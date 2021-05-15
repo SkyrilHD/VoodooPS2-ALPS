@@ -7,7 +7,7 @@
 #include <IOKit/IOWorkLoop.h>
 #include <IOKit/IOTimerEventSource.h>
 #include "VoodooPS2Controller.h"
-#include "VoodooPS2TouchPadBase.h"
+#include "VoodooPS2AlpsBase.h"
 
 // =============================================================================
 // VoodooPS2TouchPadBase Class Implementation
@@ -67,6 +67,7 @@ bool VoodooPS2TouchPadBase::init(OSDictionary * dict)
 
     // set defaults for configuration items
     
+    //z_finger = 0;
 	/*z_finger=45;
 	divisorx=divisory=1;
 	ledge=1700;
@@ -279,6 +280,10 @@ bool VoodooPS2TouchPadBase::start( IOService * provider )
         if (dragTimer)
             pWorkLoop->addEventSource(dragTimer);
     }
+    
+    scrollDebounceTIMER = IOTimerEventSource::timerEventSource(this, OSMemberFunctionCast(IOTimerEventSource::Action, this, &VoodooPS2TouchPadBase::onScrollDebounceTimer));
+    if(scrollDebounceTIMER)
+        pWorkLoop->addEventSource(scrollDebounceTIMER);
     
     pWorkLoop->addEventSource(_cmdGate);
     
@@ -605,6 +610,11 @@ void VoodooPS2TouchPadBase::onDragTimer(void)
     //TODO: find other places the timer should be cancelled.
 }
 
+
+void VoodooPS2TouchPadBase::onScrollDebounceTimer(void)
+{
+    scrolldebounce = false;
+}
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 void VoodooPS2TouchPadBase::initTouchPad()
@@ -737,6 +747,7 @@ void VoodooPS2TouchPadBase::setParamPropertiesGated(OSDictionary * config)
         {"ClickPadClickTime",               &clickpadclicktime},
         {"MiddleClickTime",                 &_maxmiddleclicktime},
         {"DragExitDelayTime",               &dragexitdelay},
+        {"ScrollExitDelayTime",             &scrollexitdelay},
     };
     
     int oldmousecount = mousecount;
@@ -1014,4 +1025,22 @@ void VoodooPS2TouchPadBase::receiveMessage(int message, void* data)
             break;
         }
     }
+    
+}
+
+// Acidanthera VoodooPS2
+bool VoodooPS2TouchPadBase::handleOpen(IOService *forClient, IOOptionBits options, void *arg) {
+    if (forClient && forClient->getProperty(VOODOO_INPUT_IDENTIFIER)) {
+        voodooInputInstance = forClient;
+        voodooInputInstance->retain();
+
+        return true;
+    }
+
+    return super::handleOpen(forClient, options, arg);
+}
+
+void VoodooPS2TouchPadBase::handleClose(IOService *forClient, IOOptionBits options) {
+    OSSafeReleaseNULL(voodooInputInstance);
+    super::handleClose(forClient, options);
 }

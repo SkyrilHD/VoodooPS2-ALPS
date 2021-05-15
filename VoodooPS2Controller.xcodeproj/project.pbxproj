@@ -29,8 +29,8 @@
 		84F424E3161B59E500777765 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 84F424C3161B593D00777765 /* Cocoa.framework */; };
 		84F424E4161B59E500777765 /* PreferencePanes.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 84F424C5161B593D00777765 /* PreferencePanes.framework */; };
 		BA560D361734DFF100914439 /* Decay.h in Headers */ = {isa = PBXBuildFile; fileRef = BA560D351734DFF100914439 /* Decay.h */; };
-		BA5C70CF17338E7000E30E1A /* VoodooPS2TouchPadBase.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C3F4F41B76902F9877062D93 /* VoodooPS2TouchPadBase.cpp */; };
-		BA5C70D017338E8600E30E1A /* VoodooPS2TouchPadBase.h in Headers */ = {isa = PBXBuildFile; fileRef = C3F4F859C067FD563476F515 /* VoodooPS2TouchPadBase.h */; };
+		BA5C70CF17338E7000E30E1A /* VoodooPS2AlpsBase.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C3F4F41B76902F9877062D93 /* VoodooPS2AlpsBase.cpp */; };
+		BA5C70D017338E8600E30E1A /* VoodooPS2AlpsBase.h in Headers */ = {isa = PBXBuildFile; fileRef = C3F4F859C067FD563476F515 /* VoodooPS2AlpsBase.h */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -72,9 +72,9 @@
 		84F424C8161B593D00777765 /* CoreData.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreData.framework; path = System/Library/Frameworks/CoreData.framework; sourceTree = SDKROOT; };
 		84F424C9161B593D00777765 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
 		BA560D351734DFF100914439 /* Decay.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Decay.h; sourceTree = "<group>"; };
-		C3F4F41B76902F9877062D93 /* VoodooPS2TouchPadBase.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = VoodooPS2TouchPadBase.cpp; sourceTree = "<group>"; };
+		C3F4F41B76902F9877062D93 /* VoodooPS2AlpsBase.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = VoodooPS2AlpsBase.cpp; sourceTree = "<group>"; };
 		C3F4F603A234F724795A2FBD /* VoodooPS2Trackpad.kext */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.kernel-extension"; name = VoodooPS2Trackpad.kext; path = "../../Library/Caches/appCode20/DerivedData/VoodooPS2Controller-5fc0befb/Build/Products/Debug/VoodooPS2Trackpad.kext"; sourceTree = "<group>"; };
-		C3F4F859C067FD563476F515 /* VoodooPS2TouchPadBase.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = VoodooPS2TouchPadBase.h; sourceTree = "<group>"; };
+		C3F4F859C067FD563476F515 /* VoodooPS2AlpsBase.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = VoodooPS2AlpsBase.h; sourceTree = "<group>"; };
 		C3F4FA022A4265DD37A85F4D /* VoodooPS2Controller.kext */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.kernel-extension"; name = VoodooPS2Controller.kext; path = "../../Library/Caches/appCode20/DerivedData/VoodooPS2Controller-5fc0befb/Build/Products/Debug/VoodooPS2Controller.kext"; sourceTree = "<group>"; };
 		C3F4FAC34E9069A684BFE9E1 /* VoodooPS2Keyboard.kext */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.kernel-extension"; name = VoodooPS2Keyboard.kext; path = "../../Library/Caches/appCode20/DerivedData/VoodooPS2Controller-5fc0befb/Build/Products/Debug/VoodooPS2Keyboard.kext"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -228,8 +228,8 @@
 				84833FAC161B62A900845294 /* alps.h */,
 				84833FAB161B62A900845294 /* alps.cpp */,
 				84167857161B56C4002C60E6 /* Supporting Files */,
-				C3F4F859C067FD563476F515 /* VoodooPS2TouchPadBase.h */,
-				C3F4F41B76902F9877062D93 /* VoodooPS2TouchPadBase.cpp */,
+				C3F4F859C067FD563476F515 /* VoodooPS2AlpsBase.h */,
+				C3F4F41B76902F9877062D93 /* VoodooPS2AlpsBase.cpp */,
 				BA560D351734DFF100914439 /* Decay.h */,
 			);
 			path = VoodooPS2Trackpad;
@@ -303,7 +303,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				84833FB2161B62A900845294 /* alps.h in Headers */,
-				BA5C70D017338E8600E30E1A /* VoodooPS2TouchPadBase.h in Headers */,
+				BA5C70D017338E8600E30E1A /* VoodooPS2AlpsBase.h in Headers */,
 				BA560D361734DFF100914439 /* Decay.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -579,7 +579,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				84833FB1161B62A900845294 /* alps.cpp in Sources */,
-				BA5C70CF17338E7000E30E1A /* VoodooPS2TouchPadBase.cpp in Sources */,
+				BA5C70CF17338E7000E30E1A /* VoodooPS2AlpsBase.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -673,7 +673,7 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				LLVM_LTO = YES_THIN;
 				"LLVM_LTO[arch=x86_64]" = YES_THIN;
-				MACOSX_DEPLOYMENT_TARGET = 10.6;
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				MODULE_VERSION = 6.0.0;
 				ONLY_ACTIVE_ARCH = YES;
 				"OTHER_LDFLAGS[arch=x86_64]" = "-dead_strip";
@@ -714,7 +714,7 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				LLVM_LTO = YES_THIN;
 				"LLVM_LTO[arch=x86_64]" = YES_THIN;
-				MACOSX_DEPLOYMENT_TARGET = 10.6;
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				MODULE_VERSION = 6.0.0;
 				ONLY_ACTIVE_ARCH = YES;
 				"OTHER_LDFLAGS[arch=x86_64]" = "-dead_strip";

@@ -20,7 +20,8 @@
  * @APPLE_LICENSE_HEADER_END@
  */
 
-#include "VoodooPS2TouchPadBase.h"
+#include "VoodooPS2AlpsBase.h"
+#include "../VoodooInput/VoodooInput/VoodooInputMultitouch/VoodooInputEvent.h"
 
 #define ALPS_PROTO_V1	0x100
 #define ALPS_PROTO_V2	0x200
@@ -303,6 +304,8 @@ class EXPORT ALPS : public VoodooPS2TouchPadBase {
     OSDeclareDefaultStructors( ALPS );
     
 private:
+    VoodooInputEvent inputEvent;
+    
     alps_data priv;
     hw_init hw_init;
     decode_fields decode_fields;
@@ -445,9 +448,9 @@ protected:
     
     bool alps_hw_init_ss4_v2();
     
-    bool ps2_command_short(UInt8 command);
+    void ps2_command_short(UInt8 command);
     
-    bool ps2_command(unsigned char value, UInt8 command);
+    void ps2_command(unsigned char value, UInt8 command);
         
     void set_protocol();
     

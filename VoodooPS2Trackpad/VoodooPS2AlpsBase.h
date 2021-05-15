@@ -11,6 +11,9 @@
 #include <IOKit/IOCommandGate.h>
 #include "Decay.h"
 
+#include "../VoodooInput/VoodooInput/VoodooInputMultitouch/VoodooInputTransducer.h"
+#include "../VoodooInput/VoodooInput/VoodooInputMultitouch/VoodooInputMessages.h"
+
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 // VoodooPS2TouchPadBase Class Declaration
 //
@@ -23,6 +26,10 @@ class EXPORT VoodooPS2TouchPadBase : public IOHIPointing
     OSDeclareAbstractStructors(VoodooPS2TouchPadBase);
 
 protected:
+    
+    // VoodooInput
+    IOService *voodooInputInstance;
+    
     ApplePS2MouseDevice * _device;
     bool                _interruptHandlerInstalled;
     bool                _powerControlHandlerInstalled;
@@ -103,12 +110,15 @@ protected:
     // normal state
 	int lastx, lasty, last_fingers, b4last;
     UInt32 lastbuttons;
+    UInt32 lastTrackStickButtons, lastTouchpadButtons;
     int ignoredeltas;
+    int ignoresingle;
 	int xrest, yrest, scrollrest;
     int touchx, touchy;
 	uint64_t touchtime;
 	uint64_t untouchtime;
 	bool wasdouble,wastriple;
+    bool scrolldebounce;
     uint64_t keytime;
     bool ignoreall;
     UInt32 passbuttons;
@@ -147,6 +157,7 @@ protected:
 
     // momentum scroll state
     bool momentumscroll;
+    bool wasScroll = false;
     SimpleAverage<int, 32> dy_history;
     SimpleAverage<uint64_t, 32> time_history;
     IOTimerEventSource* scrollTimer;
@@ -163,7 +174,10 @@ protected:
 
     // timer for drag delay
     uint64_t dragexitdelay;
+    uint64_t scrollexitdelay;
     IOTimerEventSource* dragTimer;
+    
+    IOTimerEventSource* scrollDebounceTIMER;
     
     SimpleAverage<int, 5> x_avg;
     SimpleAverage<int, 5> y_avg;
@@ -225,9 +239,10 @@ protected:
     virtual void touchpadShutdown() {};
     virtual void initTouchPad();
 
-    inline bool isFingerTouch(int z) { return z>z_finger && z<zlimit; }
+    inline bool isFingerTouch(int z) { return z>z_finger; }
 
     void onScrollTimer(void);
+    void onScrollDebounceTimer(void);
     void onButtonTimer(void);
     void onDragTimer(void);
 
@@ -236,8 +251,8 @@ protected:
 
     virtual void setParamPropertiesGated(OSDictionary* dict);
 
-	virtual IOItemCount buttonCount();
-	virtual IOFixed     resolution();
+    virtual IOItemCount buttonCount() override;
+    virtual IOFixed     resolution() override;
     virtual bool deviceSpecificInit() = 0;
     inline void dispatchRelativePointerEventX(int dx, int dy, UInt32 buttonState, uint64_t now)
         { dispatchRelativePointerEvent(dx, dy, buttonState, *(AbsoluteTime*)&now); }
@@ -249,17 +264,21 @@ protected:
         { timer->cancelTimeout(); }
 
 public:
-    virtual bool init( OSDictionary * properties );
+    virtual bool init( OSDictionary * properties ) override;
     virtual VoodooPS2TouchPadBase * probe( IOService * provider,
-                                               SInt32 *    score ) = 0;
-    virtual bool start( IOService * provider );
-    virtual void stop( IOService * provider );
+                                               SInt32 *    score ) override = 0;
+    virtual bool start( IOService * provider ) override;
+    virtual void stop( IOService * provider ) override;
 
-    virtual UInt32 deviceType();
-    virtual UInt32 interfaceID();
+    virtual UInt32 deviceType() override;
+    virtual UInt32 interfaceID() override;
 
-	virtual IOReturn setParamProperties(OSDictionary * dict);
-	virtual IOReturn setProperties(OSObject *props);
+	virtual IOReturn setParamProperties(OSDictionary * dict) override;
+    virtual IOReturn setProperties(OSObject *props) override;
+    
+    // Acidanthera VoodooPS2
+    bool handleOpen(IOService *forClient, IOOptionBits options, void *arg) override;
+    void handleClose(IOService *forClient, IOOptionBits options) override;
 };
 
 #endif //__VoodooPS2TouchPadBase_H_

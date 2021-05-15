@@ -93,9 +93,9 @@
 					<key>EdgeTop</key>
 					<integer>2940</integer>
 					<key>FingerChangeIgnoreDeltas</key>
-					<integer>0</integer>
+					<integer>1</integer>
 					<key>FingerZ</key>
-					<integer>30</integer>
+					<integer>5</integer>
 					<key>HorizontalScrollDivisor</key>
 					<integer>0</integer>
 					<key>ImmediateClick</key>
@@ -128,6 +128,8 @@
 					<integer>0</integer>
 					<key>ScrollResolution</key>
 					<integer>400</integer>
+					<key>ScrollExitDelayTime</key>
+					<integer>10000</integer>
 					<key>SmoothInput</key>
 					<true/>
 					<key>StickyHorizontalScrolling</key>
