@@ -286,6 +286,10 @@ bool ApplePS2Keyboard::init(OSDictionary * dict)
     parseAction("3b d, 3a d, 7b d, 7b u, 3a u, 3b u", _actionSwipe4Left, countof(_actionSwipe4Left));
     parseAction("3b d, 3a d, 7c d, 7c u, 3a u, 3b u", _actionSwipe4Right, countof(_actionSwipe4Right));
     
+    // TODO: zoom-in/out
+    parseAction("37 d, 18 d, 18 u, 37 u", _actionZoomIn, countof(_actionZoomIn));
+    parseAction("37 d, 1b d, 1b u, 37 u", _actionZoomOut, countof(_actionZoomOut));
+    
     //
     // Load settings specfic to the Platform Profile...
     //
@@ -1953,6 +1957,16 @@ void ApplePS2Keyboard::receiveMessage(int message, void* data)
         case kPS2M_swipe4Up:
             DEBUG_LOG("ApplePS2Keyboard: Synaptic Trackpad call Swipe 4 Up\n");
             sendKeySequence(_actionSwipe4Up);
+            break;
+            
+        case kPS2M_zoomIn:
+            DEBUG_LOG("ApplePS2Keyboard: Synaptic Trackpad call Zoom In\n");
+            sendKeySequence(_actionZoomIn);
+            break;
+
+        case kPS2M_zoomOut:
+            DEBUG_LOG("ApplePS2Keyboard: Synaptic Trackpad call Zoom Out\n");
+            sendKeySequence(_actionZoomOut);
             break;
     }
 }

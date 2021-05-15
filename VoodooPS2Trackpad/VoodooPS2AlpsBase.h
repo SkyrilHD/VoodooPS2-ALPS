@@ -40,6 +40,23 @@ protected:
     UInt16              _touchPadVersion;
 
     IOCommandGate*      _cmdGate;
+    
+    int skippyThresh;
+    int lastdx;
+    int lastdy;
+    
+    SimpleAverage<int, 32> dx_history;
+    SimpleAverage<uint64_t, 32> xtime_history;
+    IOTimerEventSource* xscrollTimer;
+    uint64_t xmomentumscrollinterval;
+    int xmomentumscrollsum;
+    int64_t xmomentumscrollcurrent;
+    int64_t xmomentumscrollrest1;
+    int64_t xmomentumscrollrest2;
+    
+    SimpleAverage<int, 32> secondaryfingerdistance_history;
+    int fingerzooming;
+    
     int z_finger;
 	int divisorx, divisory;
 	int ledge;
@@ -90,6 +107,11 @@ protected:
     int bogusdxthresh, bogusdythresh;
     int scrolldxthresh, scrolldythresh;
     int immediateclick;
+    
+    int rightclick_corner;
+    bool ignore_ew_packets;
+    bool threefingerdrag;
+    int notificationcenter;
 
     // three finger and four finger state
     uint8_t inSwipeLeft, inSwipeRight;
@@ -177,6 +199,8 @@ protected:
     uint64_t scrollexitdelay;
     IOTimerEventSource* dragTimer;
     
+    bool fourfingersdetected;
+    
     IOTimerEventSource* scrollDebounceTIMER;
     
     SimpleAverage<int, 5> x_avg;
@@ -215,6 +239,8 @@ protected:
         MODE_WAIT2TAP =     102,    // "no touch"
         MODE_WAIT2RELEASE = 103,    // "touch"
     } touchmode;
+    
+    const char* modeName(int touchmode);
 
     inline bool isTouchMode() { return touchmode & 1; }
 
@@ -242,6 +268,7 @@ protected:
     inline bool isFingerTouch(int z) { return z>z_finger; }
 
     void onScrollTimer(void);
+    void onScrollTimerX(void);
     void onScrollDebounceTimer(void);
     void onButtonTimer(void);
     void onDragTimer(void);

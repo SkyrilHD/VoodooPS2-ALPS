@@ -2806,6 +2806,25 @@ void ALPS::dispatchEventsWithInfo(int xraw, int yraw, int z, int fingers, UInt32
         y = y_avg.filter(y);
     }
     
+    // distance from primary
+    // two finger zoom settings?
+    if (1) {
+        int dxx = x - lastx;
+        int dyy = y - lasty;
+        int ds = ((dxx * dxx) + (dyy * dyy)) >> 4;
+        int last = secondaryfingerdistance_history.newest();
+        int change = (ds - last);
+        int count = secondaryfingerdistance_history.count();
+        fingerzooming = 0;
+        if (count > 3) {
+            //proper zooming threshold value?
+            if (abs(change) > 50000) {
+                fingerzooming = change;
+            }
+        }
+        secondaryfingerdistance_history.filter(ds);
+    }
+    
     if (ignoredeltas) {
         DEBUG_LOG("ALPS: Still ignoring deltas. Value=%d\n", ignoredeltas);
         lastx = x;
@@ -2828,7 +2847,7 @@ void ALPS::dispatchEventsWithInfo(int xraw, int yraw, int z, int fingers, UInt32
     }
     
     // if trackpad input is supposed to be ignored, then don't do anything
-    if (ignoreall) {
+    if (ignoreall || ignore_ew_packets) {
         DEBUG_LOG("ignoreall is set, returning\n");
         return;
     }
@@ -2836,6 +2855,30 @@ void ALPS::dispatchEventsWithInfo(int xraw, int yraw, int z, int fingers, UInt32
 #ifdef DEBUG
     int tm1 = touchmode;
 #endif
+    
+    /*
+     Three-finger drag should work the following way:
+     When three fingers touch the touchpad, start dragging
+     While dragging, ignore touches with not 3 fingers
+     When all fingers are released, go to DRAGNOTOUCH mode
+     In DRAGNOTOUCH mode:
+        one or two fingers can be placed on the touchpad, and it prolongs the drag stop timer
+        if one or two fingers MOVE on the touchpad or are RELEASED, dragging is stopped (click to stop)
+        when three fingers are on the touchpad, continue dragging in DRAGLOCK mode
+    */
+    
+    bool _threefingerdrag = (threefingerdrag && !fourfingersdetected);
+    
+    if(isFingerTouch(z) && (touchmode == MODE_DRAGLOCK || touchmode == MODE_DRAG) && _threefingerdrag && fingers != 1) {
+        last_fingers=fingers;
+        return;
+    }
+    
+    if (touchmode == MODE_DRAGNOTOUCH && _threefingerdrag && fingers != 1) {
+        last_fingers=fingers;
+        return;
+    }
+    
     DEBUG_LOG("VoodooPS2::Mode: %d\n", touchmode);
     if (z < z_finger && isTouchMode()) {
         // Finger has been lifted
@@ -2859,10 +2902,22 @@ void ALPS::dispatchEventsWithInfo(int xraw, int yraw, int z, int fingers, UInt32
                 momentumscrollrest1 = 0;
                 momentumscrollrest2 = 0;
                 setTimerTimeout(scrollTimer, momentumscrolltimer);
+           } else
+                
+            if (dx_history.count() > momentumscrollsamplesmin &&
+                (xmomentumscrollinterval = xtime_history.newest() - xtime_history.oldest()))
+            {
+                xmomentumscrollsum = dx_history.sum();
+                xmomentumscrollcurrent = momentumscrolltimer * xmomentumscrollsum;
+                xmomentumscrollrest1 = 0;
+                xmomentumscrollrest2 = 0;
+                setTimerTimeout(xscrollTimer, momentumscrolltimer);
             }
         }
         time_history.reset();
         dy_history.reset();
+        xtime_history.reset();
+        dx_history.reset();
         
         if (now_ns - touchtime < maxtaptime && clicking) {
             switch (touchmode) {
@@ -2952,6 +3007,13 @@ void ALPS::dispatchEventsWithInfo(int xraw, int yraw, int z, int fingers, UInt32
 #endif
     int dx = 0, dy = 0;
     
+    if ((touchmode != MODE_MTOUCH) || (touchmode == MODE_MTOUCH && fingers != 0)) {
+        if (secondaryfingerdistance_history.count() > 0) {
+            secondaryfingerdistance_history.reset();
+            fingerzooming = 0;
+        }
+    }
+    
     switch (touchmode) {
         case MODE_DRAG:
         case MODE_DRAGLOCK:
@@ -2993,6 +3055,8 @@ void ALPS::dispatchEventsWithInfo(int xraw, int yraw, int z, int fingers, UInt32
                         setTimerTimeout(scrollDebounceTIMER, scrollexitdelay);
                         scrolldebounce = true;
                         wasScroll = true;
+                        dx_history.reset();
+                        xtime_history.reset();
                         dy_history.reset();
                         time_history.reset();
                         touchmode=MODE_MOVE;
@@ -3005,6 +3069,13 @@ void ALPS::dispatchEventsWithInfo(int xraw, int yraw, int z, int fingers, UInt32
                     
                     break;
                 case 2: // two finger
+                    if (fingerzooming != 0) {
+                        if (fingerzooming > 0)
+                            _device->dispatchKeyboardMessage(kPS2M_zoomIn, &now_abs);
+                        else
+                            _device->dispatchKeyboardMessage(kPS2M_zoomOut, &now_abs);
+                        break;
+                    }
                     if (last_fingers != fingers) {
                         break;
                     }
@@ -3025,7 +3096,15 @@ void ALPS::dispatchEventsWithInfo(int xraw, int yraw, int z, int fingers, UInt32
                         dy_history.reset();
                         time_history.reset();
                     }
+                    if ((dx < 0) != (dx_history.newest() < 0) || dx == 0)
+                    {
+                        // stopped or changed direction, clear history
+                        dx_history.reset();
+                        xtime_history.reset();
+                    }
                     // put movement and time in history for later
+                    dx_history.filter(dx);
+                    xtime_history.filter(now_ns);
                     dy_history.filter(dy);
                     time_history.filter(now_ns);
                     //REVIEW: filter out small movements (Mavericks issue)
@@ -3045,6 +3124,7 @@ void ALPS::dispatchEventsWithInfo(int xraw, int yraw, int z, int fingers, UInt32
                         // Gets rid of scrolling while trying to tap 
                         if (!touchtime)
                             dispatchScrollWheelEventX(wvdivisor ? dy / wvdivisor : 0, (whdivisor && hscroll) ? -dx / whdivisor : 0, 0, now_abs);
+                            //dispatchScrollWheelEvent(whdivisor ? dx / whdivisor : 0, (wvdivisor && vscroll) ? -dy / wvdivisor : 0, 0, now_abs);
                         dx = dy = 0;
                         ignoresingle = 3;
                     }
@@ -3056,6 +3136,7 @@ void ALPS::dispatchEventsWithInfo(int xraw, int yraw, int z, int fingers, UInt32
                     }
                     
                     if (threefingerhorizswipe || threefingervertswipe) {
+                        
                         // Now calculate total movement since 3 fingers down (add to total)
                         xmoved += lastx-x;
                         ymoved += y-lasty;
@@ -3097,39 +3178,42 @@ void ALPS::dispatchEventsWithInfo(int xraw, int yraw, int z, int fingers, UInt32
                         break;
                     }
                     
-                    // Now calculate total movement since 4 fingers down (add to total)
-                    xmoved += lastx-x;
-                    ymoved += y-lasty;
+                    //if (fourfingersdetected)
+                   // {
+                        // Now calculate total movement since 4 fingers down (add to total)
+                        xmoved += lastx-x;
+                        ymoved += y-lasty;
                     
-                    // dispatching 4 finger movement
-                    if (ymoved > swipedy && !inSwipe4Up) {
-                        inSwipe4Up = 1; inSwipeUp = 0;
-                        inSwipe4Down = 0;
-                        ymoved = 0;
-                        _device->dispatchKeyboardMessage(kPS2M_swipe4Up, &now_abs);
-                        break;
-                    }
-                    if (ymoved < -swipedy && !inSwipe4Down) {
-                        inSwipe4Down = 1; inSwipeDown = 0;
-                        inSwipe4Up = 0;
-                        ymoved = 0;
-                        _device->dispatchKeyboardMessage(kPS2M_swipe4Down, &now_abs);
-                        break;
-                    }
-                    if (xmoved < -swipedx && !inSwipe4Right) {
-                        inSwipe4Right = 1; inSwipeRight = 0;
-                        inSwipe4Left = 0;
-                        xmoved = 0;
-                        _device->dispatchKeyboardMessage(kPS2M_swipe4Right, &now_abs);
-                        break;
-                    }
-                    if (xmoved > swipedx && !inSwipe4Left) {
-                        inSwipe4Left = 1; inSwipeLeft = 0;
-                        inSwipe4Right = 0;
-                        xmoved = 0;
-                        _device->dispatchKeyboardMessage(kPS2M_swipe4Left, &now_abs);
-                        break;
-                    }
+                        // dispatching 4 finger movement
+                        if (ymoved > swipedy && !inSwipe4Up) {
+                            inSwipe4Up = 1; inSwipeUp = 0;
+                            inSwipe4Down = 0;
+                            ymoved = 0;
+                            _device->dispatchKeyboardMessage(kPS2M_swipe4Up, &now_abs);
+                            break;
+                        }
+                        if (ymoved < -swipedy && !inSwipe4Down) {
+                            inSwipe4Down = 1; inSwipeDown = 0;
+                            inSwipe4Up = 0;
+                            ymoved = 0;
+                            _device->dispatchKeyboardMessage(kPS2M_swipe4Down, &now_abs);
+                            break;
+                        }
+                        if (xmoved < -swipedx && !inSwipe4Right) {
+                            inSwipe4Right = 1; inSwipeRight = 0;
+                            inSwipe4Left = 0;
+                            xmoved = 0;
+                            _device->dispatchKeyboardMessage(kPS2M_swipe4Right, &now_abs);
+                            break;
+                        }
+                        if (xmoved > swipedx && inSwipe4Left) {
+                            inSwipe4Left = 1; inSwipeLeft = 0;
+                            inSwipe4Right = 0;
+                            xmoved = 0;
+                            _device->dispatchKeyboardMessage(kPS2M_swipe4Left, &now_abs);
+                            break;
+                        }
+                    //}
             }
             break;
         case MODE_DRAGNOTOUCH:
@@ -3149,7 +3233,7 @@ void ALPS::dispatchEventsWithInfo(int xraw, int yraw, int z, int fingers, UInt32
     // capture time of tap, and watch for double/triple tap
     if (isFingerTouch(z)) {
         // taps don't count if too close to typing or if currently in momentum scroll
-        if ((!palm_wt || now_ns - keytime >= maxaftertyping) && !momentumscrollcurrent) {
+        if ((!palm_wt || now_ns - keytime >= maxaftertyping) && !momentumscrollcurrent && !xmomentumscrollcurrent) {
             
             if (!isTouchMode()) {
                 touchtime = now_ns;
@@ -3171,26 +3255,73 @@ void ALPS::dispatchEventsWithInfo(int xraw, int yraw, int z, int fingers, UInt32
             setTimerTimeout(scrollDebounceTIMER,scrollexitdelay);
             scrolldebounce = true;
         }
+        
+        if(!scrolldebounce && xmomentumscrollcurrent){
+            // any touch cancels momentum scroll
+            xmomentumscrollcurrent = 0;
+            setTimerTimeout(scrollDebounceTIMER,scrollexitdelay);
+            scrolldebounce = true;
+        }
     }
     // switch modes, depending on input
     if (touchmode == MODE_PREDRAG && isFingerTouch(z)) {
         touchmode = MODE_DRAG;
         draglocktemp = _modifierdown & draglocktempmask;
     }
-    if (touchmode == MODE_DRAGNOTOUCH && isFingerTouch(z)) {
+    if (touchmode == MODE_DRAGNOTOUCH && isFingerTouch(z) && (!_threefingerdrag || (_threefingerdrag && fingers == 1))) {
         if (dragTimer)
             cancelTimer(dragTimer);
         touchmode=MODE_DRAGLOCK;
     }
     if (MODE_MTOUCH != touchmode && fingers > 1 && isFingerTouch(z)) {
-        touchmode = MODE_MTOUCH;
+        if (fingers == 1 && _threefingerdrag)
+        {
+            touchmode = MODE_DRAG;
+            ignore_ew_packets=true;
+        }
+        else
+            touchmode=MODE_MTOUCH;
+        tracksecondary=false;
     }
     
     if (touchmode == MODE_NOTOUCH && z > z_finger && !scrolldebounce) {
         touchmode = MODE_MOVE;
     }
     
-    // dispatch dx/dy and current button status
+    // pointer jumpy fix;
+#if 1
+    if (!(fingers == 0 ||
+        touchmode == MODE_VSCROLL || touchmode == MODE_HSCROLL ||
+        momentumscrollcurrent != 0 || xmomentumscrollcurrent != 0)) {
+
+        if (skippyThresh > 0) {
+            skippyThresh--;
+            if (abs(dx) > 100 && abs(dy) > 100) {
+                dx = 0;
+                dy = 0;
+            }
+        }
+        if (lastdx == 0 && dx != 0) {
+            dx = 0;
+            lastdx = 1;
+        } else {
+            lastdx = dx;
+        }
+        if (lastdy == 0 && dy != 0) {
+            dy = 0;
+            lastdy = 1;
+        } else {
+            lastdy = dy;
+        }
+        if (dx == 0 && dy == 0) {
+            skippyThresh = 8;
+        } else {
+            skippyThresh--;
+        }
+    }
+#endif
+    
+    // filter out middle mouse click if middle button scroll is true
     dispatchRelativePointerEventX(dx / divisorx, dy / divisory, buttons, now_abs);
     
     // always save last seen position for calculating deltas later
@@ -3199,9 +3330,9 @@ void ALPS::dispatchEventsWithInfo(int xraw, int yraw, int z, int fingers, UInt32
     //b4last = last_fingers;
     last_fingers = fingers;
     
-#ifdef DEBUG
-    DEBUG_LOG("ps2: fingers=%d, dx=%d, dy=%d (%d,%d) z=%d mode=(%d,%d,%d) buttons=%d wasdouble=%d wastriple=%d\n", fingers, dx, dy, x, y, z, tm1, tm2, touchmode, buttons, wasdouble, wastriple);
-#endif
+    #ifdef DEBUG
+        DEBUG_LOG("ps2: fingers=%d, dx=%d, dy=%d (%d,%d) z=%d mode=(%d,%d,%d) buttons=%d wasdouble=%d wastriple=%d\n", fingers, dx, dy, x, y, z, tm1, tm2, touchmode, buttons, wasdouble, wastriple);
+    #endif
 }
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
