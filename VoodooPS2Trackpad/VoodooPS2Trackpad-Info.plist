@@ -27,7 +27,7 @@
 			<key>SupportsGestureScrolling</key>
 			<true/>
 			<key>TrackpadFourFingerGestures</key>
-			<false/>
+			<true/>
 			<key>ApplePreferenceIdentifier</key>
 			<string>com.apple.AppleMultitouchTrackpad</string>
 			<key>MTHIDDevice</key>
@@ -39,7 +39,7 @@
 			<key>TrackpadEmbedded</key>
 			<true/>
 			<key>TrackpadThreeFingerDrag</key>
-			<false/>
+			<true/>
 			<key>TrackpadSecondaryClickCorners</key>
 			<true/>
 			<key>CFBundleIdentifier</key>
@@ -79,7 +79,9 @@
 					<key>DoubleTapThresholdY</key>
 					<integer>100</integer>
 					<key>DragExitDelayTime</key>
-					<integer>1000000000</integer>
+					<integer>750000000</integer>
+					<key>Dragging</key>
+					<integer>1</integer>
 					<key>DragLockTempMask</key>
 					<integer>1048592</integer>
 					<key>DoubleSmoothness</key>
@@ -99,7 +101,7 @@
 					<key>HorizontalScrollDivisor</key>
 					<integer>0</integer>
 					<key>ImmediateClick</key>
-					<false/>
+					<true/>
 					<key>MaxDragTime</key>
 					<integer>180000000</integer>
 					<key>MaxTapTime</key>
