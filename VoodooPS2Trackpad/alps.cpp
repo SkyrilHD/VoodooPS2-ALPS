@@ -3123,7 +3123,7 @@ void ALPS::dispatchEventsWithInfo(int xraw, int yraw, int z, int fingers, UInt32
                         // Don't move unless user is moved fingers far enough to know this wasn't a two finger tap
                         // Gets rid of scrolling while trying to tap 
                         if (!touchtime)
-                            dispatchScrollWheelEventX(wvdivisor ? dy / wvdivisor : 0, (whdivisor && hscroll) ? -dx / whdivisor : 0, 0, now_abs);
+                            dispatchScrollWheelEventX(wvdivisor ? dy / wvdivisor : 0, (whdivisor && hscroll) ? dx / whdivisor : 0, 0, now_abs);
                             //dispatchScrollWheelEvent(whdivisor ? dx / whdivisor : 0, (wvdivisor && vscroll) ? -dy / wvdivisor : 0, 0, now_abs);
                         dx = dy = 0;
                         ignoresingle = 3;
