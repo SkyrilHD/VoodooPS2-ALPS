@@ -2907,7 +2907,7 @@ void ALPS::dispatchEventsWithInfo(int xraw, int yraw, int z, int fingers, UInt32
             if (dx_history.count() > momentumscrollsamplesmin &&
                 (xmomentumscrollinterval = xtime_history.newest() - xtime_history.oldest()))
             {
-                xmomentumscrollsum = dx_history.sum();
+                xmomentumscrollsum = -dx_history.sum();
                 xmomentumscrollcurrent = momentumscrolltimer * xmomentumscrollsum;
                 xmomentumscrollrest1 = 0;
                 xmomentumscrollrest2 = 0;
