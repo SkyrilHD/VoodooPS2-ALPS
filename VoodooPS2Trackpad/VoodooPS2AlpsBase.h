@@ -109,7 +109,6 @@ protected:
     int immediateclick;
     
     int rightclick_corner;
-    bool ignore_ew_packets;
     bool threefingerdrag;
     int notificationcenter;
 

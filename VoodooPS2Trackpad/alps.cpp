@@ -2847,7 +2847,7 @@ void ALPS::dispatchEventsWithInfo(int xraw, int yraw, int z, int fingers, UInt32
     }
     
     // if trackpad input is supposed to be ignored, then don't do anything
-    if (ignoreall || ignore_ew_packets) {
+    if (ignoreall) {
         DEBUG_LOG("ignoreall is set, returning\n");
         return;
     }
@@ -3277,7 +3277,6 @@ void ALPS::dispatchEventsWithInfo(int xraw, int yraw, int z, int fingers, UInt32
         if (fingers == 1 && _threefingerdrag)
         {
             touchmode = MODE_DRAG;
-            ignore_ew_packets=true;
         }
         else
             touchmode=MODE_MTOUCH;
