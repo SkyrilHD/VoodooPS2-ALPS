@@ -656,7 +656,6 @@ void VoodooPS2TouchPadBase::onDragTimer(void)
         UInt32 buttons = middleButton(lastbuttons & ~0x01, now_abs, fromPassthru);
         DEBUG_LOG("ps2: onDragTimer, button = %d\n", buttons);
         if (!(mousemiddlescroll && buttons == 4)) dispatchRelativePointerEventX(0, 0, buttons, now_abs);
-        ignore_ew_packets=false;
     }
     else
     {
