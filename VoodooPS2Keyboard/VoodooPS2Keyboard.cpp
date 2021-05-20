@@ -1920,52 +1920,52 @@ void ApplePS2Keyboard::receiveMessage(int message, void* data)
     switch (message)
     {
         case kPS2M_swipeDown:
-            DEBUG_LOG("ApplePS2Keyboard: Synaptic Trackpad call Swipe Down\n");
+            DEBUG_LOG("ApplePS2Keyboard: ALPS Trackpad call Swipe Down\n");
             sendKeySequence(_actionSwipeDown);
             break;
             
         case kPS2M_swipeLeft:
-            DEBUG_LOG("ApplePS2Keyboard: Synaptic Trackpad call Swipe Left\n");
+            DEBUG_LOG("ApplePS2Keyboard: ALPS Trackpad call Swipe Left\n");
             sendKeySequence(_actionSwipeLeft);
             break;
             
         case kPS2M_swipeRight:
-            DEBUG_LOG("ApplePS2Keyboard: Synaptic Trackpad call Swipe Right\n");
+            DEBUG_LOG("ApplePS2Keyboard: ALPS Trackpad call Swipe Right\n");
             sendKeySequence(_actionSwipeRight);
             break;
             
         case kPS2M_swipeUp:
-            DEBUG_LOG("ApplePS2Keyboard: Synaptic Trackpad call Swipe Up\n");
+            DEBUG_LOG("ApplePS2Keyboard: ALPS Trackpad call Swipe Up\n");
             sendKeySequence(_actionSwipeUp);
             break;
             
         case kPS2M_swipe4Down:
-            DEBUG_LOG("ApplePS2Keyboard: Synaptic Trackpad call Swipe 4 Down\n");
+            DEBUG_LOG("ApplePS2Keyboard: ALPS Trackpad call Swipe 4 Down\n");
             sendKeySequence(_actionSwipe4Down);
             break;
             
         case kPS2M_swipe4Left:
-            DEBUG_LOG("ApplePS2Keyboard: Synaptic Trackpad call Swipe 4 Left\n");
+            DEBUG_LOG("ApplePS2Keyboard: ALPS Trackpad call Swipe 4 Left\n");
             sendKeySequence(_actionSwipe4Left);
             break;
             
         case kPS2M_swipe4Right:
-            DEBUG_LOG("ApplePS2Keyboard: Synaptic Trackpad call Swipe 4 Right\n");
+            DEBUG_LOG("ApplePS2Keyboard: ALPS Trackpad call Swipe 4 Right\n");
             sendKeySequence(_actionSwipe4Right);
             break;
             
         case kPS2M_swipe4Up:
-            DEBUG_LOG("ApplePS2Keyboard: Synaptic Trackpad call Swipe 4 Up\n");
+            DEBUG_LOG("ApplePS2Keyboard: ALPS Trackpad call Swipe 4 Up\n");
             sendKeySequence(_actionSwipe4Up);
             break;
             
         case kPS2M_zoomIn:
-            DEBUG_LOG("ApplePS2Keyboard: Synaptic Trackpad call Zoom In\n");
+            DEBUG_LOG("ApplePS2Keyboard: ALPS Trackpad call Zoom In\n");
             sendKeySequence(_actionZoomIn);
             break;
 
         case kPS2M_zoomOut:
-            DEBUG_LOG("ApplePS2Keyboard: Synaptic Trackpad call Zoom Out\n");
+            DEBUG_LOG("ApplePS2Keyboard: ALPS Trackpad call Zoom Out\n");
             sendKeySequence(_actionZoomOut);
             break;
     }
