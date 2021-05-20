@@ -284,10 +284,6 @@ protected:
     
     bool alps_exit_command_mode();
     
-    bool alps_passthrough_mode_v2(bool enable);
-        
-    bool alps_absolute_mode_v1_v2();
-    
     int alps_monitor_mode_send_word(int word);
     
     int alps_monitor_mode_write_reg(int addr, int value);
@@ -300,39 +296,11 @@ protected:
     
     bool alps_tap_mode(bool enable);
     
-    bool alps_hw_init_v1_v2();
-    
-    bool alps_hw_init_v6();
-    
-    bool alps_passthrough_mode_v3(int regBase, bool enable);
-    
-    bool alps_absolute_mode_v3();
-    
     IOReturn alps_probe_trackstick_v3_v7(int regBase);
-    
-    IOReturn alps_setup_trackstick_v3(int regBase);
-    
-    bool alps_hw_init_v3();
     
     bool alps_get_v3_v7_resolution(int reg_pitch);
     
-    bool alps_hw_init_rushmore_v3();
-    
-    bool alps_absolute_mode_v4();
-    
-    bool alps_hw_init_v4();
-    
-    void alps_get_otp_values_ss4_v2(unsigned char index);
-    
-    void alps_set_defaults_ss4_v2(struct alps_data *priv);
-    
-    int alps_dolphin_get_device_area(struct alps_data *priv);
-    
-    bool alps_hw_init_dolphin_v1();
-    
     bool alps_hw_init_v7();
-    
-    bool alps_hw_init_ss4_v2();
     
     void ps2_command_short(UInt8 command);
     

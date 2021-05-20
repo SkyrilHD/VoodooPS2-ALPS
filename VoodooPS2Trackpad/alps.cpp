@@ -60,44 +60,6 @@ static const struct alps_nibble_commands alps_v3_nibble_commands[] = {
     { kDP_SetMouseScaling1To1,          0x00 }, /* f no send/recv */
 };
 
-static const struct alps_nibble_commands alps_v4_nibble_commands[] = {
-    { kDP_Enable,                       0x00 }, /* 0 no send/recv */
-    { kDP_SetDefaults,                  0x00 }, /* 1 no send/recv */
-    { kDP_SetMouseScaling2To1,          0x00 }, /* 2 no send/recv */
-    { kDP_SetMouseSampleRate | 0x1000,  0x0a }, /* 3 send=1 recv=0 */
-    { kDP_SetMouseSampleRate | 0x1000,  0x14 }, /* 4 ..*/
-    { kDP_SetMouseSampleRate | 0x1000,  0x28 }, /* 5 ..*/
-    { kDP_SetMouseSampleRate | 0x1000,  0x3c }, /* 6 ..*/
-    { kDP_SetMouseSampleRate | 0x1000,  0x50 }, /* 7 ..*/
-    { kDP_SetMouseSampleRate | 0x1000,  0x64 }, /* 8 ..*/
-    { kDP_SetMouseSampleRate | 0x1000,  0xc8 }, /* 9 ..*/
-    { kDP_CommandNibble10    | 0x0100,  0x00 }, /* a send=0 recv=1 */
-    { kDP_SetMouseResolution | 0x1000,  0x00 }, /* b send=1 recv=0 */
-    { kDP_SetMouseResolution | 0x1000,  0x01 }, /* c ..*/
-    { kDP_SetMouseResolution | 0x1000,  0x02 }, /* d ..*/
-    { kDP_SetMouseResolution | 0x1000,  0x03 }, /* e ..*/
-    { kDP_SetMouseScaling1To1,          0x00 }, /* f no send/recv */
-};
-
-static const struct alps_nibble_commands alps_v6_nibble_commands[] = {
-    { kDP_Enable,		            0x00 }, /* 0 */
-    { kDP_SetMouseSampleRate,		0x0a }, /* 1 */
-    { kDP_SetMouseSampleRate,		0x14 }, /* 2 */
-    { kDP_SetMouseSampleRate,		0x28 }, /* 3 */
-    { kDP_SetMouseSampleRate,		0x3c }, /* 4 */
-    { kDP_SetMouseSampleRate,		0x50 }, /* 5 */
-    { kDP_SetMouseSampleRate,		0x64 }, /* 6 */
-    { kDP_SetMouseSampleRate,		0xc8 }, /* 7 */
-    { kDP_GetId,		            0x00 }, /* 8 */
-    { kDP_GetMouseInformation,		0x00 }, /* 9 */
-    { kDP_SetMouseResolution,		0x00 }, /* a */
-    { kDP_SetMouseResolution,		0x01 }, /* b */
-    { kDP_SetMouseResolution,		0x02 }, /* c */
-    { kDP_SetMouseResolution,		0x03 }, /* d */
-    { kDP_SetMouseScaling2To1,	    0x00 }, /* e */
-    { kDP_SetMouseScaling1To1,	    0x00 }, /* f */
-};
-
 
 #define ALPS_DUALPOINT          0x02    /* touchpad has trackstick */
 #define ALPS_PASS               0x04    /* device has a pass-through port */
