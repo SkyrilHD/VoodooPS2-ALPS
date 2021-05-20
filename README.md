@@ -6,14 +6,13 @@ The aim of this driver is to improve the usability of ALPS TouchPads in macOS.
 
 ## Driver Features:
 
-- Supports ALPS hardware versions V1-V5, V7, V8
+- Supports ALPS hardware versions V7
 - Supports Mac OS 10.12 to 11.0
 - 1-finger tapping
-- Side (edge) scrolling (Vertical with inertia, and Horizontal)
 - 2-finger tap for right click
 - 2-finger scrolling (vertical and horizontal with inertia)
-- 3-finger gestures (V3+, check the log to find out your hw version)
-- 4-finger gestures (as keyboard shortcut)
+- 3-finger gestures
+- 4-finger gestures (as keyboard shortcuts)
 - Pointer acceleration and smoothing
 - Trackstick (movement and scrolling)
 
