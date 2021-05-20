@@ -5,7 +5,8 @@
 #ifndef __VoodooPS2TouchPadBase_H_
 #define __VoodooPS2TouchPadBase_H_
 
-#include "ApplePS2MouseDevice.h"
+#include "../VoodooPS2Controller/ApplePS2MouseDevice.h"
+#include "Multitouch Support/VoodooI2CMultitouchInterface.hpp"
 #include <IOKit/IOTimerEventSource.h>
 #include <IOKit/hidsystem/IOHIPointing.h>
 #include <IOKit/IOCommandGate.h>
@@ -13,10 +14,39 @@
 
 #include "../VoodooInput/VoodooInput/VoodooInputMultitouch/VoodooInputTransducer.h"
 #include "../VoodooInput/VoodooInput/VoodooInputMultitouch/VoodooInputMessages.h"
+#include "Multitouch Support/VoodooI2CMultitouchInterface.hpp"
+
+struct synaptics_hw_state {
+    int x;
+    int y;
+    int z;
+    int w;
+    unsigned int left:1;
+    unsigned int right:1;
+    unsigned int middle:1;
+    unsigned int up:1;
+    unsigned int down:1;
+    UInt8 ext_buttons;
+    SInt8 scroll;
+};
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 // VoodooPS2TouchPadBase Class Declaration
 //
+
+#define XMIN 0
+#define XMAX 6143
+#define YMIN 0
+#define YMAX 6143
+#define XMIN_NOMINAL 1472
+#define XMAX_NOMINAL 5472
+#define YMIN_NOMINAL 1408
+#define YMAX_NOMINAL 4448
+
+#define ABS_POS_BITS 13
+#define X_MAX_POSITIVE 8176
+#define Y_MAX_POSITIVE 8176
+
 
 #define kPacketLength 6
 
@@ -31,6 +61,7 @@ protected:
     IOService *voodooInputInstance;
     
     ApplePS2MouseDevice * _device;
+    VoodooI2CMultitouchInterface* mt_interface;
     bool                _interruptHandlerInstalled;
     bool                _powerControlHandlerInstalled;
     bool                _messageHandlerInstalled;
@@ -56,6 +87,18 @@ protected:
     
     SimpleAverage<int, 32> secondaryfingerdistance_history;
     int fingerzooming;
+    
+    OSArray* transducers;
+
+    // advanced gesture mode (
+    struct synaptics_hw_state agmState;
+    int agmFingerCount;
+    int lastFingerCount;
+
+    bool publish_multitouch_interface();
+    void unpublish_multitouch_interface();
+    int synaptics_parse_hw_state(const UInt8 buf[]);
+    void parse_input(UInt8* packet, UInt32 packetSize);
     
     int z_finger;
 	int divisorx, divisory;
@@ -111,6 +154,13 @@ protected:
     int rightclick_corner;
     bool threefingerdrag;
     int notificationcenter;
+    
+    int primaryx;
+    int primaryy;
+    int secondaryx;
+    int secondaryy;
+    //uint64_t beginmultitouch_ns;
+    uint64_t lastdispatchkey_ns;
 
     // three finger and four finger state
     uint8_t inSwipeLeft, inSwipeRight;

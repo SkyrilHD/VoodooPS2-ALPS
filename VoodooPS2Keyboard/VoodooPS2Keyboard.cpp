@@ -66,6 +66,30 @@ void* _org_rehabman_dontstrip_[] =
 #define kActionSwipeDown                    "ActionSwipeDown"
 #define kActionSwipeLeft                    "ActionSwipeLeft"
 #define kActionSwipeRight                   "ActionSwipeRight"
+
+#define kActionSwipe4FingersUp              "ActionSwipe4FingersUp"
+#define kActionSwipe4FingersDown            "ActionSwipe4FingersDown"
+#define kActionSwipe4FingersLeft            "ActionSwipe4FingersLeft"
+#define kActionSwipe4FingersRight           "ActionSwipe4FingersRight"
+
+#define kActionZoomIn                       "ActionZoomIn"
+#define kActionZoomOut                      "ActionZoomOut"
+
+#define kActionSwipeUpFromEdge              "ActionSwipeUpFromEdge"
+#define kActionSwipeDownFromEdge            "ActionSwipeDownFromEdge"
+#define kActionSwipeLeftFromEdge            "ActionSwipeLeftFromEdge"
+#define kActionSwipeRightFromEdge           "ActionSwipeRightFromEdge"
+
+#define kAction3FingersSpread               "Action3FingersSpread"
+#define kAction4FingersSpread               "Action4FingersSpread"
+
+#define KAction3FingersPinch                "Action3FingersPinch"
+#define KAction4FingersPinch                "Action4FingersPinch"
+
+#define KAction2FingersTap                  "Action2FingersTap"
+#define KAction3FingersTap                  "Action3FingersTap"
+#define KAction4FingersTap                  "Action4FingersTap"
+
 #define kBrightnessHack                     "BrightnessHack"
 #define kMacroInversion                     "Macro Inversion"
 #define kMacroTranslation                   "Macro Translation"
@@ -276,19 +300,51 @@ bool ApplePS2Keyboard::init(OSDictionary * dict)
     bcopy(_PS2flagsStock, _PS2flags, sizeof(_PS2flags));
     
     // Setup default swipe actions
-    parseAction("3b d, 37 d, 7e d, 7e u, 37 u, 3b u", _actionSwipeUp, countof(_actionSwipeUp));
+    //parseAction("3b d, 37 d, 7e d, 7e u, 37 u, 3b u", _actionSwipeUp, countof(_actionSwipeUp));
+    // modified by syscl to fit MacBook's gestures
+    // 3finger up: mission control
+    parseAction("3b d, 7e d, 7e u, 3b u", _actionSwipeUp, countof(_actionSwipeUp));
     parseAction("3b d, 37 d, 7d d, 7d u, 37 u, 3b u", _actionSwipeDown, countof(_actionSwipeDown));
-    parseAction("3b d, 37 d, 7b d, 7b u, 37 u, 3b u", _actionSwipeLeft, countof(_actionSwipeLeft));
-    parseAction("3b d, 37 d, 7c d, 7c u, 37 u, 3b u", _actionSwipeRight, countof(_actionSwipeRight));
+    //parseAction("3b d, 37 d, 7b d, 7b u, 37 u, 3b u", _actionSwipeLeft, countof(_actionSwipeLeft));
+    //parseAction("3b d, 37 d, 7c d, 7c u, 37 u, 3b u", _actionSwipeRight, countof(_actionSwipeRight));
+    // 3finger swipe left: show previous page
+    parseAction("37 d, 1e d, 1e u, 37 u", _actionSwipeLeft, countof(_actionSwipeLeft));
+    // 3finger swipe right: shwo next page
+    parseAction("37 d, 21 d, 21 u, 37 u", _actionSwipeRight, countof(_actionSwipeRight));
     
+    // MARK: Remove code after implementation
     parseAction("3b d, 3a d, 7e d, 7e u, 3a u, 3b u", _actionSwipe4Up, countof(_actionSwipe4Up));
     parseAction("3b d, 3a d, 7d d, 7d u, 3a u, 3b u", _actionSwipe4Down, countof(_actionSwipe4Down));
     parseAction("3b d, 3a d, 7b d, 7b u, 3a u, 3b u", _actionSwipe4Left, countof(_actionSwipe4Left));
     parseAction("3b d, 3a d, 7c d, 7c u, 3a u, 3b u", _actionSwipe4Right, countof(_actionSwipe4Right));
     
-    // TODO: zoom-in/out
+    //parseAction("3b d, 37 d, 7e d, 7e u, 37 u, 3b u", _actionSwipe4FingersUp, countof(_actionSwipe4FingersUp));
+    // 4finger setting(modified by syscl)
+    // 4finger swipe up: show desktop
+    parseAction("67 d, 67 u", _actionSwipe4FingersUp, countof(_actionSwipe4FingersUp));
+    parseAction("37 d, 2e d, 2e u, 37 u", _actionSwipe4FingersDown, countof(_actionSwipe4FingersDown));
+    parseAction("3b d, 7c d, 7c u, 3b u", _actionSwipe4FingersLeft, countof(_actionSwipe4FingersLeft));
+    parseAction("3b d, 7b d, 7b u, 3b u", _actionSwipe4FingersRight, countof(_actionSwipe4FingersRight));
+    
     parseAction("37 d, 18 d, 18 u, 37 u", _actionZoomIn, countof(_actionZoomIn));
     parseAction("37 d, 1b d, 1b u, 37 u", _actionZoomOut, countof(_actionZoomOut));
+    
+    parseAction("3b d, 37 d, 1d d, 1d u, 37 u, 3b u", _actionSwipeLeftFromEdge, countof(_actionSwipeLeftFromEdge));
+    parseAction("3b d, 37 d, 19 d, 19 u, 37 u, 3b u", _actionSwipeRightFromEdge, countof(_actionSwipeRightFromEdge));
+
+    //parseAction("3b d, 37 d, 1c d, 1c u, 37 u, 3b u", _action4FingersSpread, countof(_action4FingersSpread));
+    //parseAction("3b d, 37 d, 1a d, 1a u, 37 u, 3b u", _action4FingersPinch, countof(_action4FingersPinch));
+
+    // same as 4 fingers spread/pinch
+    //parseAction("3b d, 37 d, 1c d, 1c u, 37 u, 3b u", _action3FingersSpread, countof(_action3FingersSpread));
+    //parseAction("3b d, 37 d, 1a d, 1a u, 37 u, 3b u", _action3FingersPinch, countof(_action3FingersPinch));
+
+    // 2finger tap
+    parseAction("3b d, 37 d, 1c d, 1c u, 37 u, 3b u", _action2FingersTap, countof(_action2FingersTap));
+    // 3finger tap: look up function/3D Touch function (c) syscl
+    parseAction("3b d, 37 d, 2 d, 2 u, 37 u, 3b u", _action3FingersTap, countof(_action3FingersTap));
+    // 4finger tap: look up function/3D Touch function (c) syscl
+    parseAction("3b d, 37 d, 2 d, 2 u, 37 u, 3b u", _action4FingersTap, countof(_action4FingersTap));
     
     //
     // Load settings specfic to the Platform Profile...
@@ -350,6 +406,12 @@ bool ApplePS2Keyboard::init(OSDictionary * dict)
     logKeySequence("Swipe Left:", _actionSwipeLeft);
     logKeySequence("Swipe Right:", _actionSwipeRight);
     logKeySequence("Swipe 4 Up:", _actionSwipe4Up);
+    logKeySequence("Zoom In:", _actionZoomIn);
+    logKeySequence("Zoom Out:", _actionZoomOut);
+    logKeySequence("4 finger spread:", _action4FingersSpread);
+    logKeySequence("4 finger pinch:", _action4FingersPinch);
+    
+    // MARK: Remove code after implementation
     logKeySequence("Swipe 4 Down:", _actionSwipe4Down);
     logKeySequence("Swipe 4 Left:", _actionSwipe4Left);
     logKeySequence("Swipe 4 Right:", _actionSwipe4Right);
@@ -988,6 +1050,129 @@ void ApplePS2Keyboard::setParamPropertiesGated(OSDictionary * dict)
         parseAction(str->getCStringNoCopy(), _actionSwipeRight, countof(_actionSwipeRight));
         setProperty(kActionSwipeRight, str);
     }
+    
+    str = OSDynamicCast(OSString, dict->getObject(kActionSwipe4FingersUp));
+        if (str)
+        {
+            parseAction(str->getCStringNoCopy(), _actionSwipe4FingersUp, countof(_actionSwipe4FingersUp));
+            setProperty(kActionSwipe4FingersUp, str);
+        }
+
+        str = OSDynamicCast(OSString, dict->getObject(kActionSwipe4FingersDown));
+        if (str)
+        {
+            parseAction(str->getCStringNoCopy(), _actionSwipe4FingersDown, countof(_actionSwipe4FingersDown));
+            setProperty(kActionSwipe4FingersDown, str);
+        }
+
+        str = OSDynamicCast(OSString, dict->getObject(kActionSwipe4FingersLeft));
+        if (str)
+        {
+            parseAction(str->getCStringNoCopy(), _actionSwipe4FingersLeft, countof(_actionSwipe4FingersLeft));
+            setProperty(kActionSwipe4FingersLeft, str);
+        }
+
+        str = OSDynamicCast(OSString, dict->getObject(kActionSwipe4FingersRight));
+        if (str)
+        {
+            parseAction(str->getCStringNoCopy(), _actionSwipe4FingersRight, countof(_actionSwipe4FingersRight));
+            setProperty(kActionSwipe4FingersRight, str);
+        }
+
+        str = OSDynamicCast(OSString, dict->getObject(kActionZoomIn));
+        if (str)
+        {
+            parseAction(str->getCStringNoCopy(), _actionZoomIn, countof(_actionZoomIn));
+            setProperty(kActionZoomIn, str);
+        }
+
+        str = OSDynamicCast(OSString, dict->getObject(kActionZoomOut));
+        if (str)
+        {
+            parseAction(str->getCStringNoCopy(), _actionZoomOut, countof(_actionZoomOut));
+            setProperty(kActionZoomOut, str);
+        }
+
+        str = OSDynamicCast(OSString, dict->getObject(kActionSwipeUpFromEdge));
+        if (str)
+        {
+            parseAction(str->getCStringNoCopy(), _actionSwipeUpFromEdge, countof(_actionSwipeUpFromEdge));
+            setProperty(kActionSwipeUpFromEdge, str);
+        }
+
+        str = OSDynamicCast(OSString, dict->getObject(kActionSwipeDownFromEdge));
+        if (str)
+        {
+            parseAction(str->getCStringNoCopy(), _actionSwipeDownFromEdge, countof(_actionSwipeDownFromEdge));
+            setProperty(kActionSwipeDownFromEdge, str);
+        }
+
+        str = OSDynamicCast(OSString, dict->getObject(kActionSwipeLeftFromEdge));
+        if (str)
+        {
+            parseAction(str->getCStringNoCopy(), _actionSwipeLeftFromEdge, countof(_actionSwipeLeftFromEdge));
+            setProperty(kActionSwipeLeftFromEdge, str);
+        }
+
+        str = OSDynamicCast(OSString, dict->getObject(kActionSwipeRightFromEdge));
+        if (str)
+        {
+            parseAction(str->getCStringNoCopy(), _actionSwipeRightFromEdge, countof(_actionSwipeRightFromEdge));
+            setProperty(kActionSwipeRightFromEdge, str);
+        }
+
+        /*
+        str = OSDynamicCast(OSString, dict->getObject(kAction3FingersSpread));
+        if (str)
+        {
+            parseAction(str->getCStringNoCopy(), _action3FingersSpread, countof(_action3FingersSpread));
+            setProperty(kAction3FingersSpread, str);
+        }*/
+
+        /*
+        str = OSDynamicCast(OSString, dict->getObject(kAction4FingersSpread));
+        if (str)
+        {
+            parseAction(str->getCStringNoCopy(), _action4FingersSpread, countof(_action4FingersSpread));
+            setProperty(kAction4FingersSpread, str);
+        }*/
+
+        /*
+        str = OSDynamicCast(OSString, dict->getObject(KAction3FingersPinch));
+        if (str)
+        {
+            parseAction(str->getCStringNoCopy(), _action3FingersPinch, countof(_action3FingersPinch));
+            setProperty(KAction3FingersPinch, str);
+        }*/
+
+        /*
+        str = OSDynamicCast(OSString, dict->getObject(KAction4FingersPinch));
+        if (str)
+        {
+            parseAction(str->getCStringNoCopy(), _action4FingersPinch, countof(_action4FingersPinch));
+            setProperty(KAction4FingersPinch, str);
+        }*/
+
+        str = OSDynamicCast(OSString, dict->getObject(KAction2FingersTap));
+        if (str)
+        {
+            parseAction(str->getCStringNoCopy(), _action2FingersTap, countof(_action2FingersTap));
+            setProperty(KAction3FingersTap, str);
+        }
+
+        str = OSDynamicCast(OSString, dict->getObject(KAction3FingersTap));
+        if (str)
+        {
+            parseAction(str->getCStringNoCopy(), _action3FingersTap, countof(_action3FingersTap));
+            setProperty(KAction3FingersTap, str);
+        }
+
+        str = OSDynamicCast(OSString, dict->getObject(KAction4FingersTap));
+        if (str)
+        {
+            parseAction(str->getCStringNoCopy(), _action4FingersTap, countof(_action4FingersTap));
+            setProperty(KAction4FingersTap, str);
+        }
 }
 
 IOReturn ApplePS2Keyboard::setParamProperties(OSDictionary *dict)
@@ -1938,7 +2123,8 @@ void ApplePS2Keyboard::receiveMessage(int message, void* data)
             DEBUG_LOG("ApplePS2Keyboard: Synaptic Trackpad call Swipe Up\n");
             sendKeySequence(_actionSwipeUp);
             break;
-            
+        
+        // MARK: Remove code after implementation
         case kPS2M_swipe4Down:
             DEBUG_LOG("ApplePS2Keyboard: Synaptic Trackpad call Swipe 4 Down\n");
             sendKeySequence(_actionSwipe4Down);
@@ -1958,6 +2144,47 @@ void ApplePS2Keyboard::receiveMessage(int message, void* data)
             DEBUG_LOG("ApplePS2Keyboard: Synaptic Trackpad call Swipe 4 Up\n");
             sendKeySequence(_actionSwipe4Up);
             break;
+        // Until here
+            
+        case kPS2M_swipe4FingersDown:
+            DEBUG_LOG("ApplePS2Keyboard: Synaptic Trackpad call Swipe 4 Fingers Down\n");
+            sendKeySequence(_actionSwipe4FingersDown);
+            break;
+
+        case kPS2M_swipe4FingersLeft:
+            DEBUG_LOG("ApplePS2Keyboard: Synaptic Trackpad call Swipe 4 Fingers Left\n");
+            sendKeySequence(_actionSwipe4FingersLeft);
+            break;
+
+        case kPS2M_swipe4FingersRight:
+            DEBUG_LOG("ApplePS2Keyboard: Synaptic Trackpad call Swipe 4 Fingers Right\n");
+            sendKeySequence(_actionSwipe4FingersRight);
+            break;
+
+        case kPS2M_swipe4FingersUp:
+            DEBUG_LOG("ApplePS2Keyboard: Synaptic Trackpad call Swipe 4 Fingers Up\n");
+            sendKeySequence(_actionSwipe4FingersUp);
+            break;
+
+        case kPS2M_swipeDownFromEdge:
+            DEBUG_LOG("ApplePS2Keyboard: Synaptic Trackpad call Swipe Down From Edge\n");
+            sendKeySequence(_actionSwipeDownFromEdge);
+            break;
+
+        case kPS2M_swipeLeftFromEdge:
+            DEBUG_LOG("ApplePS2Keyboard: Synaptic Trackpad call Swipe Left From Edge\n");
+            sendKeySequence(_actionSwipeLeftFromEdge);
+            break;
+
+        case kPS2M_swipeRightFromEdge:
+            DEBUG_LOG("ApplePS2Keyboard: Synaptic Trackpad call Swipe Right From Edge\n");
+            sendKeySequence(_actionSwipeRightFromEdge);
+            break;
+
+        case kPS2M_swipeUpFromEdge:
+            DEBUG_LOG("ApplePS2Keyboard: Synaptic Trackpad call Swipe Up From Edge\n");
+            sendKeySequence(_actionSwipeUpFromEdge);
+            break;
             
         case kPS2M_zoomIn:
             DEBUG_LOG("ApplePS2Keyboard: Synaptic Trackpad call Zoom In\n");
@@ -1967,6 +2194,26 @@ void ApplePS2Keyboard::receiveMessage(int message, void* data)
         case kPS2M_zoomOut:
             DEBUG_LOG("ApplePS2Keyboard: Synaptic Trackpad call Zoom Out\n");
             sendKeySequence(_actionZoomOut);
+            break;
+            
+        case kPS2M_3fingersSpread:
+            DEBUG_LOG("ApplePS2Keyboard: Synaptic Trackpad call 3 finger spread\n");
+            sendKeySequence(_action3FingersSpread);
+            break;
+
+        case kPS2M_3fingersPinch:
+            DEBUG_LOG("ApplePS2Keyboard: Synaptic Trackpad call 3 finger pinch\n");
+            sendKeySequence(_action3FingersPinch);
+            break;
+
+        case kPS2M_4fingersSpread:
+            DEBUG_LOG("ApplePS2Keyboard: Synaptic Trackpad call 4 finger spread\n");
+            sendKeySequence(_action4FingersSpread);
+            break;
+
+        case kPS2M_4fingersPinch:
+            DEBUG_LOG("ApplePS2Keyboard: Synaptic Trackpad call 4 finger pinch\n");
+            sendKeySequence(_action4FingersPinch);
             break;
     }
 }

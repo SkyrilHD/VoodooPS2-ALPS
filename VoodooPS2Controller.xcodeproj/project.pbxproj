@@ -7,6 +7,23 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		7148DB4F2656DEFF001BC847 /* helpers.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 7148DB4E2656DEFF001BC847 /* helpers.hpp */; };
+		7148DB592656DF04001BC847 /* helpers.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7148DB582656DF04001BC847 /* helpers.cpp */; };
+		7148DB722656DFED001BC847 /* VoodooI2CMultitouchInterface.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 7148DB622656DFEC001BC847 /* VoodooI2CMultitouchInterface.hpp */; };
+		7148DB732656DFED001BC847 /* VoodooI2CDigitiserTransducer.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 7148DB632656DFEC001BC847 /* VoodooI2CDigitiserTransducer.hpp */; };
+		7148DB742656DFED001BC847 /* VoodooI2CMultitouchEngine.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 7148DB642656DFEC001BC847 /* VoodooI2CMultitouchEngine.hpp */; };
+		7148DB752656DFED001BC847 /* VoodooI2CDigitiserStylus.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 7148DB652656DFEC001BC847 /* VoodooI2CDigitiserStylus.hpp */; };
+		7148DB762656DFED001BC847 /* VoodooI2CMT2ActuatorDevice.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7148DB672656DFEC001BC847 /* VoodooI2CMT2ActuatorDevice.cpp */; };
+		7148DB772656DFED001BC847 /* VoodooI2CNativeEngine.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7148DB682656DFEC001BC847 /* VoodooI2CNativeEngine.cpp */; };
+		7148DB782656DFED001BC847 /* VoodooI2CMT2SimulatorDevice.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 7148DB692656DFEC001BC847 /* VoodooI2CMT2SimulatorDevice.hpp */; };
+		7148DB792656DFED001BC847 /* VoodooI2CMT2SimulatorDevice.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7148DB6A2656DFED001BC847 /* VoodooI2CMT2SimulatorDevice.cpp */; };
+		7148DB7A2656DFED001BC847 /* VoodooI2CMT2ActuatorDevice.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 7148DB6B2656DFED001BC847 /* VoodooI2CMT2ActuatorDevice.hpp */; };
+		7148DB7B2656DFED001BC847 /* VoodooI2CNativeEngine.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 7148DB6C2656DFED001BC847 /* VoodooI2CNativeEngine.hpp */; };
+		7148DB7C2656DFED001BC847 /* MultitouchHelpers.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 7148DB6D2656DFED001BC847 /* MultitouchHelpers.hpp */; };
+		7148DB7D2656DFED001BC847 /* VoodooI2CDigitiserTransducer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7148DB6E2656DFED001BC847 /* VoodooI2CDigitiserTransducer.cpp */; };
+		7148DB7E2656DFED001BC847 /* VoodooI2CMultitouchInterface.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7148DB6F2656DFED001BC847 /* VoodooI2CMultitouchInterface.cpp */; };
+		7148DB7F2656DFED001BC847 /* VoodooI2CMultitouchEngine.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7148DB702656DFED001BC847 /* VoodooI2CMultitouchEngine.cpp */; };
+		7148DB802656DFED001BC847 /* VoodooI2CDigitiserStylus.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7148DB712656DFED001BC847 /* VoodooI2CDigitiserStylus.cpp */; };
 		840F104A16EFE42600E8C116 /* ApplePS2Device.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 840F104916EFE42600E8C116 /* ApplePS2Device.cpp */; };
 		84167820161B55B2002C60E6 /* VoodooPS2Controller.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8416781F161B55B2002C60E6 /* VoodooPS2Controller.cpp */; };
 		84167836161B5613002C60E6 /* VoodooPS2Keyboard.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 84167835161B5613002C60E6 /* VoodooPS2Keyboard.cpp */; };
@@ -34,6 +51,23 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		7148DB4E2656DEFF001BC847 /* helpers.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = helpers.hpp; sourceTree = "<group>"; };
+		7148DB582656DF04001BC847 /* helpers.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = helpers.cpp; sourceTree = "<group>"; };
+		7148DB622656DFEC001BC847 /* VoodooI2CMultitouchInterface.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = VoodooI2CMultitouchInterface.hpp; sourceTree = "<group>"; };
+		7148DB632656DFEC001BC847 /* VoodooI2CDigitiserTransducer.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = VoodooI2CDigitiserTransducer.hpp; sourceTree = "<group>"; };
+		7148DB642656DFEC001BC847 /* VoodooI2CMultitouchEngine.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = VoodooI2CMultitouchEngine.hpp; sourceTree = "<group>"; };
+		7148DB652656DFEC001BC847 /* VoodooI2CDigitiserStylus.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = VoodooI2CDigitiserStylus.hpp; sourceTree = "<group>"; };
+		7148DB672656DFEC001BC847 /* VoodooI2CMT2ActuatorDevice.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = VoodooI2CMT2ActuatorDevice.cpp; sourceTree = "<group>"; };
+		7148DB682656DFEC001BC847 /* VoodooI2CNativeEngine.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = VoodooI2CNativeEngine.cpp; sourceTree = "<group>"; };
+		7148DB692656DFEC001BC847 /* VoodooI2CMT2SimulatorDevice.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = VoodooI2CMT2SimulatorDevice.hpp; sourceTree = "<group>"; };
+		7148DB6A2656DFED001BC847 /* VoodooI2CMT2SimulatorDevice.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = VoodooI2CMT2SimulatorDevice.cpp; sourceTree = "<group>"; };
+		7148DB6B2656DFED001BC847 /* VoodooI2CMT2ActuatorDevice.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = VoodooI2CMT2ActuatorDevice.hpp; sourceTree = "<group>"; };
+		7148DB6C2656DFED001BC847 /* VoodooI2CNativeEngine.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = VoodooI2CNativeEngine.hpp; sourceTree = "<group>"; };
+		7148DB6D2656DFED001BC847 /* MultitouchHelpers.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = MultitouchHelpers.hpp; sourceTree = "<group>"; };
+		7148DB6E2656DFED001BC847 /* VoodooI2CDigitiserTransducer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = VoodooI2CDigitiserTransducer.cpp; sourceTree = "<group>"; };
+		7148DB6F2656DFED001BC847 /* VoodooI2CMultitouchInterface.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = VoodooI2CMultitouchInterface.cpp; sourceTree = "<group>"; };
+		7148DB702656DFED001BC847 /* VoodooI2CMultitouchEngine.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = VoodooI2CMultitouchEngine.cpp; sourceTree = "<group>"; };
+		7148DB712656DFED001BC847 /* VoodooI2CDigitiserStylus.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = VoodooI2CDigitiserStylus.cpp; sourceTree = "<group>"; };
 		8404565C161E3AAF00D74D7F /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		84045662161E3AD800D74D7F /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		84045665161E3AF900D74D7F /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
@@ -54,9 +88,9 @@
 		844952F1169A2696003DA49F /* makefile */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.make; path = makefile; sourceTree = "<group>"; usesTabs = 1; };
 		84833F9D161B627D00845294 /* ApplePS2Device.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ApplePS2Device.h; path = VoodooPS2Controller/ApplePS2Device.h; sourceTree = "<group>"; };
 		84833F9E161B627D00845294 /* ApplePS2KeyboardDevice.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ApplePS2KeyboardDevice.cpp; sourceTree = "<group>"; };
-		84833F9F161B627D00845294 /* ApplePS2KeyboardDevice.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ApplePS2KeyboardDevice.h; path = VoodooPS2Controller/ApplePS2KeyboardDevice.h; sourceTree = "<group>"; };
+		84833F9F161B627D00845294 /* ApplePS2KeyboardDevice.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ApplePS2KeyboardDevice.h; sourceTree = "<group>"; };
 		84833FA0161B627D00845294 /* ApplePS2MouseDevice.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ApplePS2MouseDevice.cpp; sourceTree = "<group>"; };
-		84833FA1161B627D00845294 /* ApplePS2MouseDevice.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ApplePS2MouseDevice.h; path = VoodooPS2Controller/ApplePS2MouseDevice.h; sourceTree = "<group>"; };
+		84833FA1161B627D00845294 /* ApplePS2MouseDevice.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ApplePS2MouseDevice.h; sourceTree = "<group>"; };
 		84833FA9161B629500845294 /* ApplePS2ToADBMap.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ApplePS2ToADBMap.h; sourceTree = "<group>"; };
 		84833FAB161B62A900845294 /* alps.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; lineEnding = 0; path = alps.cpp; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.cpp; };
 		84833FAC161B62A900845294 /* alps.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = alps.h; sourceTree = "<group>"; };
@@ -138,6 +172,45 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		7148DB4D2656DE3B001BC847 /* Dependencies */ = {
+			isa = PBXGroup;
+			children = (
+				7148DB582656DF04001BC847 /* helpers.cpp */,
+				7148DB4E2656DEFF001BC847 /* helpers.hpp */,
+			);
+			path = Dependencies;
+			sourceTree = "<group>";
+		};
+		7148DB612656DFEC001BC847 /* Multitouch Support */ = {
+			isa = PBXGroup;
+			children = (
+				7148DB622656DFEC001BC847 /* VoodooI2CMultitouchInterface.hpp */,
+				7148DB632656DFEC001BC847 /* VoodooI2CDigitiserTransducer.hpp */,
+				7148DB642656DFEC001BC847 /* VoodooI2CMultitouchEngine.hpp */,
+				7148DB652656DFEC001BC847 /* VoodooI2CDigitiserStylus.hpp */,
+				7148DB662656DFEC001BC847 /* Native */,
+				7148DB6D2656DFED001BC847 /* MultitouchHelpers.hpp */,
+				7148DB6E2656DFED001BC847 /* VoodooI2CDigitiserTransducer.cpp */,
+				7148DB6F2656DFED001BC847 /* VoodooI2CMultitouchInterface.cpp */,
+				7148DB702656DFED001BC847 /* VoodooI2CMultitouchEngine.cpp */,
+				7148DB712656DFED001BC847 /* VoodooI2CDigitiserStylus.cpp */,
+			);
+			path = "Multitouch Support";
+			sourceTree = "<group>";
+		};
+		7148DB662656DFEC001BC847 /* Native */ = {
+			isa = PBXGroup;
+			children = (
+				7148DB672656DFEC001BC847 /* VoodooI2CMT2ActuatorDevice.cpp */,
+				7148DB682656DFEC001BC847 /* VoodooI2CNativeEngine.cpp */,
+				7148DB692656DFEC001BC847 /* VoodooI2CMT2SimulatorDevice.hpp */,
+				7148DB6A2656DFED001BC847 /* VoodooI2CMT2SimulatorDevice.cpp */,
+				7148DB6B2656DFED001BC847 /* VoodooI2CMT2ActuatorDevice.hpp */,
+				7148DB6C2656DFED001BC847 /* VoodooI2CNativeEngine.hpp */,
+			);
+			path = Native;
+			sourceTree = "<group>";
+		};
 		84167806161B55B2002C60E6 = {
 			isa = PBXGroup;
 			children = (
@@ -177,6 +250,8 @@
 		84167818161B55B2002C60E6 /* VoodooPS2Controller */ = {
 			isa = PBXGroup;
 			children = (
+				84833F9F161B627D00845294 /* ApplePS2KeyboardDevice.h */,
+				84833FA1161B627D00845294 /* ApplePS2MouseDevice.h */,
 				84DD197A162D496E0044D061 /* AppleACPIPS2Nub.h */,
 				84DD1979162D496E0044D061 /* AppleACPIPS2Nub.cpp */,
 				840F104916EFE42600E8C116 /* ApplePS2Device.cpp */,
@@ -225,6 +300,8 @@
 		84167856161B56C4002C60E6 /* VoodooPS2Trackpad */ = {
 			isa = PBXGroup;
 			children = (
+				7148DB612656DFEC001BC847 /* Multitouch Support */,
+				7148DB4D2656DE3B001BC847 /* Dependencies */,
 				84833FAC161B62A900845294 /* alps.h */,
 				84833FAB161B62A900845294 /* alps.cpp */,
 				84167857161B56C4002C60E6 /* Supporting Files */,
@@ -249,8 +326,6 @@
 			isa = PBXGroup;
 			children = (
 				84833F9D161B627D00845294 /* ApplePS2Device.h */,
-				84833F9F161B627D00845294 /* ApplePS2KeyboardDevice.h */,
-				84833FA1161B627D00845294 /* ApplePS2MouseDevice.h */,
 				84E9BAC816BE4C1300EEEB63 /* new_kext.h */,
 				84E9BACA16BE4CB300EEEB63 /* new_kext.cpp */,
 			);
@@ -302,8 +377,17 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7148DB7C2656DFED001BC847 /* MultitouchHelpers.hpp in Headers */,
+				7148DB722656DFED001BC847 /* VoodooI2CMultitouchInterface.hpp in Headers */,
+				7148DB7B2656DFED001BC847 /* VoodooI2CNativeEngine.hpp in Headers */,
+				7148DB742656DFED001BC847 /* VoodooI2CMultitouchEngine.hpp in Headers */,
+				7148DB4F2656DEFF001BC847 /* helpers.hpp in Headers */,
+				7148DB782656DFED001BC847 /* VoodooI2CMT2SimulatorDevice.hpp in Headers */,
 				84833FB2161B62A900845294 /* alps.h in Headers */,
 				BA5C70D017338E8600E30E1A /* VoodooPS2AlpsBase.h in Headers */,
+				7148DB7A2656DFED001BC847 /* VoodooI2CMT2ActuatorDevice.hpp in Headers */,
+				7148DB732656DFED001BC847 /* VoodooI2CDigitiserTransducer.hpp in Headers */,
+				7148DB752656DFED001BC847 /* VoodooI2CDigitiserStylus.hpp in Headers */,
 				BA560D361734DFF100914439 /* Decay.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -578,7 +662,15 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7148DB7E2656DFED001BC847 /* VoodooI2CMultitouchInterface.cpp in Sources */,
+				7148DB802656DFED001BC847 /* VoodooI2CDigitiserStylus.cpp in Sources */,
+				7148DB7F2656DFED001BC847 /* VoodooI2CMultitouchEngine.cpp in Sources */,
 				84833FB1161B62A900845294 /* alps.cpp in Sources */,
+				7148DB762656DFED001BC847 /* VoodooI2CMT2ActuatorDevice.cpp in Sources */,
+				7148DB772656DFED001BC847 /* VoodooI2CNativeEngine.cpp in Sources */,
+				7148DB792656DFED001BC847 /* VoodooI2CMT2SimulatorDevice.cpp in Sources */,
+				7148DB592656DF04001BC847 /* helpers.cpp in Sources */,
+				7148DB7D2656DFED001BC847 /* VoodooI2CDigitiserTransducer.cpp in Sources */,
 				BA5C70CF17338E7000E30E1A /* VoodooPS2AlpsBase.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

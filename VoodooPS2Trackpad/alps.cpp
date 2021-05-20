@@ -1150,6 +1150,20 @@ void ALPS::alps_process_packet_v7(UInt8 *packet){
         alps_process_trackstick_packet_v7(packet);
     else
         alps_process_touchpad_packet_v7(packet);
+        mt_interface->logical_min_x = (packet[0] << 5) | ((packet[1] & 0x0f) << 1);
+        mt_interface->logical_min_y = (packet[2] << 5) | ((packet[1] & 0xf0) >> 3);
+
+        mt_interface->logical_max_x -= mt_interface->logical_min_x;
+        mt_interface->logical_max_y -= mt_interface->logical_min_y;
+
+        setProperty("KP Min X", mt_interface->logical_min_x);
+        setProperty("KP Min Y", mt_interface->logical_min_y);
+
+        setProperty("KP Max X", mt_interface->logical_max_x);
+        setProperty("KP Max Y", mt_interface->logical_max_y);
+
+        mt_interface->physical_max_x = 1.0 / ( (mt_interface->logical_max_x - mt_interface->logical_min_x) * xupmm * 1.0f);
+        mt_interface->physical_max_y = 1.0 / ( (mt_interface->logical_max_y - mt_interface->logical_min_y) * yupmm * 1.0f);
 }
 
 unsigned char ALPS::alps_get_pkt_id_ss4_v2(UInt8 *byte)
@@ -1486,6 +1500,7 @@ void ALPS::packetReady() {
     // empty the ring buffer, dispatching each packet...
     while (_ringBuffer.count() >= priv.pktsize) {
         UInt8 *packet = _ringBuffer.tail();
+        //parse_input(_ringBuffer.tail(), kPacketLength);
         if (priv.PSMOUSE_BAD_DATA == false) {
             (this->*process_packet)(packet);
         } else {
@@ -2747,6 +2762,143 @@ void ALPS::dispatchEventsWithInfo(int xraw, int yraw, int z, int fingers, UInt32
     uint64_t now_ns;
     absolutetime_to_nanoseconds(now_abs, &now_ns);
     
+    int swipeThresh = 2;
+    int swipeThreshY = 3;
+    int swipeEdgeThresh = 2;
+
+    int swipeUp = 0;
+    int swipeDown = 0;
+    int swipeLeft = 0;
+    int swipeRight = 0;
+    int spreadFingers = 0;
+    
+    // elapsed since lastdispatchkey_ns
+    uint32_t elapsed = (uint32_t)(now_ns - lastdispatchkey_ns);
+    if (fingers == 4) {
+        if (lastdispatchkey_ns != 0) {
+            if (elapsed < 500000000) {
+                primaryx = 0;
+                primaryy = 0;
+                secondaryx = 0;
+                secondaryy = 0;
+            }
+        }
+    }
+    
+    // grid
+    // adjust grid according to trackpad size
+    int trackarea = 255;
+    int ww = (((redge - centerx)) * trackarea) >> 8;
+    int hh = (((ledge - centery)) * trackarea) >> 8;
+    int cw = ww >> 3;
+    int ch = hh >> 3;
+
+    if (!(primaryx == 0 && primaryy == 0) && !(secondaryx == 0 && secondaryy == 0)) {
+
+#define IN_COL(_x,_y,_cx,_cy,_cw,_ch) ((((_cx - _x) + ww + _cw) / _cw ) )
+#define IN_ROW(_x,_y,_cx,_cy,_cw,_ch) ((((_cy - _y) + hh + _ch) / _ch ) )
+#define MOVED_X(_x,_y,_x2,_y2,_cx,_cy,_cw,_ch) (IN_COL(_x,_y,_cx,_cy,_cw,_ch) - IN_COL(_x2,_y2,_cx,_cy,_cw,_ch))
+#define MOVED_Y(_x,_y,_x2,_y2,_cx,_cy,_cw,_ch) (IN_ROW(_x,_y,_cx,_cy,_cw,_ch) - IN_ROW(_x2,_y2,_cx,_cy,_cw,_ch))
+
+#if 0
+        IOLog("PS2 (%d %d) (%d %d)",
+              IN_COL(primaryx, primaryy, centerx, centery, cw, ch),
+              IN_ROW(primaryx, primaryy, centerx, centery, cw, ch),
+              IN_COL(secondaryx, secondaryy, centerx, centery, cw, ch),
+              IN_ROW(secondaryx, secondaryy, centerx, centery, cw, ch)
+              );
+#endif
+
+        // check swiping
+        swipeLeft = (primaryx > lastx && secondaryx > lastx2) ?
+            abs((MOVED_X(lastx, lasty, primaryx, primaryy, centerx, centery, cw, ch)) +
+             (MOVED_X(lastx2, lasty2, secondaryx, secondaryy, centerx, centery, cw, ch)) ) >> 1
+            : 0;
+        swipeRight = (primaryx < lastx && secondaryx < lastx2) ?
+            abs((MOVED_X(lastx, lasty, primaryx, primaryy, centerx, centery, cw, ch)) +
+             (MOVED_X(lastx2, lasty2, secondaryx, secondaryy, centerx, centery, cw, ch)) ) >> 1
+             : 0;
+        swipeUp = (primaryy < lasty && secondaryy < lasty2) ?
+            abs((MOVED_Y(lastx, lasty, primaryx, primaryy, centerx, centery, cw, ch)) +
+             (MOVED_Y(lastx2, lasty2, secondaryx, secondaryy, centerx, centery, cw, ch)) ) >> 1
+             : 0;
+        swipeDown = (primaryy > lasty && secondaryy > lasty2) ?
+            abs((MOVED_Y(lastx, lasty, primaryx, primaryy, centerx, centery, cw, ch)) +
+             (MOVED_Y(lastx2, lasty2, secondaryx, secondaryy, centerx, centery, cw, ch)) ) >> 1
+             : 0;
+
+        if ((swipeLeft > swipeThresh >> 1 || swipeRight > swipeThresh >> 1) &&
+            (swipeUp > swipeThreshY >> 1 || swipeDown > swipeThreshY >> 1)) {
+                swipeUp = swipeDown = swipeLeft = swipeRight = 0;
+        }
+
+
+        if (true) {
+            // check spread
+
+            int xx = MOVED_X(primaryx, primaryy, secondaryx, secondaryy, centerx, centery, cw, ch);
+            int yy = MOVED_Y(primaryx, primaryy, secondaryx, secondaryy, centerx, centery, cw, ch);
+            int xx2 = MOVED_X(lastx, lasty, lastx2, lasty2, centerx, centery, cw, ch);
+            int yy2 = MOVED_Y(lastx, lasty, lastx2, lasty2, centerx, centery, cw, ch);
+
+            int dxx = xx - xx2;
+            int dyy = yy - yy2;
+            int adxx = abs(dxx);
+            int adyy = abs(dyy);
+
+            /*
+            static int sqrts[] = {
+            0,
+            1000,
+            1414,
+            1732,
+            2000,
+            2236,
+            2449,
+            2646,
+            2828,
+            3000,
+            3162,
+            3317,
+            3464,
+            3606,
+            3742,
+            3873,
+            4000,
+            4123,
+            4243,
+            4359,
+            4472,
+            4583,
+            4690,
+            4796,
+            4899,
+            5000,
+            5000,5000,5000,5000,5000,
+            5000,5000,5000,5000,5000,
+            5000,5000,5000,5000,5000,
+            5000,5000,5000,5000,5000
+            };
+            */
+
+//            int dist = sqrts[(dxx * dxx) + (dyy * dyy)];
+
+            int spreadThresh = 3;
+            if (adxx > spreadThresh && adyy > spreadThresh) {
+                if (adxx > adyy) {
+                    spreadFingers = adxx * (abs(xx2) > abs(xx) ? 1 : -1);
+                } else {
+                    spreadFingers = adyy * (abs(yy2) > abs(yy) ? 1 : -1);
+                }
+
+                //IOLog("PS2 xx:%d yy:%d xx2:%d yy2:%d %d", xx, yy, xx2, yy2, spreadFingers);
+            }
+        }
+
+        //IOLog("PS2 l:%d r:%d u:%d d:%d s:%d", swipeLeft, swipeRight, swipeUp, swipeDown, spreadFingers);
+
+    }
+    
     // scale x & y to the axis which has the most resolution
     if (xupmm < yupmm) {
         xraw = xraw * yupmm / xupmm;
@@ -2806,6 +2958,7 @@ void ALPS::dispatchEventsWithInfo(int xraw, int yraw, int z, int fingers, UInt32
         y = y_avg.filter(y);
     }
     
+    /*
     // distance from primary
     // two finger zoom settings?
     if (1) {
@@ -2824,6 +2977,7 @@ void ALPS::dispatchEventsWithInfo(int xraw, int yraw, int z, int fingers, UInt32
         }
         secondaryfingerdistance_history.filter(ds);
     }
+    */
     
     if (ignoredeltas) {
         DEBUG_LOG("ALPS: Still ignoring deltas. Value=%d\n", ignoredeltas);
@@ -3069,13 +3223,13 @@ void ALPS::dispatchEventsWithInfo(int xraw, int yraw, int z, int fingers, UInt32
                     
                     break;
                 case 2: // two finger
-                    if (fingerzooming != 0) {
+                    /*if (fingerzooming != 0) {
                         if (fingerzooming > 0)
                             _device->dispatchKeyboardMessage(kPS2M_zoomIn, &now_abs);
                         else
                             _device->dispatchKeyboardMessage(kPS2M_zoomOut, &now_abs);
                         break;
-                    }
+                    }*/
                     if (last_fingers != fingers) {
                         break;
                     }
@@ -3085,6 +3239,59 @@ void ALPS::dispatchEventsWithInfo(int xraw, int yraw, int z, int fingers, UInt32
                     if (palm_wt && now_ns - keytime < maxaftertyping) {
                         break;
                     }
+                    
+                    if (touchmode == MODE_VSCROLL || touchmode == MODE_HSCROLL) {
+                        spreadFingers = 0;
+                        primaryx = primaryy = secondaryx = secondaryy = 0;
+                        lastdispatchkey_ns = now_ns;
+                        elapsed = 0;
+                    }
+
+                    // zoom
+                    if (!xmomentumscrollcurrent && !momentumscrollcurrent) {
+                        if (lastdispatchkey_ns == 0 || elapsed > 10000000) {
+
+                            int spreadThresh = 3;
+                            int pinchThresh = 3;
+                            bool didDispatch = false;
+
+                            if (spreadFingers > spreadThresh) {
+                            //if (xmoved > swipedx) {
+                                //int col1 = IN_COL(lastx, lasty, centerx, centery, cw, ch);
+                                //int col2 = IN_COL(lastx2, lasty2, centerx, centery, cw, ch);
+                                //if (col1 != col2) {
+                                inSwipeDown = 1;
+                                inSwipeUp = 0;
+                                xmoved = 0;
+                                    _device->dispatchKeyboardMessage(kPS2M_zoomIn, &now_abs);
+                                    didDispatch = true;
+                                //}
+                            } else if (spreadFingers < pinchThresh){
+                            //} else if (xmoved < -swipedx) {
+                                //int col1 = IN_COL(primaryx, primaryy, centerx, centery, cw, ch);
+                                //int col2 = IN_COL(secondaryx, secondaryy, centerx, centery, cw, ch);
+                                //if (col1 != col2) {
+                                inSwipeDown = 1;
+                                inSwipeUp = 0;
+                                ymoved = 0;
+                                    _device->dispatchKeyboardMessage(kPS2M_zoomOut, &now_abs);
+                                    didDispatch = true;
+                                    
+                                //}
+                            }
+
+                            if (didDispatch) {
+                                lastdispatchkey_ns = now_ns;
+                                // reset
+                                primaryx = 0;
+                                primaryy = 0;
+                                secondaryx = 0;
+                                secondaryy = 0;
+                                break;
+                            }
+                        }
+                    }
+                    
                     dy = (wvdivisor) ? (y-lasty+yrest) : 0;
                     dx = (whdivisor&&hscroll) ? (x-lastx+xrest) : 0;
                     yrest = (wvdivisor) ? dy % wvdivisor : 0;
