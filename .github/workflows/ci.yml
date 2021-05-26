@@ -18,6 +18,7 @@ jobs:
       JOB_TYPE: BUILD
     steps:
       - uses: actions/checkout@v2
+      - run: git clone https://github.com/acidanthera/VoodooInput
       - run: xcodebuild build -arch x86_64 -scheme VoodooPS2Trackpad -configuration Release
       - run: xcodebuild build -arch x86_64 -scheme VoodooPS2Trackpad -configuration Debug
       - run: xcodebuild build -arch x86_64 -scheme VoodooPS2Keyboard -configuration Release
