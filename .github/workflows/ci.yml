@@ -25,7 +25,25 @@ jobs:
       - run: xcodebuild build -arch x86_64 -scheme VoodooPS2Keyboard -configuration Debug
       - run: xcodebuild build -arch x86_64 -scheme VoodooPS2Controller -configuration Release
       - run: xcodebuild build -arch x86_64 -scheme VoodooPS2Controller -configuration Debug
-
+      
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@master
+    - name: Archive Release
+      uses: thedoctor0/zip-release@master
+      with:
+        filename: 'release.zip'
+        exclusions: '*.git*'
+      
+jobs:
+  build:
+    name: Upload
+    runs-on: macos-latest
+    env:
+      JOB_TYPE: BUILD
+    steps:
       - name: Upload to Artifacts
         uses: actions/upload-artifact@v2
         with:
