@@ -17,7 +17,7 @@ jobs:
     env:
       JOB_TYPE: BUILD
     steps:
-      - name: Manage Version
+      - name: Add Version
         run: |
           eval $(grep -m 1 "MODULE_VERSION =" VoodooPS2Controller.xcodeproj/project.pbxproj | tr -d ';' | tr -d '\t' | tr -d " ")
           echo "TAG_VER=$MODULE_VERSION" >> $GITHUB_ENV
@@ -35,7 +35,6 @@ jobs:
       - run: xcodebuild build -arch x86_64 -scheme VoodooPS2Controller -configuration Release -derivedDataPath Build
       - run: xcodebuild build -arch x86_64 -scheme VoodooPS2Controller -configuration Debug -derivedDataPath Build
       - run: cd Build/Build/Products/Debug && zip -r -X "../VoodooPS2Controller-${TAG_VER}-DEBUG.zip" .
-      - run: cd ..
       - run: cd Build/Build/Products/Release && zip -r -X "../VoodooPS2Controller-${TAG_VER}-RELEASE.zip" .
       
       - name: Upload to Artifacts
@@ -43,6 +42,7 @@ jobs:
         with:
           name: Artifacts
           path: Build/Build/Products/*.zip
+          
       - name: Upload to Release
         if: github.event_name == 'release'
         uses: svenstaro/upload-release-action@e74ff71f7d8a4c4745b560a485cc5fdb9b5b999d
