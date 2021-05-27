@@ -36,13 +36,13 @@ jobs:
       - run: xcodebuild build -arch x86_64 -scheme VoodooPS2Controller -configuration Debug -derivedDataPath Build
       - run: cd Build/Build/Products/Debug && zip -r -X "../VoodooPS2Controller-${TAG_VER}-DEBUG.zip" .
       - run: cd ..
-      - run: cd Release && zip -r -X "../VoodooPS2Controller-${TAG_VER}-RELEASE.zip" .
+      - run: cd Build/Build/Products/Release && zip -r -X "../VoodooPS2Controller-${TAG_VER}-RELEASE.zip" .
       
       - name: Upload to Artifacts
         uses: actions/upload-artifact@v2
         with:
           name: Artifacts
-          path: Build/Products/*.zip
+          path: Build/Build/Products/*.zip
       - name: Upload to Release
         if: github.event_name == 'release'
         uses: svenstaro/upload-release-action@e74ff71f7d8a4c4745b560a485cc5fdb9b5b999d
