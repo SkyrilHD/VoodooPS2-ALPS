@@ -26,8 +26,8 @@ jobs:
       - run: xcodebuild build -arch x86_64 -scheme VoodooPS2Controller -configuration Release
       - run: xcodebuild build -arch x86_64 -scheme VoodooPS2Controller -configuration Debug
       
-jobs:
-  build:
+  zip:
+    name: Zip kext
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@master
@@ -37,8 +37,7 @@ jobs:
         filename: 'release.zip'
         exclusions: '*.git*'
       
-jobs:
-  build:
+  upload:
     name: Upload
     runs-on: macos-latest
     env:
