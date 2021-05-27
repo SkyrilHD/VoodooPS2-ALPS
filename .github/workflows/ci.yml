@@ -19,12 +19,12 @@ jobs:
     steps:          
       - uses: actions/checkout@v2
       - run: git clone https://github.com/acidanthera/VoodooInput
-      - run: xcodebuild build -arch x86_64 -scheme VoodooPS2Trackpad -configuration Release
-      - run: xcodebuild build -arch x86_64 -scheme VoodooPS2Trackpad -configuration Debug
-      - run: xcodebuild build -arch x86_64 -scheme VoodooPS2Keyboard -configuration Release
-      - run: xcodebuild build -arch x86_64 -scheme VoodooPS2Keyboard -configuration Debug
-      - run: xcodebuild build -arch x86_64 -scheme VoodooPS2Controller -configuration Release
-      - run: xcodebuild build -arch x86_64 -scheme VoodooPS2Controller -configuration Debug
+      - run: xcodebuild build -arch x86_64 -scheme VoodooPS2Trackpad -configuration Release -derivedDataPath Build
+      - run: xcodebuild build -arch x86_64 -scheme VoodooPS2Trackpad -configuration Debug -derivedDataPath Build
+      - run: xcodebuild build -arch x86_64 -scheme VoodooPS2Keyboard -configuration Release -derivedDataPath Build
+      - run: xcodebuild build -arch x86_64 -scheme VoodooPS2Keyboard -configuration Debug -derivedDataPath Build
+      - run: xcodebuild build -arch x86_64 -scheme VoodooPS2Controller -configuration Release -derivedDataPath Build
+      - run: xcodebuild build -arch x86_64 -scheme VoodooPS2Controller -configuration Debug -derivedDataPath Build
       - run: cd Build/Products/Debug && zip -r -X "../VoodooPS2Controller-${{ github.ref }}-DEBUG.zip" .
       - run: cd ..
       - run: cd Release && zip -r -X "../VoodooPS2Controller-${{ github.ref }}-RELEASE.zip" .
