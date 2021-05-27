@@ -16,11 +16,13 @@ jobs:
     runs-on: macos-latest
     env:
       JOB_TYPE: BUILD
-    steps:
-      - name: Get the version
-          run: echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\//}
-          
+    steps:          
       - uses: actions/checkout@v2
+      - name: Bump version and push tag
+        uses: ChloePlanet/github-tag-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          WITH_V: false
       - run: git clone https://github.com/acidanthera/VoodooInput
       - run: xcodebuild build -arch x86_64 -scheme VoodooPS2Trackpad -configuration Release
       - run: xcodebuild build -arch x86_64 -scheme VoodooPS2Trackpad -configuration Debug
