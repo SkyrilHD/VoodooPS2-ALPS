@@ -17,6 +17,11 @@ jobs:
     env:
       JOB_TYPE: BUILD
     steps:
+      - name: Add Version
+        run: |
+          eval $(grep -m 1 "MODULE_VERSION =" VoodooPS2Controller.xcodeproj/project.pbxproj | tr -d ';' | tr -d '\t' | tr -d " ")
+          echo "TAG_VER=$MODULE_VERSION" >> $GITHUB_ENV
+        
       - name: Build
         uses: actions/checkout@v2
       - run: git clone https://github.com/acidanthera/VoodooInput
