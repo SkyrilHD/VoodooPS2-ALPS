@@ -15,11 +15,11 @@
 	<key>CFBundlePackageType</key>
 	<string>KEXT</string>
 	<key>CFBundleShortVersionString</key>
-	<string>${MODULE_VERSION}</string>
+	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
 	<key>CFBundleVersion</key>
-	<string>${MODULE_VERSION}</string>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>IOKitPersonalities</key>
 	<dict>
 		<key>ApplePS2Keyboard</key>
@@ -220,7 +220,7 @@
 						<array>
 							<string>e01b=70</string>
 							<string>e06e=83</string>
-                                                        <string>e005=6b</string>
+							<string>e005=6b</string>
 							<string>e006=71</string>
 						</array>
 						<key>Custom PS2 Map</key>
