@@ -15,33 +15,19 @@
 	<key>CFBundlePackageType</key>
 	<string>KEXT</string>
 	<key>CFBundleShortVersionString</key>
-	<string>${MODULE_VERSION}</string>
+	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
 	<key>CFBundleVersion</key>
-	<string>${MODULE_VERSION}</string>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>IOKitPersonalities</key>
 	<dict>
 		<key>ALPS TouchPad</key>
 		<dict>
-			<key>SupportsGestureScrolling</key>
-			<true/>
-			<key>TrackpadFourFingerGestures</key>
+			<key>ApplePreferenceCapability</key>
 			<true/>
 			<key>ApplePreferenceIdentifier</key>
 			<string>com.apple.AppleMultitouchTrackpad</string>
-			<key>MTHIDDevice</key>
-			<true/>
-			<key>MT Built-in</key>
-			<true/>
-			<key>ApplePreferenceCapability</key>
-			<true/>
-			<key>TrackpadEmbedded</key>
-			<true/>
-			<key>TrackpadThreeFingerDrag</key>
-			<true/>
-			<key>TrackpadSecondaryClickCorners</key>
-			<true/>
 			<key>CFBundleIdentifier</key>
 			<string>org.rehabman.voodoo.driver.PS2Trackpad</string>
 			<key>IOClass</key>
@@ -50,6 +36,10 @@
 			<integer>6000</integer>
 			<key>IOProviderClass</key>
 			<string>ApplePS2MouseDevice</string>
+			<key>MT Built-in</key>
+			<true/>
+			<key>MTHIDDevice</key>
+			<true/>
 			<key>Platform Profile</key>
 			<dict>
 				<key>Default</key>
@@ -74,18 +64,18 @@
 					<integer>5</integer>
 					<key>DivisorY</key>
 					<integer>5</integer>
+					<key>DoubleSmoothness</key>
+					<true/>
 					<key>DoubleTapThresholdX</key>
 					<integer>100</integer>
 					<key>DoubleTapThresholdY</key>
 					<integer>100</integer>
 					<key>DragExitDelayTime</key>
 					<integer>750000000</integer>
-					<key>Dragging</key>
-					<integer>1</integer>
 					<key>DragLockTempMask</key>
 					<integer>1048592</integer>
-					<key>DoubleSmoothness</key>
-					<true/>
+					<key>Dragging</key>
+					<integer>1</integer>
 					<key>EdgeBottom</key>
 					<integer>500</integer>
 					<key>EdgeLeft</key>
@@ -128,10 +118,10 @@
 					<integer>0</integer>
 					<key>ScrollDeltaThreshY</key>
 					<integer>0</integer>
-					<key>ScrollResolution</key>
-					<integer>400</integer>
 					<key>ScrollExitDelayTime</key>
 					<integer>10000</integer>
+					<key>ScrollResolution</key>
+					<integer>400</integer>
 					<key>SmoothInput</key>
 					<true/>
 					<key>StickyHorizontalScrolling</key>
@@ -176,6 +166,16 @@
 			</dict>
 			<key>ProductID</key>
 			<integer>547</integer>
+			<key>SupportsGestureScrolling</key>
+			<true/>
+			<key>TrackpadEmbedded</key>
+			<true/>
+			<key>TrackpadFourFingerGestures</key>
+			<true/>
+			<key>TrackpadSecondaryClickCorners</key>
+			<true/>
+			<key>TrackpadThreeFingerDrag</key>
+			<true/>
 			<key>VendorID</key>
 			<integer>1452</integer>
 		</dict>
@@ -191,7 +191,7 @@
 		<key>com.apple.kpi.mach</key>
 		<string>9.0.0</string>
 		<key>org.rehabman.voodoo.driver.PS2Controller</key>
-		<string>2.8.15</string>
+		<string>1.0.0</string>
 	</dict>
 	<key>OSBundleRequired</key>
 	<string>Console</string>
