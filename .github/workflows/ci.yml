@@ -18,11 +18,6 @@ jobs:
       JOB_TYPE: BUILD
     steps:          
       - uses: actions/checkout@v2
-      - name: Bump version and push tag
-        uses: ChloePlanet/github-tag-action@master
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          WITH_V: false
       - run: git clone https://github.com/acidanthera/VoodooInput
       - run: xcodebuild build -arch x86_64 -scheme VoodooPS2Trackpad -configuration Release
       - run: xcodebuild build -arch x86_64 -scheme VoodooPS2Trackpad -configuration Debug
@@ -30,9 +25,9 @@ jobs:
       - run: xcodebuild build -arch x86_64 -scheme VoodooPS2Keyboard -configuration Debug
       - run: xcodebuild build -arch x86_64 -scheme VoodooPS2Controller -configuration Release
       - run: xcodebuild build -arch x86_64 -scheme VoodooPS2Controller -configuration Debug
-      - run: cd Build/VoodooPS2Controller/Build/Products/Debug && zip -r -X "../VoodooPS2Controller-DEMO-DEBUG.zip" .
+      - run: cd Build/VoodooPS2Controller/Build/Products/Debug && zip -r -X "../VoodooPS2Controller-${{ github.ref }}-DEBUG.zip" .
       - run: cd ..
-      - run: cd Release && zip -r -X "../VoodooPS2Controller-DEMO-RELEASE.zip" .
+      - run: cd Release && zip -r -X "../VoodooPS2Controller-${{ github.ref }}-RELEASE.zip" .
       
       - name: Upload to Artifacts
         uses: actions/upload-artifact@v2
