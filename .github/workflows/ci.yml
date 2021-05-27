@@ -18,7 +18,6 @@ jobs:
       JOB_TYPE: BUILD
     steps:
       - name: Manage Version
-        uses: actions/checkout@v2
         run: |
           eval $(grep -m 1 "MODULE_VERSION =" VoodooPS2Controller.xcodeproj/project.pbxproj | tr -d ';' | tr -d '\t' | tr -d " ")
           echo "TAG_VER=$MODULE_VERSION" >> $GITHUB_ENV
