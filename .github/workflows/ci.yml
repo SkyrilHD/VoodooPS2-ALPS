@@ -25,7 +25,7 @@ jobs:
       - run: xcodebuild build -arch x86_64 -scheme VoodooPS2Keyboard -configuration Debug -derivedDataPath Build
       - run: xcodebuild build -arch x86_64 -scheme VoodooPS2Controller -configuration Release -derivedDataPath Build
       - run: xcodebuild build -arch x86_64 -scheme VoodooPS2Controller -configuration Debug -derivedDataPath Build
-      - run: cd Build/Products/Debug && zip -r -X "../VoodooPS2Controller-${{ github.ref }}-DEBUG.zip" .
+      - run: cd Build/Build/Products/Debug && zip -r -X "../VoodooPS2Controller-${{ github.ref }}-DEBUG.zip" .
       - run: cd ..
       - run: cd Release && zip -r -X "../VoodooPS2Controller-${{ github.ref }}-RELEASE.zip" .
       
