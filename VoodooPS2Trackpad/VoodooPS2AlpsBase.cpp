@@ -209,6 +209,11 @@ bool VoodooPS2TouchPadBase::init(OSDictionary * dict)
     fourfingersdetected=false;
     fingerzooming = 0;
     threefingerdrag=false;
+    primaryx = 0;
+    primaryy = 0;
+    secondaryx = 0;
+    secondaryy = 0;
+    lastdispatchkey_ns = 0;
     //notificationcenter=false;
     //rightclick_corner=0;
     

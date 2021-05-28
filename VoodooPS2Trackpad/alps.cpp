@@ -69,7 +69,7 @@ static const struct alps_nibble_commands alps_v3_nibble_commands[] = {
 #define ALPS_FW_BK_2            0x20    /* front & back buttons present */
 #define ALPS_FOUR_BUTTONS       0x40    /* 4 direction button present */
 #define ALPS_PS2_INTERLEAVED    0x80    /* 3-byte PS/2 packet interleaved with
-6-byte ALPS packet */
+                                           6-byte ALPS packet */
 #define ALPS_STICK_BITS		    0x100	/* separate stick button bits */
 #define ALPS_BUTTONPAD		    0x200	/* device is a clickpad */
 #define ALPS_DUALPOINT_WITH_PRESSURE	0x400	/* device can report trackpoint pressure */
@@ -384,7 +384,8 @@ int ALPS::alps_process_bitmap(struct alps_data *priv,
     
     fields->mt[0] = fields->st;
     fields->mt[1] = corner[priv->second_touch];
-  
+ 
+/*
 #if DEBUG
     IOLog("ALPS: BITMAP\n");
     
@@ -404,6 +405,7 @@ int ALPS::alps_process_bitmap(struct alps_data *priv,
   
     IOLog("ALPS: Process Bitmap, Corner=%d, Fingers=%d, x1=%d, x2=%d, y1=%d, y2=%d xmap=%d ymap=%d\n", priv->second_touch, fingers, fields->mt[0].x, fields->mt[1].x, fields->mt[0].y, fields->mt[1].y, fields->x_map, fields->y_map);
 #endif // DEBUG
+*/
   return fingers;
 }
 
@@ -446,9 +448,10 @@ void ALPS::alps_get_finger_coordinate_v7(struct input_mt_pos *mt,
             mt[1].x &= ~0x000F;
             mt[1].y |= 0x000F;
             /* Detect false-positive touches where x & y report max value */
-            if (mt[1].y == 0x7ff && mt[1].x == 0xff0)
+            if (mt[1].y == 0x7ff && mt[1].x == 0xff0) {
                 mt[1].x = 0;
-            /* y gets set to 0 at the end of this function */
+                /* y gets set to 0 at the end of this function */
+            }
             break;
             
         case V7_PACKET_ID_MULTI:
@@ -1352,25 +1355,6 @@ void ALPS::dispatchEventsWithInfo(int xraw, int yraw, int z, int fingers, UInt32
         y = y_avg.filter(y);
     }
     
-    // distance from primary
-    // two finger zoom settings?
-    if (1) {
-        int dxx = x - lastx;
-        int dyy = y - lasty;
-        int ds = ((dxx * dxx) + (dyy * dyy)) >> 4;
-        int last = secondaryfingerdistance_history.newest();
-        int change = (ds - last);
-        int count = secondaryfingerdistance_history.count();
-        fingerzooming = 0;
-        if (count > 3) {
-            //proper zooming threshold value?
-            if (abs(change) > 50000) {
-                fingerzooming = change;
-            }
-        }
-        secondaryfingerdistance_history.filter(ds);
-    }
-    
     if (ignoredeltas) {
         DEBUG_LOG("ALPS: Still ignoring deltas. Value=%d\n", ignoredeltas);
         lastx = x;
@@ -1413,7 +1397,97 @@ void ALPS::dispatchEventsWithInfo(int xraw, int yraw, int z, int fingers, UInt32
         when three fingers are on the touchpad, continue dragging in DRAGLOCK mode
     */
     
-    bool _threefingerdrag = (threefingerdrag && !fourfingersdetected);
+    //---------------------------
+    // gather gesture data
+    //---------------------------
+    
+    int swipeThresh = 1;
+    int swipeThreshY = 3;
+    
+    int swipeUp = 0;
+    int swipeDown = 0;
+    int swipeLeft = 0;
+    int swipeRight = 0;
+    int spreadFingers = 0;
+    
+    uint32_t elapsed = (uint32_t)(now_ns - lastdispatchkey_ns);
+    
+    // grid
+    // adjust grid according to trackpad size
+    int trackarea = 255;
+    int ww = (((redge - centerx)) * trackarea) >> 8;
+    int hh = (((ledge - centery)) * trackarea) >> 8;
+    int cw = ww >> 3;
+    int ch = hh >> 3;
+    
+    if (!(primaryx == 0 && primaryy == 0) && !(secondaryx == 0 && secondaryy == 0)) {
+        
+#define IN_COL(_x,_y,_cx,_cy,_cw,_ch) ((((_cx - _x) + ww + _cw) / _cw ) )
+#define IN_ROW(_x,_y,_cx,_cy,_cw,_ch) ((((_cy - _y) + hh + _ch) / _ch ) )
+#define MOVED_X(_x,_y,_x2,_y2,_cx,_cy,_cw,_ch) (IN_COL(_x,_y,_cx,_cy,_cw,_ch) - IN_COL(_x2,_y2,_cx,_cy,_cw,_ch))
+#define MOVED_Y(_x,_y,_x2,_y2,_cx,_cy,_cw,_ch) (IN_ROW(_x,_y,_cx,_cy,_cw,_ch) - IN_ROW(_x2,_y2,_cx,_cy,_cw,_ch))
+        
+#if 0
+        IOLog("PS2 (%d %d) (%d %d)",
+              IN_COL(primaryx, primaryy, centerx, centery, cw, ch),
+              IN_ROW(primaryx, primaryy, centerx, centery, cw, ch),
+              IN_COL(secondaryx, secondaryy, centerx, centery, cw, ch),
+              IN_ROW(secondaryx, secondaryy, centerx, centery, cw, ch)
+              );
+#endif
+        
+        // check swiping
+        swipeLeft = (primaryx > lastx && secondaryx > lastx2) ?
+        abs((MOVED_X(lastx, lasty, primaryx, primaryy, centerx, centery, cw, ch)) +
+            (MOVED_X(lastx2, lasty2, secondaryx, secondaryy, centerx, centery, cw, ch)) ) >> 1
+        : 0;
+        swipeRight = (primaryx < lastx && secondaryx < lastx2) ?
+        abs((MOVED_X(lastx, lasty, primaryx, primaryy, centerx, centery, cw, ch)) +
+            (MOVED_X(lastx2, lasty2, secondaryx, secondaryy, centerx, centery, cw, ch)) ) >> 1
+        : 0;
+        swipeUp = (primaryy < lasty && secondaryy < lasty2) ?
+        abs((MOVED_Y(lastx, lasty, primaryx, primaryy, centerx, centery, cw, ch)) +
+            (MOVED_Y(lastx2, lasty2, secondaryx, secondaryy, centerx, centery, cw, ch)) ) >> 1
+        : 0;
+        swipeDown = (primaryy > lasty && secondaryy > lasty2) ?
+        abs((MOVED_Y(lastx, lasty, primaryx, primaryy, centerx, centery, cw, ch)) +
+            (MOVED_Y(lastx2, lasty2, secondaryx, secondaryy, centerx, centery, cw, ch)) ) >> 1
+        : 0;
+        
+        
+        if ((swipeLeft > swipeThresh >> 1 || swipeRight > swipeThresh >> 1) &&
+            (swipeUp > swipeThreshY >> 1 || swipeDown > swipeThreshY >> 1)) {
+            swipeUp = swipeDown = swipeLeft = swipeRight = 0;
+        }
+        
+        if (true) {
+            // check spread
+            
+            int xx = MOVED_X(primaryx, primaryy, secondaryx, secondaryy, centerx, centery, cw, ch);
+            int yy = MOVED_Y(primaryx, primaryy, secondaryx, secondaryy, centerx, centery, cw, ch);
+            int xx2 = MOVED_X(lastx, lasty, lastx2, lasty2, centerx, centery, cw, ch);
+            int yy2 = MOVED_Y(lastx, lasty, lastx2, lasty2, centerx, centery, cw, ch);
+            int dxx = xx - xx2;
+            int dyy = yy - yy2;
+            int adxx = abs(dxx);
+            int adyy = abs(dyy);
+            
+            int spreadThresh = 3;
+            if (adxx > spreadThresh && adyy > spreadThresh) {
+                if (adxx > adyy) {
+                    spreadFingers = adxx * (abs(xx2) > abs(xx) ? 1 : -1);
+                } else {
+                    spreadFingers = adyy * (abs(yy2) > abs(yy) ? 1 : -1);
+                }
+                
+                //                IOLog("PS2:d1:%d d2:%d c:%d", dist, dist2, change);
+                
+                //IOLog("PS2 xx:%d yy:%d xx2:%d yy2:%d %d", xx, yy, xx2, yy2, spreadFingers);
+            }
+        }
+    }
+    
+    bool _threefingerdrag = (threefingerdrag && !fourfingersdetected && spreadFingers == 0);
     
     if(isFingerTouch(z) && (touchmode == MODE_DRAGLOCK || touchmode == MODE_DRAG) && _threefingerdrag && fingers != 1) {
         last_fingers=fingers;
@@ -1553,10 +1627,23 @@ void ALPS::dispatchEventsWithInfo(int xraw, int yraw, int z, int fingers, UInt32
 #endif
     int dx = 0, dy = 0;
     
-    if ((touchmode != MODE_MTOUCH) || (touchmode == MODE_MTOUCH && fingers != 0)) {
-        if (secondaryfingerdistance_history.count() > 0) {
-            secondaryfingerdistance_history.reset();
-            fingerzooming = 0;
+    if (touchmode == MODE_MTOUCH && (fingers == 2 || fingers == 3)) {
+        if (primaryx == 0 && primaryy == 0) {
+            primaryx = x;
+            primaryy = y;
+//            beginmultitouch_ns = now_ns;
+        }
+    }
+    
+    if (touchmode == MODE_NOTOUCH || (touchmode != MODE_MTOUCH) || (touchmode == MODE_MTOUCH && (fingers != 2 && fingers != 3))) {
+        primaryx = primaryy = secondaryx = secondaryy = 0;
+    }
+    
+    if (spreadFingers != 0) {
+        if (!draglock && !draglocktemp) {
+            primaryx = primaryy = secondaryx = secondaryy = 0;
+            cancelTimer(dragTimer);
+            touchmode =  MODE_MTOUCH;
         }
     }
     
@@ -1615,13 +1702,6 @@ void ALPS::dispatchEventsWithInfo(int xraw, int yraw, int z, int fingers, UInt32
                     
                     break;
                 case 2: // two finger
-                    if (fingerzooming != 0) {
-                        if (fingerzooming > 0)
-                            _device->dispatchKeyboardMessage(kPS2M_zoomIn, &now_abs);
-                        else
-                            _device->dispatchKeyboardMessage(kPS2M_zoomOut, &now_abs);
-                        break;
-                    }
                     if (last_fingers != fingers) {
                         break;
                     }
@@ -1631,6 +1711,61 @@ void ALPS::dispatchEventsWithInfo(int xraw, int yraw, int z, int fingers, UInt32
                     if (palm_wt && now_ns - keytime < maxaftertyping) {
                         break;
                     }
+                        
+                    if (touchmode == MODE_VSCROLL || touchmode == MODE_HSCROLL) {
+                        spreadFingers = 0;
+                        primaryx = primaryy = secondaryx = secondaryy = 0;
+                        lastdispatchkey_ns = now_ns;
+                        elapsed = 0;
+                    }
+                    
+                    
+                    if (touchmode != MODE_VSCROLL || touchmode != MODE_HSCROLL) {
+                        if (primaryx > lastx && secondaryx > lastx2) {
+                            _device->dispatchKeyboardMessage(kPS2M_swipeUp, &now_abs);
+                        }
+                    }
+                    
+                    
+                    // zoom
+                    if (spreadFingers != 0 && !xmomentumscrollcurrent && !momentumscrollcurrent) {
+                        //elapsed = (uint32_t)(now_ns - lastdispatchkey_ns);
+                        if (lastdispatchkey_ns == 0 || elapsed > 100000000) {
+                            
+                            int spreadThresh = 3;
+                            int pinchThresh = 3;
+                            bool didDispatch = false;
+                            
+                            //if (spreadFingers > 0)
+                            if (spreadFingers > spreadThresh) {
+                                _device->dispatchKeyboardMessage(kPS2M_swipeUp, &now_abs);
+                                didDispatch = true;
+                            } else if (spreadFingers < pinchThresh) {
+                                _device->dispatchKeyboardMessage(kPS2M_swipeUp, &now_abs);
+                                didDispatch = true;
+                            }
+                            //lastdispatchkey_ns = now_ns;
+
+                            // reset
+                            //dist_history.reset();
+                            //primaryx = 0;
+                            //primaryy = 0;
+                            //secondaryx = 0;
+                            //secondaryy = 0;
+                            //break;
+                            
+                            if (didDispatch) {
+                                lastdispatchkey_ns = now_ns;
+                                // reset
+                                primaryx = 0;
+                                primaryy = 0;
+                                secondaryx = 0;
+                                secondaryy = 0;
+                                break;
+                            }
+                        }
+                    }
+                    
                     dy = (wvdivisor) ? (y-lasty+yrest) : 0;
                     dx = (whdivisor&&hscroll) ? (x-lastx+xrest) : 0;
                     yrest = (wvdivisor) ? dy % wvdivisor : 0;
@@ -1670,7 +1805,6 @@ void ALPS::dispatchEventsWithInfo(int xraw, int yraw, int z, int fingers, UInt32
                         // Gets rid of scrolling while trying to tap 
                         if (!touchtime)
                             dispatchScrollWheelEventX(wvdivisor ? dy / wvdivisor : 0, (whdivisor && hscroll) ? -dx / whdivisor : 0, 0, now_abs);
-                            //dispatchScrollWheelEvent(whdivisor ? dx / whdivisor : 0, (wvdivisor && vscroll) ? -dy / wvdivisor : 0, 0, now_abs);
                         dx = dy = 0;
                         ignoresingle = 3;
                     }
@@ -1814,19 +1948,32 @@ void ALPS::dispatchEventsWithInfo(int xraw, int yraw, int z, int fingers, UInt32
         touchmode = MODE_DRAG;
         draglocktemp = _modifierdown & draglocktempmask;
     }
-    if (touchmode == MODE_DRAGNOTOUCH && isFingerTouch(z) && (!_threefingerdrag || (_threefingerdrag && fingers == 1))) {
+    if (touchmode == MODE_DRAGNOTOUCH && isFingerTouch(z) && (!_threefingerdrag || (_threefingerdrag && fingers == 3))) {
         if (dragTimer)
             cancelTimer(dragTimer);
         touchmode=MODE_DRAGLOCK;
     }
     if (MODE_MTOUCH != touchmode && fingers > 1 && isFingerTouch(z)) {
-        if (fingers == 1 && _threefingerdrag)
-        {
-            touchmode = MODE_DRAG;
-        }
-        else
-            touchmode=MODE_MTOUCH;
+        touchmode=MODE_MTOUCH;
         tracksecondary=false;
+        
+        // three finger dragging
+        if (fingers == 3 && _threefingerdrag) {
+//            uint64_t elapsedMTouch = (uint64_t)(now_ns - beginmultitouch_ns);
+//            if (elapsedMTouch > 500000000)
+//            {
+                int dx = MOVED_X(primaryx, primaryy, secondaryx, secondaryy, centerx, centery, cw, ch);
+                int dy = MOVED_Y(primaryx, primaryy, secondaryx, secondaryy, centerx, centery, cw, ch);
+                int dst = (dx * dx) + (dy * dy);
+                int cellarea = ((cw << 1) * (cw << 1)) + ((cw << 1) * (cw << 1));
+                // fingers must be close together
+                if (dst < cellarea) {
+                    touchmode=MODE_DRAG;
+                }
+//            } else {
+//                IOLog("PS2 wait seconds more");
+//            }
+        }
     }
     
     if (touchmode == MODE_NOTOUCH && z > z_finger && !scrolldebounce) {

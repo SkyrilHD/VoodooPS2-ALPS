@@ -57,6 +57,13 @@ protected:
     SimpleAverage<int, 32> secondaryfingerdistance_history;
     int fingerzooming;
     
+    SimpleAverage<int, 32> dist_history;
+         int primaryx;
+         int primaryy;
+         int secondaryx;
+         int secondaryy;
+         uint64_t lastdispatchkey_ns;
+    
     int z_finger;
 	int divisorx, divisory;
 	int ledge;
