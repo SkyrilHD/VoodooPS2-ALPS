@@ -2105,7 +2105,10 @@ static OSString* getPlatformManufacturer()
         OSString* id = OSDynamicCast(OSString, reg->getProperty("RM,oem-id"));
         reg->release();
         if (id)
+        {
+            id->retain();
             return id;
+        }
     }
     // otherwise use DSDT header
     const DSDT_HEADER* pDSDT = getDSDT();
