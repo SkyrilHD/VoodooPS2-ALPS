@@ -64,8 +64,6 @@
 		84C337A91698BC38009B8177 /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
 		84DD1979162D496E0044D061 /* AppleACPIPS2Nub.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = AppleACPIPS2Nub.cpp; sourceTree = "<group>"; };
 		84DD197A162D496E0044D061 /* AppleACPIPS2Nub.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AppleACPIPS2Nub.h; sourceTree = "<group>"; };
-		84E9BAC816BE4C1300EEEB63 /* new_kext.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.h; path = new_kext.h; sourceTree = "<group>"; };
-		84E9BACA16BE4CB300EEEB63 /* new_kext.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = new_kext.cpp; sourceTree = "<group>"; };
 		84F424C3161B593D00777765 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
 		84F424C5161B593D00777765 /* PreferencePanes.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = PreferencePanes.framework; path = System/Library/Frameworks/PreferencePanes.framework; sourceTree = SDKROOT; };
 		84F424C7161B593D00777765 /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = System/Library/Frameworks/AppKit.framework; sourceTree = SDKROOT; };
@@ -251,8 +249,6 @@
 				84833F9D161B627D00845294 /* ApplePS2Device.h */,
 				84833F9F161B627D00845294 /* ApplePS2KeyboardDevice.h */,
 				84833FA1161B627D00845294 /* ApplePS2MouseDevice.h */,
-				84E9BAC816BE4C1300EEEB63 /* new_kext.h */,
-				84E9BACA16BE4CB300EEEB63 /* new_kext.cpp */,
 			);
 			name = Common;
 			sourceTree = "<group>";
