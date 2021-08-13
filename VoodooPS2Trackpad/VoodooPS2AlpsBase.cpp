@@ -267,8 +267,15 @@ bool VoodooPS2TouchPadBase::start( IOService * provider )
     if (!pWorkLoop || !_cmdGate)
     {
         _device->release();
+        _device = nullptr;
         return false;
     }
+    
+    //
+    // Lock the controller during initialization
+    //
+
+    _device->lock();
     
     //
     // Setup button timer event source
@@ -278,7 +285,9 @@ bool VoodooPS2TouchPadBase::start( IOService * provider )
         _buttonTimer = IOTimerEventSource::timerEventSource(this, OSMemberFunctionCast(IOTimerEventSource::Action, this, &VoodooPS2TouchPadBase::onButtonTimer));
         if (!_buttonTimer)
         {
+            _device->unlock();
             _device->release();
+            _device = nullptr;
             return false;
         }
         pWorkLoop->addEventSource(_buttonTimer);
@@ -311,13 +320,6 @@ bool VoodooPS2TouchPadBase::start( IOService * provider )
     if (xscrollTimer)
         pWorkLoop->addEventSource(xscrollTimer);
     
-    //
-    // Lock the controller during initialization
-    //
-    
-    _device->lock();
-
-
     //
     // Perform any implementation specific device initialization
     //

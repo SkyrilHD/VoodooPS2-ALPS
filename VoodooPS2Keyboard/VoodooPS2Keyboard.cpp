@@ -467,13 +467,6 @@ bool ApplePS2Keyboard::start(IOService * provider)
         _device = 0;
         return false;
     }
-    pWorkLoop->addEventSource(_sleepEjectTimer);
-    pWorkLoop->addEventSource(_cmdGate);
-    
-    // _macroTimer is used in for macro inversion
-    _macroTimer = IOTimerEventSource::timerEventSource(this, OSMemberFunctionCast(IOTimerEventSource::Action, this, &ApplePS2Keyboard::onMacroTimer));
-    if (_macroTimer)
-        pWorkLoop->addEventSource(_macroTimer);
     
     // get IOACPIPlatformDevice for Device (PS2K)
     //REVIEW: should really look at the parent chain for IOACPIPlatformDevice instead.
@@ -599,6 +592,14 @@ bool ApplePS2Keyboard::start(IOService * provider)
     //
     
     initKeyboard();
+    
+    pWorkLoop->addEventSource(_sleepEjectTimer);
+    pWorkLoop->addEventSource(_cmdGate);
+    
+    // _macroTimer is used in for macro inversion
+    _macroTimer = IOTimerEventSource::timerEventSource(this, OSMemberFunctionCast(IOTimerEventSource::Action, this, &ApplePS2Keyboard::onMacroTimer));
+    if (_macroTimer)
+        pWorkLoop->addEventSource(_macroTimer);
     
     //
     // Install our driver's interrupt handler, for asynchronous data delivery.
