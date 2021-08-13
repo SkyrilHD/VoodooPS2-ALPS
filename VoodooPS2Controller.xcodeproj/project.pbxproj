@@ -22,7 +22,6 @@
 		84DD197C162D496E0044D061 /* AppleACPIPS2Nub.h in Headers */ = {isa = PBXBuildFile; fileRef = 84DD197A162D496E0044D061 /* AppleACPIPS2Nub.h */; };
 		84EB0AE316F0AD9300016108 /* ApplePS2KeyboardDevice.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 84833F9E161B627D00845294 /* ApplePS2KeyboardDevice.cpp */; };
 		84EB0AE516F0AD9600016108 /* ApplePS2MouseDevice.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 84833FA0161B627D00845294 /* ApplePS2MouseDevice.cpp */; };
-		BA560D361734DFF100914439 /* Decay.h in Headers */ = {isa = PBXBuildFile; fileRef = BA560D351734DFF100914439 /* Decay.h */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -57,7 +56,6 @@
 		84F424C7161B593D00777765 /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = System/Library/Frameworks/AppKit.framework; sourceTree = SDKROOT; };
 		84F424C8161B593D00777765 /* CoreData.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreData.framework; path = System/Library/Frameworks/CoreData.framework; sourceTree = SDKROOT; };
 		84F424C9161B593D00777765 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
-		BA560D351734DFF100914439 /* Decay.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Decay.h; sourceTree = "<group>"; };
 		C3F4F603A234F724795A2FBD /* VoodooPS2Trackpad.kext */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.kernel-extension"; name = VoodooPS2Trackpad.kext; path = "../../Library/Caches/appCode20/DerivedData/VoodooPS2Controller-5fc0befb/Build/Products/Debug/VoodooPS2Trackpad.kext"; sourceTree = "<group>"; };
 		C3F4FA022A4265DD37A85F4D /* VoodooPS2Controller.kext */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.kernel-extension"; name = VoodooPS2Controller.kext; path = "../../Library/Caches/appCode20/DerivedData/VoodooPS2Controller-5fc0befb/Build/Products/Debug/VoodooPS2Controller.kext"; sourceTree = "<group>"; };
 		C3F4FAC34E9069A684BFE9E1 /* VoodooPS2Keyboard.kext */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.kernel-extension"; name = VoodooPS2Keyboard.kext; path = "../../Library/Caches/appCode20/DerivedData/VoodooPS2Controller-5fc0befb/Build/Products/Debug/VoodooPS2Keyboard.kext"; sourceTree = "<group>"; };
@@ -177,7 +175,6 @@
 				84833FAC161B62A900845294 /* alps.h */,
 				84833FAB161B62A900845294 /* alps.cpp */,
 				84167857161B56C4002C60E6 /* Supporting Files */,
-				BA560D351734DFF100914439 /* Decay.h */,
 			);
 			path = VoodooPS2Trackpad;
 			sourceTree = "<group>";
@@ -230,7 +227,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				84833FB2161B62A900845294 /* alps.h in Headers */,
-				BA560D361734DFF100914439 /* Decay.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
