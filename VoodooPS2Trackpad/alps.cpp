@@ -3789,6 +3789,10 @@ dispatchRelativePointerEventWithPacket(UInt8 *packet,
     dispatchRelativePointerEventX(dx, dy, buttons, now_abs);
 }
 
+// =============================================================================
+// VoodooPS2AlpsBase Implementation  ///////////////////////////////////////////
+// =============================================================================
+
 void ALPS::onScrollTimerX(void)
 {
     //
