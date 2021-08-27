@@ -31,53 +31,53 @@ OSDefineMetaClassAndStructors(ApplePS2Device, IOService);
 
 bool ApplePS2Device::attach(IOService * provider)
 {
-  if (!super::attach(provider))
-      return false;
-
-  assert(_controller == 0);
-  _controller = (ApplePS2Controller*)provider;
-  _controller->retain();
-
-  return true;
+    if (!super::attach(provider))
+        return false;
+    
+    assert(_controller == 0);
+    _controller = (ApplePS2Controller*)provider;
+    _controller->retain();
+    
+    return true;
 }
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 void ApplePS2Device::detach( IOService * provider )
 {
-  assert(_controller == provider);
-  _controller->release();
-  _controller = 0;
-
-  super::detach(provider);
+    assert(_controller == provider);
+    _controller->release();
+    _controller = 0;
+    
+    super::detach(provider);
 }
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 PS2Request * ApplePS2Device::allocateRequest(int max)
 {
-  return _controller->allocateRequest(max);
+    return _controller->allocateRequest(max);
 }
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 void ApplePS2Device::freeRequest(PS2Request * request)
 {
-  _controller->freeRequest(request);
+    _controller->freeRequest(request);
 }
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 bool ApplePS2Device::submitRequest(PS2Request * request)
 {
-  return _controller->submitRequest(request);
+    return _controller->submitRequest(request);
 }
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 void ApplePS2Device::submitRequestAndBlock(PS2Request * request)
 {
-  _controller->submitRequestAndBlock(request);
+    _controller->submitRequestAndBlock(request);
 }
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -102,8 +102,8 @@ void ApplePS2Device::unlock()
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 void ApplePS2Device::installInterruptAction(OSObject *         target,
-                                                    PS2InterruptAction interruptAction,
-                                                    PS2PacketAction packetAction)
+                                            PS2InterruptAction interruptAction,
+                                            PS2PacketAction packetAction)
 {
     _controller->installInterruptAction(_deviceType, target, interruptAction, packetAction);
 }
@@ -118,8 +118,8 @@ void ApplePS2Device::uninstallInterruptAction()
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 void ApplePS2Device::installPowerControlAction(
-                                                       OSObject *            target,
-                                                       PS2PowerControlAction action)
+                                               OSObject *            target,
+                                               PS2PowerControlAction action)
 {
     _controller->installPowerControlAction(_deviceType, target, action);
 }

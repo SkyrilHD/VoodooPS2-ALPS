@@ -641,7 +641,7 @@ bool ApplePS2Controller::start(IOService * provider)
         OSSafeReleaseNULL(_mouseDevice);
         OSSafeReleaseNULL(_interruptSourceMouse);
     }
-	   
+    
     if (_keyboardDevice)
         _keyboardDevice->registerService();
     if (_mouseDevice)
