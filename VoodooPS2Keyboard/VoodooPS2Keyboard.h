@@ -40,16 +40,16 @@
 #define KBV_BITS_MASK           31
 #define KBV_BITS_SHIFT          5       // 1<<5 == 32, for cheap divide
 #define KBV_NUNITS ((KBV_NUM_KEYCODES + \
-            (KBV_BITS_PER_UNIT-1))/KBV_BITS_PER_UNIT)
+(KBV_BITS_PER_UNIT-1))/KBV_BITS_PER_UNIT)
 
 #define KBV_KEYDOWN(n) \
-    (_keyBitVector)[((n)>>KBV_BITS_SHIFT)] |= (1 << ((n) & KBV_BITS_MASK))
+(_keyBitVector)[((n)>>KBV_BITS_SHIFT)] |= (1 << ((n) & KBV_BITS_MASK))
 
 #define KBV_KEYUP(n) \
-    (_keyBitVector)[((n)>>KBV_BITS_SHIFT)] &= ~(1 << ((n) & KBV_BITS_MASK))
+(_keyBitVector)[((n)>>KBV_BITS_SHIFT)] &= ~(1 << ((n) & KBV_BITS_MASK))
 
 #define KBV_IS_KEYDOWN(n) \
-    (((_keyBitVector)[((n)>>KBV_BITS_SHIFT)] & (1 << ((n) & KBV_BITS_MASK))) != 0)
+(((_keyBitVector)[((n)>>KBV_BITS_SHIFT)] & (1 << ((n) & KBV_BITS_MASK))) != 0)
 
 #define KBV_NUM_SCANCODES       256
 
@@ -70,7 +70,7 @@ class EXPORT ApplePS2Keyboard : public IOHIKeyboard
 {
     typedef IOHIKeyboard super;
     OSDeclareDefaultStructors(ApplePS2Keyboard);
-
+    
 private:
     ApplePS2KeyboardDevice *    _device;
     UInt32                      _keyBitVector[KBV_NUNITS];
@@ -82,7 +82,7 @@ private:
     bool                        _messageHandlerInstalled;
     UInt8                       _ledState;
     IOCommandGate*              _cmdGate;
-
+    
     // for keyboard remapping
     UInt16                      _PS2modifierState;
     UInt16                      _PS2ToPS2Map[KBV_NUM_SCANCODES*2];
@@ -101,7 +101,7 @@ private:
     // dealing with sleep key delay
     IOTimerEventSource*         _sleepEjectTimer;
     UInt32                      _maxsleeppresstime;
-
+    
     // configuration items for swipe actions
     UInt16                      _actionSwipeUp[16];
     UInt16                      _actionSwipeDown[16];
@@ -114,12 +114,12 @@ private:
     
     UInt16                      _actionZoomIn[16];
     UInt16                      _actionZoomOut[16];
-
+    
     // ACPI support for screen brightness
     IOACPIPlatformDevice *      _provider;
     int *                       _brightnessLevels;
     int                         _brightnessCount;
-
+    
     // ACPI support for keyboard backlight
     int *                       _backlightLevels;
     int                         _backlightCount;
@@ -145,7 +145,7 @@ private:
     void modifyKeyboardBacklight(int adbKeyCode, bool goingDown);
     void modifyScreenBrightness(int adbKeyCode, bool goingDown);
     inline bool checkModifierState(UInt16 mask)
-        { return mask == (_PS2modifierState & mask); }
+    { return mask == (_PS2modifierState & mask); }
     
     void loadCustomPS2Map(OSArray* pArray);
     void loadBreaklessPS2(OSDictionary* dict, const char* name);
@@ -159,27 +159,27 @@ private:
     bool invertMacros(const UInt8* packet);
     void dispatchInvertBuffer();
     static bool compareMacro(const UInt8* packet, const UInt8* data, int count);
-
+    
 protected:
     virtual const unsigned char * defaultKeymapOfLength(UInt32 * length);
     virtual void setAlphaLockFeedback(bool locked);
     virtual void setNumLockFeedback(bool locked);
     virtual UInt32 maxKeyCodes();
     inline void dispatchKeyboardEventX(unsigned int keyCode, bool goingDown, uint64_t time)
-        { dispatchKeyboardEvent(keyCode, goingDown, *(AbsoluteTime*)&time); }
+    { dispatchKeyboardEvent(keyCode, goingDown, *(AbsoluteTime*)&time); }
     inline void setTimerTimeout(IOTimerEventSource* timer, uint64_t time)
-        { timer->setTimeout(*(AbsoluteTime*)&time); }
+    { timer->setTimeout(*(AbsoluteTime*)&time); }
     inline void cancelTimer(IOTimerEventSource* timer)
-        { timer->cancelTimeout(); }
-
+    { timer->cancelTimeout(); }
+    
 public:
     virtual bool init(OSDictionary * dict);
     virtual void free();
     virtual ApplePS2Keyboard * probe(IOService * provider, SInt32 * score);
-
+    
     virtual bool start(IOService * provider);
     virtual void stop(IOService * provider);
-
+    
     virtual PS2InterruptResult interruptOccurred(UInt8 scanCode);
     virtual void packetReady();
     
@@ -188,7 +188,7 @@ public:
     virtual UInt32 deviceType();
     virtual UInt32 interfaceID();
     
-  	virtual IOReturn setParamProperties(OSDictionary* dict);
+    virtual IOReturn setParamProperties(OSDictionary* dict);
     virtual IOReturn setProperties (OSObject *props);
     
     virtual IOReturn message(UInt32 type, IOService* provider, void* argument);

@@ -228,7 +228,7 @@ bool ApplePS2Keyboard::init(OSDictionary * dict)
     _swapcommandoption = false;
     _sleepEjectTimer = 0;
     _cmdGate = 0;
-        
+    
     _fkeymode = 0;
     _fkeymodesupported = false;
     _keysStandard = 0;
@@ -1956,7 +1956,7 @@ void ApplePS2Keyboard::receiveMessage(int message, void* data)
             DEBUG_LOG("ApplePS2Keyboard: Synaptic Trackpad call Zoom In\n");
             sendKeySequence(_actionZoomIn);
             break;
-
+            
         case kPS2M_zoomOut:
             DEBUG_LOG("ApplePS2Keyboard: Synaptic Trackpad call Zoom Out\n");
             sendKeySequence(_actionZoomOut);

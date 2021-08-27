@@ -452,10 +452,10 @@ public:
     
     bool start(IOService *provider) override;
     void stop(IOService *provider) override;
-
+    
     virtual UInt32 deviceType() override;
     virtual UInt32 interfaceID() override;
-
+    
     virtual IOReturn setParamProperties(OSDictionary * dict) override;
     virtual IOReturn setProperties(OSObject *props) override;
     
@@ -543,7 +543,7 @@ protected:
     bool alps_exit_command_mode();
     
     bool alps_passthrough_mode_v2(bool enable);
-        
+    
     bool alps_absolute_mode_v1_v2();
     
     int alps_monitor_mode_send_word(int word);
@@ -595,7 +595,7 @@ protected:
     void ps2_command_short(UInt8 command);
     
     void ps2_command(unsigned char value, UInt8 command);
-        
+    
     void set_protocol();
     
     bool matchTable(ALPSStatus_t *e7, ALPSStatus_t *ec);
@@ -615,7 +615,7 @@ protected:
     UInt32              _packetByteCount;
     UInt8               _lastdata;
     UInt16              _touchPadVersion;
-
+    
     IOCommandGate*      _cmdGate;
     
     int skippyThresh;
@@ -688,23 +688,23 @@ protected:
     int rightclick_corner;
     bool threefingerdrag;
     int notificationcenter;
-
+    
     // three finger and four finger state
     uint8_t inSwipeLeft, inSwipeRight;
     uint8_t inSwipeUp, inSwipeDown;
     uint8_t inSwipe4Left, inSwipe4Right;
     uint8_t inSwipe4Up, inSwipe4Down;
     int xmoved, ymoved;
-
+    
     int rczl, rczr, rczb, rczt; // rightclick zone for 1-button ClickPads
-
+    
     // state related to secondary packets/extendedwmode
     int lastx2, lasty2;
     bool tracksecondary;
     int xrest2, yrest2;
     bool clickedprimary;
     bool _extendedwmode;
-
+    
     // normal state
     int lastx, lasty, last_fingers, b4last;
     UInt32 lastbuttons;
@@ -730,13 +730,13 @@ protected:
     UInt32 _clickbuttons;  //clickbuttons to merge into buttons
     int mousecount;
     bool usb_mouse_stops_trackpad;
-
+    
     int _modifierdown; // state of left+right control keys
     int scrollzoommask;
-
+    
     // for scaling x/y values
     int xupmm, yupmm;
-
+    
     // for middle button simulation
     enum mbuttonstate
     {
@@ -746,13 +746,13 @@ protected:
         STATE_WAIT4NONE,
         STATE_NOOP,
     } _mbuttonstate;
-
+    
     UInt32 _pendingbuttons;
     uint64_t _buttontime;
     IOTimerEventSource* _buttonTimer;
     uint64_t _maxmiddleclicktime;
     int _fakemiddlebutton;
-
+    
     // momentum scroll state
     bool momentumscroll;
     bool wasScroll = false;
@@ -769,7 +769,7 @@ protected:
     int momentumscrolldivisor;
     int momentumscrollrest2;
     int momentumscrollsamplesmin;
-
+    
     // timer for drag delay
     uint64_t dragexitdelay;
     uint64_t scrollexitdelay;
@@ -785,21 +785,21 @@ protected:
     //DecayingAverage<int, int64_t, 1, 1, 2> y_avg;
     UndecayAverage<int, int64_t, 1, 1, 2> x_undo;
     UndecayAverage<int, int64_t, 1, 1, 2> y_undo;
-
+    
     SimpleAverage<int, 5> x2_avg;
     SimpleAverage<int, 5> y2_avg;
     //DecayingAverage<int, int64_t, 1, 1, 2> x2_avg;
     //DecayingAverage<int, int64_t, 1, 1, 2> y2_avg;
     UndecayAverage<int, int64_t, 1, 1, 2> x2_undo;
     UndecayAverage<int, int64_t, 1, 1, 2> y2_undo;
-
+    
     enum
     {
         // "no touch" modes... must be even (see isTouchMode)
         MODE_NOTOUCH =      0,
         MODE_PREDRAG =      2,
         MODE_DRAGNOTOUCH =  4,
-
+        
         // "touch" modes... must be odd (see isTouchMode)
         MODE_MOVE =         1,
         MODE_VSCROLL =      3,
@@ -808,7 +808,7 @@ protected:
         MODE_MTOUCH =       9,
         MODE_DRAG =         11,
         MODE_DRAGLOCK =     13,
-
+        
         // special modes for double click in LED area to enable/disable
         // same "touch"/"no touch" odd/even rule (see isTouchMode)
         MODE_WAIT1RELEASE = 101,    // "touch"
@@ -817,48 +817,48 @@ protected:
     } touchmode;
     
     const char* modeName(int touchmode);
-
+    
     inline bool isTouchMode() { return touchmode & 1; }
-
+    
     inline bool isInDisableZone(int x, int y)
-        { return x > diszl && x < diszr && y > diszb && y < diszt; }
-
+    { return x > diszl && x < diszr && y > diszb && y < diszt; }
+    
     // Sony: coordinates captured from single touch event
     // Don't know what is the exact value of x and y on edge of touchpad
     // the best would be { return x > xmax/2 && y < ymax/4; }
-
+    
     inline bool isInRightClickZone(int x, int y)
-        { return x > rczl && x < rczr && y > rczb && y < rczt; }
-
+    { return x > rczl && x < rczr && y > rczb && y < rczt; }
+    
     virtual void   setDevicePowerState(UInt32 whatToDo);
-
+    
     virtual void   receiveMessage(int message, void* data);
-
+    
     virtual void touchpadToggled() {};
     virtual void touchpadShutdown() {};
     virtual void initTouchPad();
-
+    
     inline bool isFingerTouch(int z) { return z>z_finger; }
-
+    
     void onScrollTimer(void);
     void onScrollTimerX(void);
     void onScrollDebounceTimer(void);
     void onButtonTimer(void);
     void onDragTimer(void);
-
+    
     enum MBComingFrom { fromPassthru, fromTimer, fromTrackpad, fromCancel };
     UInt32 middleButton(UInt32 buttons, uint64_t now, MBComingFrom from);
-
+    
     virtual void setParamPropertiesGated(OSDictionary* dict);
-
+    
     virtual IOItemCount buttonCount() override;
     virtual IOFixed     resolution() override;
     inline void dispatchRelativePointerEventX(int dx, int dy, UInt32 buttonState, uint64_t now)
-        { dispatchRelativePointerEvent(dx, dy, buttonState, *(AbsoluteTime*)&now); }
+    { dispatchRelativePointerEvent(dx, dy, buttonState, *(AbsoluteTime*)&now); }
     inline void dispatchScrollWheelEventX(short deltaAxis1, short deltaAxis2, short deltaAxis3, uint64_t now)
-        { dispatchScrollWheelEvent(deltaAxis1, deltaAxis2, deltaAxis3, *(AbsoluteTime*)&now); }
+    { dispatchScrollWheelEvent(deltaAxis1, deltaAxis2, deltaAxis3, *(AbsoluteTime*)&now); }
     inline void setTimerTimeout(IOTimerEventSource* timer, uint64_t time)
-        { timer->setTimeout(*(AbsoluteTime*)&time); }
+    { timer->setTimeout(*(AbsoluteTime*)&time); }
     inline void cancelTimer(IOTimerEventSource* timer)
-        { timer->cancelTimeout(); }
+    { timer->cancelTimeout(); }
 };

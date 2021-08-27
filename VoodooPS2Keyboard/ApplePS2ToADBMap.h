@@ -33,8 +33,8 @@
 // http://download.microsoft.com/download/1/6/1/161ba512-40e2-4cc9-843a-923143f3456c/translate.pdf
 static const UInt8 PS2ToADBMapStock[ADB_CONVERTER_LEN] =
 {
-/*  ADB        AT  ANSI Key-Legend
-    ======================== */
+    /*  ADB        AT  ANSI Key-Legend
+     ======================== */
     DEADKEY,// 00
     0x35,   // 01  Escape
     0x12,   // 02  1!
