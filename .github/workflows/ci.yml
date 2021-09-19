@@ -18,6 +18,7 @@ jobs:
       JOB_TYPE: BUILD
     steps:
       - uses: actions/checkout@v2
+      - uses: actions/checkout@v2
         with:
           repository: acidanthera/MacKernelSDK
           path: MacKernelSDK
@@ -27,10 +28,6 @@ jobs:
       - name: VoodooInput Bootstrap
         run: |
           src=$(/usr/bin/curl -Lfs https://raw.githubusercontent.com/acidanthera/VoodooInput/master/VoodooInput/Scripts/bootstrap.sh) && eval "$src" || exit 1
-      - name: Get Version
-        run: |
-          eval $(grep -m 1 "MODULE_VERSION =" VoodooPS2Controller.xcodeproj/project.pbxproj | tr -d ';' | tr -d '\t' | tr -d " ")
-          echo "VPS2_VER=$MODULE_VERSION" >> $GITHUB_ENV
 
       - run: xcodebuild -jobs 1 -configuration Release
       - run: xcodebuild -jobs 1 -configuration Debug
