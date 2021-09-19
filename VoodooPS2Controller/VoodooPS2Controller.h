@@ -291,17 +291,17 @@ private:
     
     virtual void dispatchDriverPowerControl(UInt32 whatToDo, PS2DeviceType deviceType);
 #if DEBUGGER_SUPPORT
-    virtual void free(void);
+    void free(void) override;
 #endif
     IOReturn setPropertiesGated(OSObject* props);
     void submitRequestAndBlockGated(PS2Request* request);
     
 public:
-    virtual bool init(OSDictionary * properties);
-    virtual bool start(IOService * provider);
-    virtual void stop(IOService * provider);
+    bool init(OSDictionary * properties) override;
+    bool start(IOService * provider) override;
+    void stop(IOService * provider) override;
     
-    virtual IOWorkLoop * getWorkLoop() const;
+    IOWorkLoop * getWorkLoop() const override;
     
     virtual void installInterruptAction(PS2DeviceType      deviceType,
                                         OSObject *         target,
@@ -316,8 +316,8 @@ public:
     virtual UInt8        setCommandByte(UInt8 setBits, UInt8 clearBits);
     void setCommandByteGated(PS2Request* request);
     
-    virtual IOReturn setPowerState(unsigned long powerStateOrdinal,
-                                   IOService *   policyMaker);
+    IOReturn setPowerState(unsigned long powerStateOrdinal,
+                                   IOService *   policyMaker) override;
     
     virtual void installPowerControlAction(PS2DeviceType         deviceType,
                                            OSObject *            target,
@@ -332,7 +332,7 @@ public:
     virtual void uninstallMessageAction(PS2DeviceType deviceType);
     virtual void dispatchMessage(PS2DeviceType deviceType, int message, void* data);
     
-    virtual IOReturn setProperties(OSObject* props);
+    IOReturn setProperties(OSObject* props) override;
     virtual void lock();
     virtual void unlock();
     

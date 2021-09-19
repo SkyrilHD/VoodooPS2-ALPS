@@ -6,3 +6,5 @@ Distribute
 xcuserdata
 xcshareddata
 project.xcworkspace
+/MacKernelSDK
+/VoodooInput

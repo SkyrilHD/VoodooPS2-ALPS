@@ -176,18 +176,6 @@ error:
     return false;
 }
 
-#ifdef DEBUG
-static void logKeySequence(const char* header, UInt16* pAction)
-{
-    DEBUG_LOG("ApplePS2Keyboard: %s { ", header);
-    for (; *pAction; ++pAction)
-    {
-        DEBUG_LOG("%04x, ", *pAction);
-    }
-    DEBUG_LOG("}\n");
-}
-#endif
-
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 bool ApplePS2Keyboard::init(OSDictionary * dict)
@@ -228,7 +216,7 @@ bool ApplePS2Keyboard::init(OSDictionary * dict)
     _swapcommandoption = false;
     _sleepEjectTimer = 0;
     _cmdGate = 0;
-    
+        
     _fkeymode = 0;
     _fkeymodesupported = false;
     _keysStandard = 0;
@@ -335,17 +323,6 @@ bool ApplePS2Keyboard::init(OSDictionary * dict)
     // populate rest of values via setParamProperties
     setParamPropertiesGated(config);
     OSSafeReleaseNULL(config);
-    
-#ifdef DEBUG
-    logKeySequence("Swipe Up:", _actionSwipeUp);
-    logKeySequence("Swipe Down:", _actionSwipeDown);
-    logKeySequence("Swipe Left:", _actionSwipeLeft);
-    logKeySequence("Swipe Right:", _actionSwipeRight);
-    logKeySequence("Swipe 4 Up:", _actionSwipe4Up);
-    logKeySequence("Swipe 4 Down:", _actionSwipe4Down);
-    logKeySequence("Swipe 4 Left:", _actionSwipe4Left);
-    logKeySequence("Swipe 4 Right:", _actionSwipe4Right);
-#endif
     
     return true;
 }
@@ -1956,7 +1933,7 @@ void ApplePS2Keyboard::receiveMessage(int message, void* data)
             DEBUG_LOG("ApplePS2Keyboard: Synaptic Trackpad call Zoom In\n");
             sendKeySequence(_actionZoomIn);
             break;
-            
+
         case kPS2M_zoomOut:
             DEBUG_LOG("ApplePS2Keyboard: Synaptic Trackpad call Zoom Out\n");
             sendKeySequence(_actionZoomOut);
