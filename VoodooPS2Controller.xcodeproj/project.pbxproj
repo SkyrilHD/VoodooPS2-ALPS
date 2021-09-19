@@ -7,6 +7,11 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		719386E426E17E8600467AB9 /* libkmod.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 719386E326E17E8600467AB9 /* libkmod.a */; };
+		71A0A5CA26E1493300530E0F /* VoodooInputTransducer.h in Headers */ = {isa = PBXBuildFile; fileRef = 71A0A5C626E1493300530E0F /* VoodooInputTransducer.h */; };
+		71A0A5CB26E1493300530E0F /* VoodooInputEvent.h in Headers */ = {isa = PBXBuildFile; fileRef = 71A0A5C726E1493300530E0F /* VoodooInputEvent.h */; };
+		71A0A5CC26E1493300530E0F /* VoodooInputMessages.h in Headers */ = {isa = PBXBuildFile; fileRef = 71A0A5C826E1493300530E0F /* VoodooInputMessages.h */; };
+		71A0A5CD26E1493300530E0F /* MultitouchHelpers.h in Headers */ = {isa = PBXBuildFile; fileRef = 71A0A5C926E1493300530E0F /* MultitouchHelpers.h */; };
 		840F104A16EFE42600E8C116 /* ApplePS2Device.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 840F104916EFE42600E8C116 /* ApplePS2Device.cpp */; };
 		84167820161B55B2002C60E6 /* VoodooPS2Controller.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8416781F161B55B2002C60E6 /* VoodooPS2Controller.cpp */; };
 		84167836161B5613002C60E6 /* VoodooPS2Keyboard.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 84167835161B5613002C60E6 /* VoodooPS2Keyboard.cpp */; };
@@ -24,7 +29,30 @@
 		84EB0AE516F0AD9600016108 /* ApplePS2MouseDevice.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 84833FA0161B627D00845294 /* ApplePS2MouseDevice.cpp */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		71CC94A226E81FFA00BEB0AC /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 84167808161B55B2002C60E6 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 8416782C161B5613002C60E6;
+			remoteInfo = VoodooPS2Keyboard;
+		};
+		71CC94A426E81FFA00BEB0AC /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 84167808161B55B2002C60E6 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 84167854161B56C4002C60E6;
+			remoteInfo = VoodooPS2Trackpad;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
+		719386E326E17E8600467AB9 /* libkmod.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libkmod.a; path = MacKernelSDK/Library/x86_64/libkmod.a; sourceTree = "<group>"; };
+		71A0A5C626E1493300530E0F /* VoodooInputTransducer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = VoodooInputTransducer.h; path = VoodooInput/Debug/VoodooInput.kext/Contents/Resources/VoodooInputMultitouch/VoodooInputTransducer.h; sourceTree = SOURCE_ROOT; };
+		71A0A5C726E1493300530E0F /* VoodooInputEvent.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = VoodooInputEvent.h; path = VoodooInput/Debug/VoodooInput.kext/Contents/Resources/VoodooInputMultitouch/VoodooInputEvent.h; sourceTree = SOURCE_ROOT; };
+		71A0A5C826E1493300530E0F /* VoodooInputMessages.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = VoodooInputMessages.h; path = VoodooInput/Debug/VoodooInput.kext/Contents/Resources/VoodooInputMultitouch/VoodooInputMessages.h; sourceTree = SOURCE_ROOT; };
+		71A0A5C926E1493300530E0F /* MultitouchHelpers.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MultitouchHelpers.h; path = VoodooInput/Debug/VoodooInput.kext/Contents/Resources/VoodooInputMultitouch/MultitouchHelpers.h; sourceTree = SOURCE_ROOT; };
+		71C22F1D26E183A100FE8589 /* VoodooPS2Common.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = VoodooPS2Common.h; sourceTree = "<group>"; };
 		8404565C161E3AAF00D74D7F /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		84045662161E3AD800D74D7F /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		84045665161E3AF900D74D7F /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
@@ -66,6 +94,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				719386E426E17E8600467AB9 /* libkmod.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -86,9 +115,21 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		7197CFC326E0DBE8005B9F34 /* VoodooInput Headers */ = {
+			isa = PBXGroup;
+			children = (
+				71A0A5C926E1493300530E0F /* MultitouchHelpers.h */,
+				71A0A5C726E1493300530E0F /* VoodooInputEvent.h */,
+				71A0A5C826E1493300530E0F /* VoodooInputMessages.h */,
+				71A0A5C626E1493300530E0F /* VoodooInputTransducer.h */,
+			);
+			path = "VoodooInput Headers";
+			sourceTree = "<group>";
+		};
 		84167806161B55B2002C60E6 = {
 			isa = PBXGroup;
 			children = (
+				719386E326E17E8600467AB9 /* libkmod.a */,
 				84167818161B55B2002C60E6 /* VoodooPS2Controller */,
 				8416782E161B5613002C60E6 /* VoodooPS2Keyboard */,
 				84167856161B56C4002C60E6 /* VoodooPS2Trackpad */,
@@ -172,9 +213,11 @@
 		84167856161B56C4002C60E6 /* VoodooPS2Trackpad */ = {
 			isa = PBXGroup;
 			children = (
+				7197CFC326E0DBE8005B9F34 /* VoodooInput Headers */,
 				84833FAC161B62A900845294 /* alps.h */,
 				84833FAB161B62A900845294 /* alps.cpp */,
 				84167857161B56C4002C60E6 /* Supporting Files */,
+				71C22F1D26E183A100FE8589 /* VoodooPS2Common.h */,
 			);
 			path = VoodooPS2Trackpad;
 			sourceTree = "<group>";
@@ -226,7 +269,11 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				71A0A5CB26E1493300530E0F /* VoodooInputEvent.h in Headers */,
+				71A0A5CD26E1493300530E0F /* MultitouchHelpers.h in Headers */,
 				84833FB2161B62A900845294 /* alps.h in Headers */,
+				71A0A5CA26E1493300530E0F /* VoodooInputTransducer.h in Headers */,
+				71A0A5CC26E1493300530E0F /* VoodooInputMessages.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -242,10 +289,13 @@
 				8416780F161B55B2002C60E6 /* Headers */,
 				84167810161B55B2002C60E6 /* Resources */,
 				84167811161B55B2002C60E6 /* Rez */,
+				71CC94A726E8215C00BEB0AC /* Archive */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				71CC94A326E81FFA00BEB0AC /* PBXTargetDependency */,
+				71CC94A526E81FFA00BEB0AC /* PBXTargetDependency */,
 			);
 			name = VoodooPS2Controller;
 			productName = VoodooPS2Controller;
@@ -273,6 +323,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 84167860161B56C4002C60E6 /* Build configuration list for PBXNativeTarget "VoodooPS2Trackpad" */;
 			buildPhases = (
+				71A0A5C526E1440600530E0F /* Bootstrap VoodooInput */,
 				8416784F161B56C4002C60E6 /* Sources */,
 				84167850161B56C4002C60E6 /* Frameworks */,
 				84167851161B56C4002C60E6 /* Headers */,
@@ -298,11 +349,11 @@
 			};
 			buildConfigurationList = 8416780B161B55B2002C60E6 /* Build configuration list for PBXProject "VoodooPS2Controller" */;
 			compatibilityVersion = "Xcode 8.0";
-			developmentRegion = English;
+			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				en,
-				English,
+				Base,
 			);
 			mainGroup = 84167806161B55B2002C60E6;
 			projectDirPath = "";
@@ -363,6 +414,45 @@
 		};
 /* End PBXRezBuildPhase section */
 
+/* Begin PBXShellScriptBuildPhase section */
+		71A0A5C526E1440600530E0F /* Bootstrap VoodooInput */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Bootstrap VoodooInput";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/bash;
+			shellScript = "if [ ! -f \"${PROJECT_DIR}/VoodooInput/Debug/VoodooInput.kext/Contents/Resources/VoodooInputMultitouch/VoodooInputEvent.h\" ]; then\n  cd \"${PROJECT_DIR}\"\n  rm -rf VoodooInput\n  src=$(/usr/bin/curl -Lfs https://raw.githubusercontent.com/acidanthera/VoodooInput/master/VoodooInput/Scripts/bootstrap.sh) && eval \"$src\" || exit 1\nfi\n";
+		};
+		71CC94A726E8215C00BEB0AC /* Archive */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = Archive;
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "cd \"${TARGET_BUILD_DIR}\"\nrm -rf \"${FULL_PRODUCT_NAME}/Contents/PlugIns/VoodooInput.kext\"\nmkdir -p \"${FULL_PRODUCT_NAME}/Contents/PlugIns\"\ncp -r \"${PROJECT_DIR}/VoodooInput/${CONFIGURATION}\"/* \"${FULL_PRODUCT_NAME}/Contents/PlugIns/\"\ndist=(\"$FULL_PRODUCT_NAME\")\nif [ -d \"$DWARF_DSYM_FILE_NAME\" ]; then\n  rm -rf dSYM\n  mkdir dSYM\n  mv \"$DWARF_DSYM_FILE_NAME\" dSYM/\n  find ${FULL_PRODUCT_NAME} -name *.dSYM -exec mv {} dSYM/ \\;\n  dist+=(dSYM);\nfi\n\narchive=\"${PRODUCT_NAME}-${MODULE_VERSION}-$(echo $CONFIGURATION | tr /a-z/ /A-Z/).zip\"\nrm -rf *.zip\nzip -qry -FS \"${archive}\" \"${dist[@]}\"\n";
+		};
+/* End PBXShellScriptBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		8416780D161B55B2002C60E6 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
@@ -393,6 +483,19 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		71CC94A326E81FFA00BEB0AC /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 8416782C161B5613002C60E6 /* VoodooPS2Keyboard */;
+			targetProxy = 71CC94A226E81FFA00BEB0AC /* PBXContainerItemProxy */;
+		};
+		71CC94A526E81FFA00BEB0AC /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 84167854161B56C4002C60E6 /* VoodooPS2Trackpad */;
+			targetProxy = 71CC94A426E81FFA00BEB0AC /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin PBXVariantGroup section */
 		8404565B161E3AAF00D74D7F /* InfoPlist.strings */ = {
@@ -426,6 +529,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = x86_64;
 				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
 				CLANG_USE_OPTIMIZATION_PROFILE = NO;
 				CLANG_WARN_BOOL_CONVERSION = YES;
@@ -437,12 +541,13 @@
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				CURRENT_PROJECT_VERSION = 6.0.0;
-				DEBUG_INFORMATION_FORMAT = dwarf;
+				CURRENT_PROJECT_VERSION = "";
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEPLOYMENT_LOCATION = NO;
 				DEPLOYMENT_POSTPROCESSING = YES;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = NO;
+				FRAMEWORK_SEARCH_PATHS = "$(PROJECT_DIR)/MacKernelSDK/Headers";
 				GCC_INLINES_ARE_PRIVATE_EXTERN = YES;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_OPTIMIZATION_LEVEL = fast;
@@ -459,10 +564,16 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				HEADER_SEARCH_PATHS = "$(PROJECT_DIR)/MacKernelSDK/Headers";
+				LIBRARY_SEARCH_PATHS = (
+					"$(PROJECT_DIR)/MacKernelSDK/Library/x86_64",
+					"$(PROJECT_DIR)/MacKernelSDK/Library/universal",
+				);
 				LLVM_LTO = YES_THIN;
 				"LLVM_LTO[arch=x86_64]" = YES_THIN;
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
-				MODULE_VERSION = 1.0.1;
+				MODULE_NAME = "";
+				MODULE_VERSION = 1.0.3;
 				ONLY_ACTIVE_ARCH = YES;
 				"OTHER_LDFLAGS[arch=x86_64]" = "-dead_strip";
 				PRODUCT_NAME = VoodooPS2Controller;
@@ -474,6 +585,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = x86_64;
 				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
 				CLANG_USE_OPTIMIZATION_PROFILE = NO;
 				CLANG_WARN_BOOL_CONVERSION = YES;
@@ -485,11 +597,12 @@
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				CURRENT_PROJECT_VERSION = 6.0.0;
-				DEBUG_INFORMATION_FORMAT = dwarf;
+				CURRENT_PROJECT_VERSION = "";
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEPLOYMENT_POSTPROCESSING = YES;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = NO;
+				FRAMEWORK_SEARCH_PATHS = "$(PROJECT_DIR)/MacKernelSDK/Headers";
 				GCC_INLINES_ARE_PRIVATE_EXTERN = YES;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_OPTIMIZATION_LEVEL = fast;
@@ -500,10 +613,16 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				HEADER_SEARCH_PATHS = "$(PROJECT_DIR)/MacKernelSDK/Headers";
+				LIBRARY_SEARCH_PATHS = (
+					"$(PROJECT_DIR)/MacKernelSDK/Library/x86_64",
+					"$(PROJECT_DIR)/MacKernelSDK/Library/universal",
+				);
 				LLVM_LTO = YES_THIN;
 				"LLVM_LTO[arch=x86_64]" = YES_THIN;
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
-				MODULE_VERSION = 1.0.1;
+				MODULE_NAME = "";
+				MODULE_VERSION = 1.0.3;
 				ONLY_ACTIVE_ARCH = YES;
 				"OTHER_LDFLAGS[arch=x86_64]" = "-dead_strip";
 				PRODUCT_NAME = VoodooPS2Controller;
@@ -514,14 +633,19 @@
 		84167825161B55B2002C60E6 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_IDENTITY = "";
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1.0.0;
+				CURRENT_PROJECT_VERSION = "";
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				INFOPLIST_FILE = "VoodooPS2Controller/VoodooPS2Controller-Info.plist";
-				MARKETING_VERSION = 1.0.0;
-				MODULE_NAME = com.rehabman.driver.VoodooPS2Controller;
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/MacKernelSDK/Library/universal",
+					"$(PROJECT_DIR)/MacKernelSDK/Library/x86_64",
+				);
+				MODULE_NAME = com.skyrilhd.VoodooPS2Controller;
 				OTHER_CFLAGS = "-fno-stack-protector";
-				PRODUCT_BUNDLE_IDENTIFIER = org.rehabman.voodoo.driver.PS2Controller;
+				PRODUCT_BUNDLE_IDENTIFIER = com.skyrilhd.PS2Controller;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRIP_INSTALLED_PRODUCT = YES;
 				STRIP_STYLE = "non-global";
@@ -531,14 +655,19 @@
 		84167826161B55B2002C60E6 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_IDENTITY = "";
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1.0.0;
+				CURRENT_PROJECT_VERSION = "";
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				INFOPLIST_FILE = "VoodooPS2Controller/VoodooPS2Controller-Info.plist";
-				MARKETING_VERSION = 1.0.0;
-				MODULE_NAME = com.rehabman.driver.VoodooPS2Controller;
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/MacKernelSDK/Library/universal",
+					"$(PROJECT_DIR)/MacKernelSDK/Library/x86_64",
+				);
+				MODULE_NAME = com.skyrilhd.VoodooPS2Controller;
 				OTHER_CFLAGS = "-fno-stack-protector";
-				PRODUCT_BUNDLE_IDENTIFIER = org.rehabman.voodoo.driver.PS2Controller;
+				PRODUCT_BUNDLE_IDENTIFIER = com.skyrilhd.PS2Controller;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRIP_INSTALLED_PRODUCT = YES;
 				STRIP_STYLE = "non-global";
@@ -548,15 +677,15 @@
 		84167839161B5613002C60E6 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_IDENTITY = "";
 				COMBINE_HIDPI_IMAGES = YES;
 				CONFIGURATION_BUILD_DIR = "$(BUILD_DIR)/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/VoodooPS2Controller.kext/Contents/PlugIns";
-				CURRENT_PROJECT_VERSION = 1.0.0;
+				CURRENT_PROJECT_VERSION = "";
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				INFOPLIST_FILE = "VoodooPS2Keyboard/VoodooPS2Keyboard-Info.plist";
-				MARKETING_VERSION = 1.0.0;
-				MODULE_NAME = com.rehabman.driver.VoodooPS2Keyboard;
+				MODULE_NAME = com.skyrilhd.VoodooPS2Keyboard;
 				OTHER_CFLAGS = "-fno-stack-protector";
-				PRODUCT_BUNDLE_IDENTIFIER = org.rehabman.voodoo.driver.PS2Keyboard;
+				PRODUCT_BUNDLE_IDENTIFIER = com.skyrilhd.PS2Keyboard;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRIP_INSTALLED_PRODUCT = YES;
 				STRIP_STYLE = "non-global";
@@ -566,15 +695,15 @@
 		8416783A161B5613002C60E6 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_IDENTITY = "";
 				COMBINE_HIDPI_IMAGES = YES;
 				CONFIGURATION_BUILD_DIR = "$(BUILD_DIR)/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/VoodooPS2Controller.kext/Contents/PlugIns";
-				CURRENT_PROJECT_VERSION = 1.0.0;
+				CURRENT_PROJECT_VERSION = "";
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				INFOPLIST_FILE = "VoodooPS2Keyboard/VoodooPS2Keyboard-Info.plist";
-				MARKETING_VERSION = 1.0.0;
-				MODULE_NAME = com.rehabman.driver.VoodooPS2Keyboard;
+				MODULE_NAME = com.skyrilhd.VoodooPS2Keyboard;
 				OTHER_CFLAGS = "-fno-stack-protector";
-				PRODUCT_BUNDLE_IDENTIFIER = org.rehabman.voodoo.driver.PS2Keyboard;
+				PRODUCT_BUNDLE_IDENTIFIER = com.skyrilhd.PS2Keyboard;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRIP_INSTALLED_PRODUCT = YES;
 				STRIP_STYLE = "non-global";
@@ -584,15 +713,20 @@
 		84167861161B56C4002C60E6 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_IDENTITY = "";
 				COMBINE_HIDPI_IMAGES = YES;
 				CONFIGURATION_BUILD_DIR = "$(BUILD_DIR)/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/VoodooPS2Controller.kext/Contents/PlugIns";
-				CURRENT_PROJECT_VERSION = 1.0.0;
+				CURRENT_PROJECT_VERSION = "";
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				HEADER_SEARCH_PATHS = "$(PROJECT_DIR)/VoodooInput/Debug/VoodooInput.kext/Contents/Resources";
 				INFOPLIST_FILE = "VoodooPS2Trackpad/VoodooPS2Trackpad-Info.plist";
-				MARKETING_VERSION = 1.0.0;
-				MODULE_NAME = com.rehabman.driver.VoodooPS2Trackpad;
+				LIBRARY_SEARCH_PATHS = (
+					"$(PROJECT_DIR)/MacKernelSDK/Library/universal",
+					"$(PROJECT_DIR)/MacKernelSDK/Library/x86_64",
+				);
+				MODULE_NAME = com.skyrilhd.VoodooPS2Trackpad;
 				OTHER_CFLAGS = "-fno-stack-protector";
-				PRODUCT_BUNDLE_IDENTIFIER = org.rehabman.voodoo.driver.PS2Trackpad;
+				PRODUCT_BUNDLE_IDENTIFIER = com.skyrilhd.PS2Trackpad;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRIP_INSTALLED_PRODUCT = YES;
 				STRIP_STYLE = "non-global";
@@ -602,15 +736,20 @@
 		84167862161B56C4002C60E6 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_IDENTITY = "";
 				COMBINE_HIDPI_IMAGES = YES;
 				CONFIGURATION_BUILD_DIR = "$(BUILD_DIR)/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/VoodooPS2Controller.kext/Contents/PlugIns";
-				CURRENT_PROJECT_VERSION = 1.0.0;
+				CURRENT_PROJECT_VERSION = "";
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				HEADER_SEARCH_PATHS = "$(PROJECT_DIR)/VoodooInput/Debug/VoodooInput.kext/Contents/Resources";
 				INFOPLIST_FILE = "VoodooPS2Trackpad/VoodooPS2Trackpad-Info.plist";
-				MARKETING_VERSION = 1.0.0;
-				MODULE_NAME = com.rehabman.driver.VoodooPS2Trackpad;
+				LIBRARY_SEARCH_PATHS = (
+					"$(PROJECT_DIR)/MacKernelSDK/Library/universal",
+					"$(PROJECT_DIR)/MacKernelSDK/Library/x86_64",
+				);
+				MODULE_NAME = com.skyrilhd.VoodooPS2Trackpad;
 				OTHER_CFLAGS = "-fno-stack-protector";
-				PRODUCT_BUNDLE_IDENTIFIER = org.rehabman.voodoo.driver.PS2Trackpad;
+				PRODUCT_BUNDLE_IDENTIFIER = com.skyrilhd.PS2Trackpad;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRIP_INSTALLED_PRODUCT = YES;
 				STRIP_STYLE = "non-global";

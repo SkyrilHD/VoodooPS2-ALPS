@@ -31,8 +31,10 @@
 
 #ifdef DEBUG_MSG
 #define DEBUG_LOG(args...)  do { IOLog(args); } while (0)
+#define INFO_LOG(args...)  do { IOLog(args); IOSleep(1000); } while (0)
 #else
 #define DEBUG_LOG(args...)  do { } while (0)
+#define INFO_LOG(args...)  do { } while (0)
 #endif
 
 #define countof(x) (sizeof((x))/sizeof((x)[0]))
@@ -585,8 +587,8 @@ protected:
     PS2DeviceType       _deviceType;
     
 public:
-    virtual bool attach(IOService * provider);
-    virtual void detach(IOService * provider);
+    bool attach(IOService * provider) override;
+    void detach(IOService * provider) override;
     
     // Interrupt Handling Routines
     

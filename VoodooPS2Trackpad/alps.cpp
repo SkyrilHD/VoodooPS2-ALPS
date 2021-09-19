@@ -20,22 +20,29 @@
  * @APPLE_LICENSE_HEADER_END@
  */
 
+#include <IOKit/IOService.h>
+
 #include "alps.h"
 #include <IOKit/IOLib.h>
 #include <IOKit/hidsystem/IOHIDParameter.h>
 #include <IOKit/IOWorkLoop.h>
 #include <IOKit/IOTimerEventSource.h>
 #include "VoodooPS2Controller.h"
+#include "VoodooInputMultitouch/VoodooInputTransducer.h"
+#include "VoodooInputMultitouch/VoodooInputMessages.h"
 
 enum {
     kTapEnabled = 0x01
 };
 
 #define ARRAY_SIZE(x)    (sizeof(x)/sizeof(x[0]))
-#define MAX(X,Y)         ((X) > (Y) ? (X) : (Y))
 #define abs(x) ((x) < 0 ? -(x) : (x))
 #define BIT(x) (1 << (x))
 
+
+/* ============================================================================================== */
+/* ===============================||\\ alps.c Definitions //||=================================== */
+/* ============================================================================================== */
 
 /*
  * Definitions for ALPS version 3 and 4 command mode protocol
@@ -111,46 +118,76 @@ static const struct alps_nibble_commands alps_v6_nibble_commands[] = {
 #define ALPS_FW_BK_1            0x10    /* front & back buttons present */
 #define ALPS_FW_BK_2            0x20    /* front & back buttons present */
 #define ALPS_FOUR_BUTTONS       0x40    /* 4 direction button present */
-#define ALPS_PS2_INTERLEAVED    0x80    /* 3-byte PS/2 packet interleaved with
-6-byte ALPS packet */
+#define ALPS_PS2_INTERLEAVED    0x80    /* 3-byte PS/2 packet interleaved with 6-byte ALPS packet */
 #define ALPS_STICK_BITS		    0x100	/* separate stick button bits */
 #define ALPS_BUTTONPAD		    0x200	/* device is a clickpad */
 #define ALPS_DUALPOINT_WITH_PRESSURE	0x400	/* device can report trackpoint pressure */
 
 
 static const struct alps_model_info alps_model_data[] = {
-    { { 0x32, 0x02, 0x14 }, 0x00, ALPS_PROTO_V2, 0xf8, 0xf8, ALPS_PASS | ALPS_DUALPOINT },
-    /* Toshiba Salellite Pro M10 */
-    { { 0x33, 0x02, 0x0a }, 0x00, ALPS_PROTO_V1, 0x88, 0xf8, 0 },               /* UMAX-530T */
-    { { 0x53, 0x02, 0x0a }, 0x00, ALPS_PROTO_V2, 0xf8, 0xf8, 0 },
-    { { 0x53, 0x02, 0x14 }, 0x00, ALPS_PROTO_V2, 0xf8, 0xf8, 0 },
-    { { 0x60, 0x03, 0xc8 }, 0x00, ALPS_PROTO_V2, 0xf8, 0xf8, 0 },               /* HP ze1115 */
-    { { 0x63, 0x02, 0x0a }, 0x00, ALPS_PROTO_V2, 0xf8, 0xf8, 0 },
-    { { 0x63, 0x02, 0x14 }, 0x00, ALPS_PROTO_V2, 0xf8, 0xf8, 0 },
-    { { 0x63, 0x02, 0x28 }, 0x00, ALPS_PROTO_V2, 0xf8, 0xf8, ALPS_FW_BK_2 },    /* Fujitsu Siemens S6010 */
-    { { 0x63, 0x02, 0x3c }, 0x00, ALPS_PROTO_V2, 0x8f, 0x8f, ALPS_WHEEL },      /* Toshiba Satellite S2400-103 */
-    { { 0x63, 0x02, 0x50 }, 0x00, ALPS_PROTO_V2, 0xef, 0xef, ALPS_FW_BK_1 },    /* NEC Versa L320 */
-    { { 0x63, 0x02, 0x64 }, 0x00, ALPS_PROTO_V2, 0xf8, 0xf8, 0 },
-    { { 0x63, 0x03, 0xc8 }, 0x00, ALPS_PROTO_V2, 0xf8, 0xf8, ALPS_PASS | ALPS_DUALPOINT },
-    /* Dell Latitude D800 */
-    { { 0x73, 0x00, 0x0a }, 0x00, ALPS_PROTO_V2, 0xf8, 0xf8, ALPS_DUALPOINT },  /* ThinkPad R61 8918-5QG */
-    { { 0x73, 0x02, 0x0a }, 0x00, ALPS_PROTO_V2, 0xf8, 0xf8, 0 },
-    { { 0x73, 0x02, 0x14 }, 0x00, ALPS_PROTO_V2, 0xf8, 0xf8, ALPS_FW_BK_2 },    /* Ahtec Laptop */
-    { { 0x20, 0x02, 0x0e }, 0x00, ALPS_PROTO_V2, 0xf8, 0xf8, ALPS_PASS | ALPS_DUALPOINT },
-    /* XXX */
-    { { 0x22, 0x02, 0x0a }, 0x00, ALPS_PROTO_V2, 0xf8, 0xf8, ALPS_PASS | ALPS_DUALPOINT },
-    { { 0x22, 0x02, 0x14 }, 0x00, ALPS_PROTO_V2, 0xff, 0xff, ALPS_PASS | ALPS_DUALPOINT },
-    /* Dell Latitude D600 */
-    /* Dell Latitude E5500, E6400, E6500, Precision M4400 */
-    { { 0x62, 0x02, 0x14 }, 0x00, ALPS_PROTO_V2, 0xcf, 0xcf,
-        ALPS_PASS | ALPS_DUALPOINT | ALPS_PS2_INTERLEAVED },
-    { { 0x73, 0x02, 0x50 }, 0x00, ALPS_PROTO_V2, 0xcf, 0xcf, ALPS_FOUR_BUTTONS },
-    /* Dell Vostro 1400 */
-    { { 0x52, 0x01, 0x14 }, 0x00, ALPS_PROTO_V2, 0xff, 0xff,
-        ALPS_PASS | ALPS_DUALPOINT | ALPS_PS2_INTERLEAVED },
-    /* Toshiba Tecra A11-11L */
-    { { 0x73, 0x02, 0x64 }, 0x8a, ALPS_PROTO_V4, 0x8f, 0x8f, 0 },
+    /*
+     * XXX This entry is suspicious. First byte has zero lower nibble,
+     * which is what a normal mouse would report. Also, the value 0x0e
+     * isn't valid per PS/2 spec.
+     */
+    { { 0x20, 0x02, 0x0e }, { ALPS_PROTO_V2, 0xf8, 0xf8, ALPS_PASS | ALPS_DUALPOINT } },
+
+    { { 0x22, 0x02, 0x0a }, { ALPS_PROTO_V2, 0xf8, 0xf8, ALPS_PASS | ALPS_DUALPOINT } },
+    { { 0x22, 0x02, 0x14 }, { ALPS_PROTO_V2, 0xff, 0xff, ALPS_PASS | ALPS_DUALPOINT } },    /* Dell Latitude D600 */
+    { { 0x32, 0x02, 0x14 }, { ALPS_PROTO_V2, 0xf8, 0xf8, ALPS_PASS | ALPS_DUALPOINT } },    /* Toshiba Salellite Pro M10 */
+    { { 0x33, 0x02, 0x0a }, { ALPS_PROTO_V1, 0x88, 0xf8, 0 } },                /* UMAX-530T */
+    { { 0x52, 0x01, 0x14 }, { ALPS_PROTO_V2, 0xff, 0xff,
+        ALPS_PASS | ALPS_DUALPOINT | ALPS_PS2_INTERLEAVED } },                /* Toshiba Tecra A11-11L */
+    { { 0x53, 0x02, 0x0a }, { ALPS_PROTO_V2, 0xf8, 0xf8, 0 } },
+    { { 0x53, 0x02, 0x14 }, { ALPS_PROTO_V2, 0xf8, 0xf8, 0 } },
+    { { 0x60, 0x03, 0xc8 }, { ALPS_PROTO_V2, 0xf8, 0xf8, 0 } },                /* HP ze1115 */
+    { { 0x62, 0x02, 0x14 }, { ALPS_PROTO_V2, 0xcf, 0xcf,
+        ALPS_PASS | ALPS_DUALPOINT | ALPS_PS2_INTERLEAVED } },                /* Dell Latitude E5500, E6400, E6500, Precision M4400 */
+    { { 0x63, 0x02, 0x0a }, { ALPS_PROTO_V2, 0xf8, 0xf8, 0 } },
+    { { 0x63, 0x02, 0x14 }, { ALPS_PROTO_V2, 0xf8, 0xf8, 0 } },
+    { { 0x63, 0x02, 0x28 }, { ALPS_PROTO_V2, 0xf8, 0xf8, ALPS_FW_BK_2 } },            /* Fujitsu Siemens S6010 */
+    { { 0x63, 0x02, 0x3c }, { ALPS_PROTO_V2, 0x8f, 0x8f, ALPS_WHEEL } },            /* Toshiba Satellite S2400-103 */
+    { { 0x63, 0x02, 0x50 }, { ALPS_PROTO_V2, 0xef, 0xef, ALPS_FW_BK_1 } },            /* NEC Versa L320 */
+    { { 0x63, 0x02, 0x64 }, { ALPS_PROTO_V2, 0xf8, 0xf8, 0 } },
+    { { 0x63, 0x03, 0xc8 }, { ALPS_PROTO_V2, 0xf8, 0xf8, ALPS_PASS | ALPS_DUALPOINT } },    /* Dell Latitude D800 */
+    { { 0x73, 0x00, 0x0a }, { ALPS_PROTO_V2, 0xf8, 0xf8, ALPS_DUALPOINT } },        /* ThinkPad R61 8918-5QG */
+    { { 0x73, 0x00, 0x14 }, { ALPS_PROTO_V6, 0xff, 0xff, ALPS_DUALPOINT } },        /* Dell XT2 */
+    { { 0x73, 0x02, 0x0a }, { ALPS_PROTO_V2, 0xf8, 0xf8, 0 } },
+    { { 0x73, 0x02, 0x14 }, { ALPS_PROTO_V2, 0xf8, 0xf8, ALPS_FW_BK_2 } },            /* Ahtec Laptop */
+    { { 0x73, 0x02, 0x50 }, { ALPS_PROTO_V2, 0xcf, 0xcf, ALPS_FOUR_BUTTONS } },        /* Dell Vostro 1400 */
 };
+
+/*
+static const struct alps_protocol_info alps_v3_protocol_data = {
+    ALPS_PROTO_V3, 0x8f, 0x8f, ALPS_DUALPOINT | ALPS_DUALPOINT_WITH_PRESSURE
+};
+
+static const struct alps_protocol_info alps_v3_rushmore_data = {
+    ALPS_PROTO_V3_RUSHMORE, 0x8f, 0x8f, ALPS_DUALPOINT | ALPS_DUALPOINT_WITH_PRESSURE
+};
+
+static const struct alps_protocol_info alps_v4_protocol_data = {
+    ALPS_PROTO_V4, 0x8f, 0x8f, 0
+};
+
+static const struct alps_protocol_info alps_v5_protocol_data = {
+    ALPS_PROTO_V5, 0xc8, 0xd8, 0
+};
+
+static const struct alps_protocol_info alps_v7_protocol_data = {
+    ALPS_PROTO_V7, 0x48, 0x48, ALPS_DUALPOINT | ALPS_DUALPOINT_WITH_PRESSURE
+};
+
+static const struct alps_protocol_info alps_v8_protocol_data = {
+    ALPS_PROTO_V8, 0x18, 0x18, 0
+};
+
+static const struct alps_protocol_info alps_v9_protocol_data = {
+    ALPS_PROTO_V9, 0xc8, 0xc8, 0
+};
+*/
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 // =============================================================================
 // ALPS Class Implementation  //////////////////////////////////////////////////
@@ -223,6 +260,18 @@ bool ALPS::deviceSpecificInit() {
         goto init_fail;
     }
     
+    // init my stuff
+    memset(&fingerStates, 0, MAX_TOUCHES * sizeof(struct alps_hw_state));
+    // agmFingerCount = 0;
+    lastFingerCount = 0;
+    hadLiftFinger = false;
+    wasSkipped = false;
+    for (int i = 0; i < MAX_TOUCHES; i++)
+        fingerStates[i].virtualFingerIndex = -1;
+    
+    memset(freeFingerTypes, true, kMT2FingerTypeCount);
+    freeFingerTypes[kMT2FingerTypeUndefined] = false;
+    
     return true;
     
 init_fail:
@@ -233,7 +282,6 @@ init_fail:
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-/* Link with Base Driver */
 bool ALPS::init(OSDictionary *dict) {
     
     //
@@ -244,6 +292,8 @@ bool ALPS::init(OSDictionary *dict) {
     if (!super::init(dict)) {
         return false;
     }
+    
+    memset(&inputEvent, 0, sizeof(VoodooInputEvent));
     
     // find config specific to Platform Profile
     OSDictionary* list = OSDynamicCast(OSDictionary, dict->getObject(kPlatformProfile));
@@ -271,79 +321,29 @@ bool ALPS::init(OSDictionary *dict) {
     _packetByteCount = 0;
     _lastdata = 0;
     _cmdGate = 0;
-    
+
     // set defaults for configuration items
     
-    //z_finger = 0;
     z_finger=45;
-    divisorx=divisory=1;
-    ledge=1700;
-    redge=5200;
-    tedge=4200;
-    bedge=1700;
-    vscrolldivisor=30;
-    hscrolldivisor=30;
-    cscrolldivisor=0;
-    ctrigger=0;
-    centerx=3000;
-    centery=3000;
-    maxtaptime=130000000;
-    maxdragtime=230000000;
-    hsticky=0;
-    vsticky=0;
-    wsticky=0;
-    tapstable=1;
-    wlimit=9;
-    wvdivisor=30;
-    whdivisor=30;
-    clicking=false;
-    rtap=true;
-    dragging=true;
     threefingervertswipe=true;
     threefingerhorizswipe=true;
-    draglock=false;
     draglocktemp=0;
-    hscroll=vscroll=true;
-    scroll=true;
-    outzone_wt = palm = palm_wt = false;
-    zlimit = 100;
     noled = false;
     maxaftertyping = 500000000;
     mousemultiplierx = 20;
     mousemultipliery = 20;
-    mousescrollmultiplierx = 20;
-    mousescrollmultipliery = 20;
-    mousemiddlescroll = true;
     wakedelay = 1000;
     skippassthru = false;
-    tapthreshx = tapthreshy = 50;
-    dblthreshx = dblthreshy = 100;
-    zonel = 1700;  zoner = 5200;
-    zonet = 99999; zoneb = 0;
-    diszl = 0; diszr = 1700;
-    diszt = 99999; diszb = 4200;
-    diszctrl = 0;
     _resolution = 2300;
     _scrollresolution = 2300;
-    swipedx = 400;
-    swipedy = 1200;
-    rczl = 3800; rczt = 2000;
-    rczr = 99999; rczb = 0;
     _buttonCount = 2;
-    swapdoubletriple = false;
-    draglocktempmask = 0x0100010; // default is Command key
-    clickpadclicktime = 300000000; // 300ms default
-    clickpadtrackboth = true;
     
     bogusdxthresh = 400;
     bogusdythresh = 350;
     
-    scrolldxthresh = 10;
-    scrolldythresh = 10;
-    
-    immediateclick = true;
-    
     xupmm = yupmm = 50; // 50 is just arbitrary, but same
+    minXOverride = maxXOverride = minYOverride = maxYOverride = -1;
+    margin_size_x = margin_size_y = 0;
     
     _extendedwmode=false;
     
@@ -370,7 +370,6 @@ bool ALPS::init(OSDictionary *dict) {
     _pendingbuttons = 0;
     _buttontime = 0;
     _maxmiddleclicktime = 100000000;
-    _fakemiddlebutton = true;
     
     ignoredeltas=0;
     ignoredeltasstart=0;
@@ -385,39 +384,22 @@ bool ALPS::init(OSDictionary *dict) {
     clickpadtype = 0;
     _clickbuttons = 0;
     _reportsv = false;
-    mousecount = 0;
     usb_mouse_stops_trackpad = true;
     _modifierdown = 0;
-    scrollzoommask = 0;
+    
+    _forceTouchMode = FORCE_TOUCH_DISABLED;
+    _forceTouchPressureThreshold = 100;
     
     inSwipeLeft=inSwipeRight=inSwipeDown=inSwipeUp=0;
     xmoved=ymoved=0;
     
-    momentumscroll = true;
     scrollTimer = 0;
-    momentumscrolltimer = 10000000;
-    momentumscrollthreshy = 7;
-    momentumscrollmultiplier = 98;
-    momentumscrolldivisor = 100;
-    momentumscrollsamplesmin = 3;
-    momentumscrollcurrent = 0;
     
-    xscrollTimer = 0;
-    xmomentumscrollcurrent = 0;
-    
-    dragexitdelay = 100000000;
     dragTimer = 0;
-    
-    touchmode=MODE_NOTOUCH;
     
     skippyThresh=0;
     lastdx=0;
     lastdy=0;
-    fourfingersdetected=false;
-    fingerzooming = 0;
-    threefingerdrag=false;
-    //notificationcenter=false;
-    //rightclick_corner=0;
     
     IOLog("VoodooPS2TouchPad Base Driver loaded...\n");
     
@@ -440,16 +422,22 @@ bool ALPS::init(OSDictionary *dict) {
     yrest=0;
     lastbuttons=0;
     
-    // Default Configuration
-    clicking=true;
-    rtap=true;
-    dragging=true;
-    scroll=true;
-    hscroll=true;
-    momentumscroll=true;
-    outzone_wt=palm=palm_wt=true;
-    
     return true;
+}
+
+bool ALPS::handleOpen(IOService *forClient, IOOptionBits options, void *arg) {
+    if (forClient && forClient->getProperty(VOODOO_INPUT_IDENTIFIER)) {
+        voodooInputInstance = forClient;
+        voodooInputInstance->retain();
+        
+        return true;
+    }
+    return super::handleOpen(forClient, options, arg);
+}
+
+void ALPS::handleClose(IOService *forClient, IOOptionBits options) {
+    OSSafeReleaseNULL(voodooInputInstance);
+    super::handleClose(forClient, options);
 }
 
 bool ALPS::start( IOService * provider )
@@ -458,14 +446,14 @@ bool ALPS::start( IOService * provider )
     // The driver has been instructed to start. This is called after a
     // successful probe and match.
     //
-    
+
     if (!super::start(provider))
         return false;
-    
+
     //
     // Maintain a pointer to and retain the provider object.
     //
-    
+
     _device = (ApplePS2MouseDevice *) provider;
     _device->retain();
     
@@ -476,7 +464,7 @@ bool ALPS::start( IOService * provider )
     // trackpad acceleration settings from user space.  Without this, tracking
     // speed adjustments from the mouse prefs panel have no effect.
     //
-    
+
     setProperty(kIOHIDPointerAccelerationTypeKey, kIOHIDTrackpadAccelerationType);
     setProperty(kIOHIDScrollAccelerationTypeKey, kIOHIDTrackpadScrollAccelerationKey);
     setProperty(kIOHIDScrollResolutionKey, _scrollresolution << 16, 32);
@@ -495,54 +483,13 @@ bool ALPS::start( IOService * provider )
         return false;
     }
     
-    //
-    // Lock the controller during initialization
-    //
-    
-    _device->lock();
-    
-    //
-    // Setup button timer event source
-    //
-    if (_buttonCount >= 3)
-    {
-        _buttonTimer = IOTimerEventSource::timerEventSource(this, OSMemberFunctionCast(IOTimerEventSource::Action, this, &ALPS::onButtonTimer));
-        if (!_buttonTimer)
-        {
-            _device->unlock();
-            _device->release();
-            _device = nullptr;
-            return false;
-        }
-        pWorkLoop->addEventSource(_buttonTimer);
-    }
-    
-    //
-    // Setup dragTimer event source
-    //
-    if (dragexitdelay)
-    {
-        dragTimer = IOTimerEventSource::timerEventSource(this, OSMemberFunctionCast(IOTimerEventSource::Action, this, &ALPS::onDragTimer));
-        if (dragTimer)
-            pWorkLoop->addEventSource(dragTimer);
-    }
-    
-    scrollDebounceTIMER = IOTimerEventSource::timerEventSource(this, OSMemberFunctionCast(IOTimerEventSource::Action, this, &ALPS::onScrollDebounceTimer));
-    if(scrollDebounceTIMER)
-        pWorkLoop->addEventSource(scrollDebounceTIMER);
-    
     pWorkLoop->addEventSource(_cmdGate);
     
     //
-    // Setup scrolltimer event source
+    // Lock the controller during initialization
     //
-    scrollTimer = IOTimerEventSource::timerEventSource(this, OSMemberFunctionCast(IOTimerEventSource::Action, this, &ALPS::onScrollTimer));
-    if (scrollTimer)
-        pWorkLoop->addEventSource(scrollTimer);
-    
-    xscrollTimer = IOTimerEventSource::timerEventSource(this, OSMemberFunctionCast(IOTimerEventSource::Action, this, &ALPS::onScrollTimerX));
-    if (xscrollTimer)
-        pWorkLoop->addEventSource(xscrollTimer);
+
+    _device->lock();
     
     //
     // Perform any implementation specific device initialization
@@ -550,10 +497,9 @@ bool ALPS::start( IOService * provider )
     if (!deviceSpecificInit()) {
         _device->unlock();
         _device->release();
-        // TODO: any other cleanup?
         return false;
     }
-    
+
     //
     // Install our driver's interrupt handler, for asynchronous data delivery.
     //
@@ -571,7 +517,7 @@ bool ALPS::start( IOService * provider )
     //
     
     _device->installPowerControlAction( this,
-                                       OSMemberFunctionCast(PS2PowerControlAction, this, &ALPS::setDevicePowerState) );
+        OSMemberFunctionCast(PS2PowerControlAction, this, &ALPS::setDevicePowerState) );
     _powerControlHandlerInstalled = true;
     
     //
@@ -579,7 +525,7 @@ bool ALPS::start( IOService * provider )
     //
     
     _device->installMessageAction( this,
-                                  OSMemberFunctionCast(PS2MessageAction, this, &ALPS::receiveMessage));
+        OSMemberFunctionCast(PS2MessageAction, this, &ALPS::receiveMessage));
     _messageHandlerInstalled = true;
     
     return true;
@@ -595,9 +541,9 @@ void ALPS::stop(IOService *provider) {
     // connections to other service objects now (ie. no registered actions,
     // no pointers and retains to objects, etc), if any.
     //
-    
+
     assert(_device == provider);
-    
+
     // free up timer for scroll momentum
     IOWorkLoop* pWorkLoop = getWorkLoop();
     if (pWorkLoop)
@@ -607,12 +553,6 @@ void ALPS::stop(IOService *provider) {
             pWorkLoop->removeEventSource(scrollTimer);
             scrollTimer->release();
             scrollTimer = 0;
-        }
-        if (xscrollTimer)
-        {
-            pWorkLoop->removeEventSource(xscrollTimer);
-            xscrollTimer->release();
-            xscrollTimer = 0;
         }
         if (_buttonTimer)
         {
@@ -631,17 +571,17 @@ void ALPS::stop(IOService *provider) {
     //
     // Uninstall the interrupt handler.
     //
-    
+
     if (_interruptHandlerInstalled)
     {
         _device->uninstallInterruptAction();
         _interruptHandlerInstalled = false;
     }
-    
+
     //
     // Uninstall the power control handler.
     //
-    
+
     if (_powerControlHandlerInstalled)
     {
         _device->uninstallPowerControlAction();
@@ -649,7 +589,7 @@ void ALPS::stop(IOService *provider) {
     }
     
     //
-    // Uinstall message handler.
+    // Uninstall message handler.
     //
     if (_messageHandlerInstalled)
     {
@@ -658,7 +598,7 @@ void ALPS::stop(IOService *provider) {
     }
     
     resetMouse();
-    
+
     //
     // Release the pointer to the provider object.
     //
@@ -695,11 +635,12 @@ bool ALPS::resetMouse() {
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 /* ============================================================================================== */
-/* ===============================||\\alps.c from linux 4.4//||================================== */
+/* ==============================||\\ alps.c Implementation //||================================= */
 /* ============================================================================================== */
 
+
 void ALPS::alps_process_packet_v1_v2(UInt8 *packet) {
-    int x, y, z, ges, fin, left, right, middle, buttons = 0, fingers = 0;
+    int x, y, z, ges, fin, left, right, middle, fingers = 0;
     int back = 0, forward = 0;
     uint64_t now_abs;
     
@@ -737,18 +678,13 @@ void ALPS::alps_process_packet_v1_v2(UInt8 *packet) {
     ges = packet[2] & 1;
     fin = packet[2] & 2;
     
-    /* To make button reporting compatible with rest of driver */
-    buttons |= left ? 0x01 : 0;
-    buttons |= right ? 0x02 : 0;
-    buttons |= middle ? 0x04 : 0;
-    
-    
     if ((priv.flags & ALPS_DUALPOINT) && z == 127) {
         int dx, dy;
         dx = x > 383 ? (x - 768) : x;
         dy = -(y > 255 ? (y - 512) : y);
         
-        dispatchRelativePointerEventX(dx, dy, buttons, now_abs);
+        // TODO: fix me
+        //dispatchRelativePointerEventX(dx, dy, buttons, now_abs);
         return;
     }
     
@@ -764,14 +700,6 @@ void ALPS::alps_process_packet_v1_v2(UInt8 *packet) {
         z = 40;
     }
     
-    /*
-     * A "tap and drag" operation is reported by the hardware as a transition
-     * from (!fin && ges) to (fin && ges). This should be translated to the
-     * sequence Z>0, Z==0, Z>0, so the Z==0 event has to be generated manually.
-     */
-    if (ges && fin && !priv.prev_fin) {
-        touchmode = MODE_DRAG;
-    }
     priv.prev_fin = fin;
     
     if (z > 30) {
@@ -782,7 +710,17 @@ void ALPS::alps_process_packet_v1_v2(UInt8 *packet) {
         fingers = 0;
     }
     
-    dispatchEventsWithInfo(x, y, z, fingers, buttons);
+    struct alps_fields f;
+    f.mt[0].x = x;
+    f.mt[0].y = y;
+    f.pressure = z;
+    f.fingers = fingers;
+    f.left = left;
+    f.right = right;
+    f.middle = middle;
+    
+    // MARK: Still needs to be tested
+    alps_parse_hw_state(_ringBuffer.tail(), f);
     
     if (priv.flags & ALPS_WHEEL) {
         int scrollAmount = ((packet[2] << 1) & 0x08) - ((packet[0] >> 4) & 0x07);
@@ -929,27 +867,27 @@ int ALPS::alps_process_bitmap(struct alps_data *priv,
     
     fields->mt[0] = fields->st;
     fields->mt[1] = corner[priv->second_touch];
-    
+  
 #if DEBUG
     IOLog("ALPS: BITMAP\n");
     
     unsigned int ymap = fields->y_map;
     
     for (int i = 0; ymap != 0; i++, ymap >>= 1) {
-        unsigned int xmap = fields->x_map;
-        char bitLog[160];
-        strlcpy(bitLog, "ALPS: ", sizeof("ALPS: ") + 1);
-        
-        for (int j = 0; xmap != 0; j++, xmap >>= 1) {
-            strcat(bitLog, (ymap & 1 && xmap & 1) ? "1 " : "0 ");
-        }
-        
-        IOLog("%s\n", bitLog);
+      unsigned int xmap = fields->x_map;
+      char bitLog[160];
+      strlcpy(bitLog, "ALPS: ", sizeof("ALPS: ") + 1);
+      
+      for (int j = 0; xmap != 0; j++, xmap >>= 1) {
+        strcat(bitLog, (ymap & 1 && xmap & 1) ? "1 " : "0 ");
+      }
+      
+      IOLog("%s\n", bitLog);
     }
-    
+  
     IOLog("ALPS: Process Bitmap, Corner=%d, Fingers=%d, x1=%d, x2=%d, y1=%d, y2=%d xmap=%d ymap=%d\n", priv->second_touch, fingers, fields->mt[0].x, fields->mt[1].x, fields->mt[0].y, fields->mt[1].y, fields->x_map, fields->y_map);
 #endif // DEBUG
-    return fingers;
+  return fingers;
 }
 
 void ALPS::alps_process_trackstick_packet_v3(UInt8 *packet) {
@@ -959,12 +897,13 @@ void ALPS::alps_process_trackstick_packet_v3(UInt8 *packet) {
     
     /* It should be a DualPoint when received trackstick packet */
     if (!(priv.flags & ALPS_DUALPOINT)) {
+        DEBUG_LOG("ALPS: Rejected trackstick packet from non DualPoint device\n");
         return;
     }
     
     /* Sanity check packet */
     if (!(packet[0] & 0x40)) {
-        DEBUG_LOG("ps2: bad trackstick packet, disregarding...\n");
+        DEBUG_LOG("ALPS: Bad trackstick packet, disregarding...\n");
         return;
     }
     
@@ -977,20 +916,15 @@ void ALPS::alps_process_trackstick_packet_v3(UInt8 *packet) {
     
     x = (SInt8) (((packet[0] & 0x20) << 2) | (packet[1] & 0x7f));
     y = (SInt8) (((packet[0] & 0x10) << 3) | (packet[2] & 0x7f));
-    z = (packet[4] & 0x7c) >> 2;
-    
-    /* Prevent pointer jump on finger lift */
-    if ((abs(x) >= 0x7f) && (abs(y) >= 0x7f)) {
-        x = y = 0;
-    }
+    z = (packet[4] & 0x7f);
     
     /*
      * The x and y values tend to be quite large, and when used
      * alone the trackstick is difficult to use. Scale them down
      * to compensate.
      */
-    x /= 3;
-    y /= 3;
+    x /= 8;
+    y /= 8;
     
     /* To get proper movement direction */
     y = -y;
@@ -1128,8 +1062,8 @@ bool ALPS::alps_decode_dolphin(struct alps_fields *f, UInt8 *p) {
 }
 
 void ALPS::alps_process_touchpad_packet_v3_v5(UInt8 *packet) {
-    //ffff
-    int fingers = 0, buttons = 0;
+    int fingers = 0;
+    //int buttons = 0;
     struct alps_fields f;
     
     memset(&f, 0, sizeof(f));
@@ -1201,17 +1135,6 @@ void ALPS::alps_process_touchpad_packet_v3_v5(UInt8 *packet) {
         priv.second_touch = -1;
     }
     
-    buttons |= f.left ? 0x01 : 0;
-    buttons |= f.right ? 0x02 : 0;
-    buttons |= f.middle ? 0x04 : 0;
-    
-    if ((priv.flags & ALPS_DUALPOINT) &&
-        !(priv.quirks & ALPS_QUIRK_TRACKSTICK_BUTTONS)) {
-        buttons |= f.ts_left ? 0x01 : 0;
-        buttons |= f.ts_right ? 0x02 : 0;
-        buttons |= f.ts_middle ? 0x04 : 0;
-    }
-    
     /* Reverse y co-ordinates to have 0 at bottom for gestures to work */
     f.mt[0].y = priv.y_max - f.mt[0].y;
     f.mt[1].y = priv.y_max - f.mt[1].y;
@@ -1221,7 +1144,7 @@ void ALPS::alps_process_touchpad_packet_v3_v5(UInt8 *packet) {
         //fingers = 2;
     }
     
-    dispatchEventsWithInfo(f.mt[0].x, f.mt[0].y, f.pressure, fingers, buttons);
+    alps_parse_hw_state(_ringBuffer.tail(), f);
 }
 
 void ALPS::alps_process_packet_v3(UInt8 *packet) {
@@ -1243,8 +1166,8 @@ void ALPS::alps_process_packet_v3(UInt8 *packet) {
 
 void ALPS::alps_process_packet_v6(UInt8 *packet)
 {
-    int x, y, z, left, right, middle;
-    int fingers = 0;
+    int x, y, z;
+    // int left, right, middle;
     int buttons = 0;
     
     uint64_t now_abs;
@@ -1259,6 +1182,7 @@ void ALPS::alps_process_packet_v6(UInt8 *packet)
     if (packet[5] == 0x7F) {
         /* It should be a DualPoint when received Trackpoint packet */
         if (!(priv.flags & ALPS_DUALPOINT)) {
+            DEBUG_LOG("ALPS: Rejected trackstick packet from non DualPoint device");
             return;
         }
         
@@ -1266,6 +1190,8 @@ void ALPS::alps_process_packet_v6(UInt8 *packet)
         x = packet[1] | ((packet[3] & 0x20) << 2);
         y = packet[2] | ((packet[3] & 0x40) << 1);
         z = packet[4];
+        // TODO: Check later if this is needed
+        /*
         left = packet[3] & 0x01;
         right = packet[3] & 0x02;
         middle = packet[3] & 0x04;
@@ -1273,6 +1199,7 @@ void ALPS::alps_process_packet_v6(UInt8 *packet)
         buttons |= left ? 0x01 : 0;
         buttons |= right ? 0x02 : 0;
         buttons |= middle ? 0x04 : 0;
+        */
         
         /* To prevent the cursor jump when finger lifted */
         if (x == 0x7F && y == 0x7F && z == 0x7F)
@@ -1284,24 +1211,33 @@ void ALPS::alps_process_packet_v6(UInt8 *packet)
     }
     
     /* Touchpad packet */
-    x = packet[1] | ((packet[3] & 0x78) << 4);
-    y = packet[2] | ((packet[4] & 0x78) << 4);
+    struct alps_fields f;
+    
+    // TODO: Recognize multitouch?
+    f.mt[0].x = packet[1] | ((packet[3] & 0x78) << 4);
+    f.mt[0].y = packet[2] | ((packet[4] & 0x78) << 4);
+    // TODO: Passthrough pressure?
     z = packet[5];
-    left = packet[3] & 0x01;
-    right = packet[3] & 0x02;
+    f.pressure = z;
+    f.left = packet[3] & 0x01;
+    f.right = packet[3] & 0x02;
     
-    fingers = z > 0 ? 1 : 0;
+    //fingers = z > 0 ? 1 : 0;
+    if (z > 30)
+        f.fingers = 1;
+    if (z < 25)
+        f.fingers = 0;
     
-    buttons |= left ? 0x01 : 0;
-    buttons |= right ? 0x02 : 0;
+    // buttons |= left ? 0x01 : 0;
+    // buttons |= right ? 0x02 : 0;
     
-    dispatchEventsWithInfo(x, y, z, fingers, buttons);
+    alps_parse_hw_state(_ringBuffer.tail(), f);
 }
 
 void ALPS::alps_process_packet_v4(UInt8 *packet) {
     SInt32 offset;
-    SInt32 fingers = 0;
-    UInt32 buttons = 0;
+    // SInt32 fingers = 0;
+    // UInt32 buttons = 0;
     struct alps_fields f;
     
     /*
@@ -1326,7 +1262,7 @@ void ALPS::alps_process_packet_v4(UInt8 *packet) {
     f.right = packet[4] & 0x02;
     
     f.st.x = ((packet[1] & 0x7f) << 4) | ((packet[3] & 0x30) >> 2) |
-    ((packet[0] & 0x30) >> 4);
+        ((packet[0] & 0x30) >> 4);
     f.st.y = ((packet[2] & 0x7f) << 4) | (packet[3] & 0x0f);
     f.pressure = packet[5] & 0x7f;
     
@@ -1341,14 +1277,20 @@ void ALPS::alps_process_packet_v4(UInt8 *packet) {
         ((priv.multi_data[3] & 0x1f) << 5) |
         (priv.multi_data[1] & 0x1f);
         
-        fingers = alps_process_bitmap(&priv, &f);
+        f.fingers = alps_process_bitmap(&priv, &f);
         
     }
     
-    buttons |= f.left ? 0x01 : 0;
-    buttons |= f.right ? 0x02 : 0;
+    // MARK: Remove later
+    // buttons |= f.left ? 0x01 : 0;
+    // buttons |= f.right ? 0x02 : 0;
     
-    dispatchEventsWithInfo(f.st.x, f.st.y, f.pressure, fingers, buttons);
+    f.mt[0].x = f.st.x;
+    f.mt[0].y = f.st.y;
+    
+    //f.fingers = fingers;
+    
+    alps_parse_hw_state(_ringBuffer.tail(), f);
 }
 
 unsigned char ALPS::alps_get_packet_id_v7(UInt8 *byte)
@@ -1392,7 +1334,7 @@ void ALPS::alps_get_finger_coordinate_v7(struct input_mt_pos *mt,
             /* Detect false-positive touches where x & y report max value */
             if (mt[1].y == 0x7ff && mt[1].x == 0xff0)
                 mt[1].x = 0;
-            /* y gets set to 0 at the end of this function */
+                /* y gets set to 0 at the end of this function */
             break;
             
         case V7_PACKET_ID_MULTI:
@@ -1431,10 +1373,14 @@ bool ALPS::alps_decode_packet_v7(struct alps_fields *f, UInt8 *p){
     unsigned char pkt_id;
     
     pkt_id = alps_get_packet_id_v7(p);
-    if (pkt_id == V7_PACKET_ID_IDLE)
+    if (pkt_id == V7_PACKET_ID_IDLE) {
+        DEBUG_LOG("ALPS: V7_PACKET_ID_IDLE\n");
         return true;
-    if (pkt_id == V7_PACKET_ID_UNKNOWN)
+    }
+    if (pkt_id == V7_PACKET_ID_UNKNOWN) {
+        DEBUG_LOG("ALPS: V7_PACKET_ID_UNKNOWN\n");
         return false;
+    }
     
     /*
      * NEW packets are send to indicate a discontinuity in the finger
@@ -1454,15 +1400,21 @@ bool ALPS::alps_decode_packet_v7(struct alps_fields *f, UInt8 *p){
      *    non NEW packet comes in
      * Since problems 2 & 3 cannot be worked around, just ignore them.
      */
-    if (pkt_id == V7_PACKET_ID_NEW)
+    if (pkt_id == V7_PACKET_ID_NEW) {
+        DEBUG_LOG("ALPS: V7_PACKET_ID_NEW\n");
         return true;
+    }
     
     alps_get_finger_coordinate_v7(f->mt, p, pkt_id);
     
-    if (pkt_id == V7_PACKET_ID_TWO)
+    if (pkt_id == V7_PACKET_ID_TWO) {
+        DEBUG_LOG("ALPS: V7_PACKET_ID_TWO\n");
         f->fingers = alps_get_mt_count(f->mt);
-    else /* pkt_id == V7_PACKET_ID_MULTI */
+    }
+    else { /* pkt_id == V7_PACKET_ID_MULTI */
+        DEBUG_LOG("ALPS: V7_PACKET_ID_MULTI\n");
         f->fingers = 3 + (p[5] & 0x03);
+    }
     
     f->left = (p[0] & 0x80) >> 7;
     if (priv.flags & ALPS_BUTTONPAD) {
@@ -1492,7 +1444,7 @@ void ALPS::alps_process_trackstick_packet_v7(UInt8 *packet)
     
     uint64_t now_abs;
     clock_get_uptime(&now_abs);
-    
+  
     /* It should be a DualPoint when received trackstick packet */
     if (!(priv.flags & ALPS_DUALPOINT)) {
         IOLog("ALPS: Rejected trackstick packet from non DualPoint device");
@@ -1501,12 +1453,12 @@ void ALPS::alps_process_trackstick_packet_v7(UInt8 *packet)
     
     x = (SInt8) ((packet[2] & 0xbf) | ((packet[3] & 0x10) << 2));
     y = (SInt8) ((packet[3] & 0x07) | (packet[4] & 0xb8) |
-                 ((packet[3] & 0x20) << 1));
+                ((packet[3] & 0x20) << 1));
     z = (packet[5] & 0x3f) | ((packet[3] & 0x80) >> 1);
     
     // Y is inverted
     y = -y;
-    
+  
     left = (packet[1] & 0x01);
     right = (packet[1] & 0x02) >> 1;
     middle = (packet[1] & 0x04) >> 2;
@@ -1527,8 +1479,6 @@ void ALPS::alps_process_trackstick_packet_v7(UInt8 *packet)
 }
 
 void ALPS::alps_process_touchpad_packet_v7(UInt8 *packet){
-    int fingers = 0;
-    UInt32 buttons = 0;
     struct alps_fields f;
     
     memset(&f, 0, sizeof(alps_fields));
@@ -1536,29 +1486,23 @@ void ALPS::alps_process_touchpad_packet_v7(UInt8 *packet){
     if (!(this->*decode_fields)(&f, packet))
         return;
     
-    buttons |= f.left ? 0x01 : 0;
-    buttons |= f.right ? 0x02 : 0;
-    buttons |= f.middle ? 0x04 : 0;
-    
-    lastTouchpadButtons = buttons;
-    buttons |= lastTrackStickButtons;
-    
-    fingers = f.fingers;
-    
     /* Reverse y co-ordinates to have 0 at bottom for gestures to work */
     f.mt[0].y = priv.y_max - f.mt[0].y;
     f.mt[1].y = priv.y_max - f.mt[1].y;
     
-    //Hack because V7 doesn't report pressure
-    /*if (fingers != 0 && (f.mt[0].x != 0 && f.mt[0].y != 0)) {
-     f.pressure = 40;
-     } else {
-     f.pressure = 0;
-     }*/
+    // TODO: maybe move this to alps_parse_hw_state
+    // scale x & y to the axis which has the most resolution
+    if (xupmm < yupmm) {
+        f.mt[0].x = f.mt[0].x * yupmm / xupmm;
+    } else if (xupmm > yupmm) {
+        f.mt[0].y = f.mt[0].y * xupmm / yupmm;
+    }
     
-    f.pressure = fingers > 0 ? 40 : 0;
+    /* Dr Hurt: Scale all touchpads' axes to 6000 to be able to the same divisors for all models */
+    f.mt[0].x *= (6000 / ((priv.x_max + priv.y_max)/2));
+    f.mt[1].y *= (6000 / ((priv.x_max + priv.y_max)/2));
     
-    dispatchEventsWithInfo(f.mt[0].x, f.mt[0].y, f.pressure, fingers, buttons);
+    alps_parse_hw_state(_ringBuffer.tail(), f);
 }
 
 void ALPS::alps_process_packet_v7(UInt8 *packet){
@@ -1574,9 +1518,7 @@ unsigned char ALPS::alps_get_pkt_id_ss4_v2(UInt8 *byte)
     
     switch (byte[3] & 0x30) {
         case 0x00:
-            if (byte[0] == 0x18 && byte[1] == 0x10 && byte[2] == 0x00 &&
-                (byte[3] & 0x88) == 0x08 && byte[4] == 0x10 &&
-                byte[5] == 0x00) {
+            if (SS4_IS_IDLE_V2(byte)) {
                 pkt_id = SS4_PACKET_ID_IDLE;
             } else {
                 pkt_id = SS4_PACKET_ID_ONE;
@@ -1612,8 +1554,10 @@ bool ALPS::alps_decode_ss4_v2(struct alps_fields *f, UInt8 *p){
     /* Current packet is 1Finger coordinate packet */
     switch (pkt_id) {
         case SS4_PACKET_ID_ONE:
+            DEBUG_LOG("ALPS: SS4_PACKET_ID_ONE\n");
             f->mt[0].x = SS4_1F_X_V2(p);
             f->mt[0].y = SS4_1F_Y_V2(p);
+            DEBUG_LOG("ALPS: Coordinates for SS4_PACKET_ID_ONE: %dx%d\n", f->mt[0].x, f->mt[0].y);
             f->pressure = ((SS4_1F_Z_V2(p)) * 2) & 0x7f;
             /*
              * When a button is held the device will give us events
@@ -1627,17 +1571,29 @@ bool ALPS::alps_decode_ss4_v2(struct alps_fields *f, UInt8 *p){
             break;
             
         case SS4_PACKET_ID_TWO:
+            DEBUG_LOG("ALPS: SS4_PACKET_ID_TWO\n");
             if (priv.flags & ALPS_BUTTONPAD) {
-                f->mt[0].x = SS4_BTL_MF_X_V2(p, 0);
+                if (IS_SS4PLUS_DEV(priv.dev_id)) {
+                    f->mt[0].x = SS4_PLUS_BTL_MF_X_V2(p, 0);
+                    f->mt[1].x = SS4_PLUS_BTL_MF_X_V2(p, 1);
+                } else {
+                    f->mt[0].x = SS4_BTL_MF_X_V2(p, 0);
+                    f->mt[1].x = SS4_BTL_MF_X_V2(p, 1);
+                }
                 f->mt[0].y = SS4_BTL_MF_Y_V2(p, 0);
-                f->mt[1].x = SS4_BTL_MF_X_V2(p, 1);
                 f->mt[1].y = SS4_BTL_MF_Y_V2(p, 1);
             } else {
-                f->mt[0].x = SS4_STD_MF_X_V2(p, 0);
+                if (IS_SS4PLUS_DEV(priv.dev_id)) {
+                    f->mt[0].x = SS4_PLUS_STD_MF_X_V2(p, 0);
+                    f->mt[1].x = SS4_PLUS_STD_MF_X_V2(p, 1);
+                } else {
+                    f->mt[0].x = SS4_STD_MF_X_V2(p, 0);
+                    f->mt[1].x = SS4_STD_MF_X_V2(p, 1);
+                }
                 f->mt[0].y = SS4_STD_MF_Y_V2(p, 0);
-                f->mt[1].x = SS4_STD_MF_X_V2(p, 1);
                 f->mt[1].y = SS4_STD_MF_Y_V2(p, 1);
             }
+            DEBUG_LOG("ALPS: Coordinates for SS4_PACKET_ID_TWO: %dx%d\n", f->mt[0].x, f->mt[0].y);
             f->pressure = SS4_MF_Z_V2(p, 0) ? 0x30 : 0;
             
             if (SS4_IS_MF_CONTINUE(p)) {
@@ -1651,20 +1607,35 @@ bool ALPS::alps_decode_ss4_v2(struct alps_fields *f, UInt8 *p){
             break;
             
         case SS4_PACKET_ID_MULTI:
+            DEBUG_LOG("ALPS: SS4_PACKET_ID_MULTI\n");
             if (priv.flags & ALPS_BUTTONPAD) {
-                f->mt[2].x = SS4_BTL_MF_X_V2(p, 0);
-                f->mt[2].y = SS4_BTL_MF_Y_V2(p, 0);
-                f->mt[3].x = SS4_BTL_MF_X_V2(p, 1);
-                f->mt[3].y = SS4_BTL_MF_Y_V2(p, 1);
-                no_data_x = SS4_MFPACKET_NO_AX_BL;
+                if (IS_SS4PLUS_DEV(priv.dev_id)) {
+                    f->mt[2].x = SS4_PLUS_BTL_MF_X_V2(p, 0);
+                    f->mt[3].x = SS4_PLUS_BTL_MF_X_V2(p, 1);
+                    no_data_x = SS4_PLUS_MFPACKET_NO_AX_BL;
+                } else {
+                    f->mt[2].x = SS4_BTL_MF_X_V2(p, 0);
+                    f->mt[3].x = SS4_BTL_MF_X_V2(p, 1);
+                    no_data_x = SS4_MFPACKET_NO_AX_BL;
+                }
                 no_data_y = SS4_MFPACKET_NO_AY_BL;
+
+                f->mt[2].y = SS4_BTL_MF_Y_V2(p, 0);
+                f->mt[3].y = SS4_BTL_MF_Y_V2(p, 1);
             } else {
-                f->mt[2].x = SS4_STD_MF_X_V2(p, 0);
-                f->mt[2].y = SS4_STD_MF_Y_V2(p, 0);
-                f->mt[3].x = SS4_STD_MF_X_V2(p, 1);
-                f->mt[3].y = SS4_STD_MF_Y_V2(p, 1);
-                no_data_x = SS4_MFPACKET_NO_AX;
+                if (IS_SS4PLUS_DEV(priv.dev_id)) {
+                    f->mt[2].x = SS4_PLUS_STD_MF_X_V2(p, 0);
+                    f->mt[3].x = SS4_PLUS_STD_MF_X_V2(p, 1);
+                    no_data_x = SS4_PLUS_MFPACKET_NO_AX;
+                } else {
+                    f->mt[2].x = SS4_STD_MF_X_V2(p, 0);
+                    f->mt[3].x = SS4_STD_MF_X_V2(p, 1);
+                    no_data_x = SS4_MFPACKET_NO_AX;
+                }
                 no_data_y = SS4_MFPACKET_NO_AY;
+
+                f->mt[2].y = SS4_STD_MF_Y_V2(p, 0);
+                f->mt[3].y = SS4_STD_MF_Y_V2(p, 1);
             }
             
             f->first_mp = 0;
@@ -1683,6 +1654,7 @@ bool ALPS::alps_decode_ss4_v2(struct alps_fields *f, UInt8 *p){
             break;
             
         case SS4_PACKET_ID_STICK:
+            DEBUG_LOG("ALPS: SS4_PACKET_ID_STICK\n");
             /*
              * x, y, and pressure are decoded in
              * alps_process_packet_ss4_v2()
@@ -1700,10 +1672,11 @@ bool ALPS::alps_decode_ss4_v2(struct alps_fields *f, UInt8 *p){
     /* handle buttons */
     if (pkt_id == SS4_PACKET_ID_STICK) {
         f->ts_left = !!(SS4_BTN_V2(p) & 0x01);
-        if (!(priv.flags & ALPS_BUTTONPAD)) {
+        // TODO: Check if this statement is needed
+        //if (!(priv.flags & ALPS_BUTTONPAD)) {
             f->ts_right = !!(SS4_BTN_V2(p) & 0x02);
             f->ts_middle = !!(SS4_BTN_V2(p) & 0x04);
-        }
+        //}
     } else {
         f->left = !!(SS4_BTN_V2(p) & 0x01);
         if (!(priv.flags & ALPS_BUTTONPAD)) {
@@ -1728,7 +1701,7 @@ void ALPS::alps_process_packet_ss4_v2(UInt8 *packet) {
         /*
          * Sometimes the first packet will indicate a multi-packet
          * sequence, but sometimes the next multi-packet would not
-         * come. Check for this, and when it happens process the
+         * come. Check for  this, and when it happens process the
          * position packet as usual.
          */
         if (f.is_mp) {
@@ -1763,51 +1736,55 @@ void ALPS::alps_process_packet_ss4_v2(UInt8 *packet) {
             return;
         }
         
-        x = (((packet[0] & 1) << 7) | (packet[1] & 0x7f));
-        y = (((packet[3] & 1) << 7) | (packet[2] & 0x7f));
-        pressure = (packet[4] & 0x7f);
+        // TODO: Maybe remove later
+        // x = (((packet[0] & 1) << 7) | (packet[1] & 0x7f));
+        // y = (((packet[3] & 1) << 7) | (packet[2] & 0x7f));
+        // pressure = (packet[4] & 0x7f);
+        x = SS4_TS_X_V2(packet);
+        y = SS4_TS_Y_V2(packet);
+        pressure = SS4_TS_Z_V2(packet);
         
         buttons |= f.ts_left ? 0x01 : 0;
         buttons |= f.ts_right ? 0x02 : 0;
         buttons |= f.ts_middle ? 0x04 : 0;
+        
+        f.pressure = pressure;
         
         if ((abs(x) >= 0x7f) || (abs(y) >= 0x7f)) {
             return;
         }
         
         //TODO: V8 Trackstick: Someone with the hardware needs to debug this.
-        //IOLog("ALPS: Trackstick report: X=%d, Y=%d, Z=%d, buttons=%d\n", x, y, pressure, buttons);
-        //dispatchRelativePointerEventX(x, y, 0, now_abs);
+        DEBUG_LOG("ALPS: Trackstick report: X=%d, Y=%d, Z=%d\n", x, y, pressure);
+        dispatchRelativePointerEventX(x, y, buttons, now_abs);
         return;
     }
     
+    // MARK: Remove later
     /* Report touchpad */
-    buttons |= f.left ? 0x01 : 0;
-    buttons |= f.right ? 0x02 : 0;
-    buttons |= f.middle ? 0x04 : 0;
+    //buttons |= f.left ? 0x01 : 0;
+    //buttons |= f.right ? 0x02 : 0;
+    //buttons |= f.middle ? 0x04 : 0;
     
     /* Reverse y co-ordinates to have 0 at bottom for gestures to work */
     f.mt[0].y = priv.y_max - f.mt[0].y;
     f.mt[1].y = priv.y_max - f.mt[1].y;
     
-    dispatchEventsWithInfo(f.mt[0].x, f.mt[0].y, f.pressure, f.fingers, buttons);
-}
-
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-void ALPS::setTouchPadEnable(bool enable) {
-    DEBUG_LOG("setTouchpadEnable enter\n");
-    //
-    // Instructs the trackpad to start or stop the reporting of data packets.
-    // It is safe to issue this request from the interrupt/completion context.
-    //
+    DEBUG_LOG("ALPS: There are currently %d fingers in alps_process_packet_ss4_v2\n", f.fingers);
     
-    if (enable) {
-        initTouchPad();
-    } else {
-        // to disable just reset the mouse
-        resetMouse();
+    // TODO: maybe move this to alps_parse_hw_state
+    // scale x & y to the axis which has the most resolution
+    if (xupmm < yupmm) {
+        f.mt[0].x = f.mt[0].x * yupmm / xupmm;
+    } else if (xupmm > yupmm) {
+        f.mt[0].y = f.mt[0].y * xupmm / yupmm;
     }
+    
+    /* Dr Hurt: Scale all touchpads' axes to 6000 to be able to the same divisors for all models */
+    f.mt[0].x *= (6000 / ((priv.x_max + priv.y_max)/2));
+    f.mt[1].y *= (6000 / ((priv.x_max + priv.y_max)/2));
+    
+    alps_parse_hw_state(_ringBuffer.tail(), f);
 }
 
 PS2InterruptResult ALPS::interruptOccurred(UInt8 data) {
@@ -1837,6 +1814,7 @@ PS2InterruptResult ALPS::interruptOccurred(UInt8 data) {
     if (priv.proto_version != ALPS_PROTO_V8 &&
         (packet[0] & 0xc8) == 0x08) {
         if (_packetByteCount == 3) {
+            DEBUG_LOG("ALPS: V8: Dealing with bare PS/2 packet");
             //dispatchRelativePointerEventWithPacket(packet, kPacketLengthSmall); //Dr Hurt: allow this?
             priv.PSMOUSE_BAD_DATA = true;
             _ringBuffer.advanceHead(priv.pktsize);
@@ -1875,19 +1853,19 @@ PS2InterruptResult ALPS::interruptOccurred(UInt8 data) {
         (((_packetByteCount == 3) && ((packet[2] & 0x40) != 0x40)) ||
          ((_packetByteCount == 4) && ((packet[3] & 0x48) != 0x48)) ||
          ((_packetByteCount == 6) && ((packet[5] & 0x40) != 0x0)))) {
-        priv.PSMOUSE_BAD_DATA = true;
-        _ringBuffer.advanceHead(priv.pktsize);
-        return kPS2IR_packetReady;
-    }
+            priv.PSMOUSE_BAD_DATA = true;
+            _ringBuffer.advanceHead(priv.pktsize);
+            return kPS2IR_packetReady;
+        }
     
     /* alps_is_valid_package_ss4_v2 */
     if (priv.proto_version == ALPS_PROTO_V8 &&
         ((_packetByteCount == 4 && ((packet[3] & 0x08) != 0x08)) ||
          (_packetByteCount == 6 && ((packet[5] & 0x10) != 0x0)))) {
-        priv.PSMOUSE_BAD_DATA = true;
-        _ringBuffer.advanceHead(priv.pktsize);
-        return kPS2IR_packetReady;
-    }
+            priv.PSMOUSE_BAD_DATA = true;
+            _ringBuffer.advanceHead(priv.pktsize);
+            return kPS2IR_packetReady;
+        }
     
     packet[_packetByteCount++] = data;
     if (_packetByteCount == priv.pktsize)
@@ -1896,21 +1874,6 @@ PS2InterruptResult ALPS::interruptOccurred(UInt8 data) {
         return kPS2IR_packetReady;
     }
     return kPS2IR_packetBuffering;
-}
-
-void ALPS::packetReady() {
-    // empty the ring buffer, dispatching each packet...
-    while (_ringBuffer.count() >= priv.pktsize) {
-        UInt8 *packet = _ringBuffer.tail();
-        if (priv.PSMOUSE_BAD_DATA == false) {
-            (this->*process_packet)(packet);
-        } else {
-            IOLog("ALPS: an invalid or bare packet has been dropped...\n");
-            /* Might need to perform a full HW reset here if we keep receiving bad packets (consecutively) */
-        }
-        _packetByteCount = 0;
-        _ringBuffer.advanceTail(priv.pktsize);
-    }
 }
 
 bool ALPS::alps_command_mode_send_nibble(int nibble) {
@@ -2117,6 +2080,11 @@ bool ALPS::alps_exit_command_mode() {
     return true;
 }
 
+/*
+ * For DualPoint devices select the device that should respond to
+ * subsequent commands. It looks like glidepad is behind stickpointer,
+ * I'd thought it would be other way around...
+ */
 bool ALPS::alps_passthrough_mode_v2(bool enable) {
     int cmd = enable ? kDP_SetMouseScaling2To1 : kDP_SetMouseScaling1To1;
     TPS2Request<4> request;
@@ -2138,6 +2106,7 @@ bool ALPS::alps_passthrough_mode_v2(bool enable) {
 
 bool ALPS::alps_absolute_mode_v1_v2() {
     
+    /* Try ALPS magic knock - 4 disable before enable */
     ps2_command_short(kDP_SetDefaultsAndDisable);
     ps2_command_short(kDP_SetDefaultsAndDisable);
     ps2_command_short(kDP_SetDefaultsAndDisable);
@@ -2182,7 +2151,7 @@ int ALPS::alps_monitor_mode(bool enable)
     int cmd = 0;
     
     if (enable) {
-        
+        /* EC E9 F5 F5 E7 E6 E7 E9 to enter monitor mode */
         ps2_command_short(kDP_MouseResetWrap);
         request.commands[cmd].command = kPS2C_SendMouseCommandAndCompareAck;
         request.commands[cmd++].inOrOut = kDP_GetMouseInformation;
@@ -2215,6 +2184,7 @@ int ALPS::alps_monitor_mode(bool enable)
         assert(request.commandsCount <= countof(request.commands));
         _device->submitRequestAndBlock(&request);
     } else {
+        /* EC to exit monitor mode */
         ps2_command_short(kDP_MouseResetWrap);
     }
     
@@ -2230,6 +2200,7 @@ void ALPS::alps_absolute_mode_v6()
 }
 
 bool ALPS::alps_get_status(ALPSStatus_t *status) {
+    /* Get status: 0xF5 0xF5 0xF5 0xE9 */
     return alps_rpt_cmd(NULL, NULL, kDP_SetDefaultsAndDisable, status);
 }
 
@@ -2287,11 +2258,12 @@ bool ALPS::alps_hw_init_v1_v2() {
     }
     
     if (!alps_tap_mode(true)) {
+        IOLog("ALPS: Failed to enable hardware tapping\n");
         return false;
     }
     
     if (!alps_absolute_mode_v1_v2()) {
-        IOLog("ERROR: Failed to enable absolute mode\n");
+        IOLog("ALPS: Failed to enable absolute mode\n");
         return false;
     }
     
@@ -2315,6 +2287,7 @@ bool ALPS::alps_hw_init_v6()
     /* Enter passthrough mode to let trackpoint enter 6byte raw mode */
     alps_passthrough_mode_v2(true);
     
+    /* alps_trackstick_enter_extended_mode_v3_v6 */
     ps2_command_short(kDP_SetMouseScaling1To1);
     ps2_command_short(kDP_SetMouseScaling1To1);
     ps2_command_short(kDP_SetMouseScaling1To1);
@@ -2328,6 +2301,9 @@ bool ALPS::alps_hw_init_v6()
     return true;
 }
 
+/*
+ * Enable or disable passthrough mode to the trackstick.
+ */
 bool ALPS::alps_passthrough_mode_v3(int regBase, bool enable) {
     int regVal;
     bool ret = false;
@@ -2362,6 +2338,7 @@ error:
     return ret;
 }
 
+/* Must be in command mode when calling this function */
 bool ALPS::alps_absolute_mode_v3() {
     
     int regVal;
@@ -2405,6 +2382,13 @@ IOReturn ALPS::alps_setup_trackstick_v3(int regBase) {
     ALPSStatus_t report;
     TPS2Request<3> request;
     
+    /*
+     * We need to configure trackstick to report data for touchpad in
+     * extended format. And also we need to tell touchpad to expect data
+     * from trackstick in extended format. Without this configuration
+     * trackstick packets sent from touchpad are in basic format which is
+     * different from what we expect.
+     */
     if (!alps_passthrough_mode_v3(regBase, true)) {
         return kIOReturnIOError;
     }
@@ -2419,7 +2403,7 @@ IOReturn ALPS::alps_setup_trackstick_v3(int regBase) {
      * all.
      */
     if (!alps_rpt_cmd(NULL, NULL, kDP_SetMouseScaling2To1, &report)) {
-        IOLog("ALPS: trackstick E7 report failed\n");
+        IOLog("ALPS: Failed to initialize trackstick (E7 report failed)\n");
         ret = kIOReturnNoDevice;
     } else {
         /*
@@ -2517,12 +2501,17 @@ bool ALPS::alps_hw_init_v3() {
     alps_exit_command_mode();
     
     /* Set rate and enable data reporting */
-    ps2_command(0x28, kDP_SetMouseSampleRate);
+    ps2_command(0x64, kDP_SetMouseSampleRate);
     ps2_command_short(kDP_Enable);
     
     return true;
     
 error:
+    /*
+     * Leaving the touchpad in command mode will essentially render
+     * it unusable until the machine reboots, so exit it here just
+     * to be safe
+     */
     alps_exit_command_mode();
     return false;
 }
@@ -2556,7 +2545,7 @@ bool ALPS::alps_get_v3_v7_resolution(int reg_pitch)
     
     priv.x_res = priv.x_max * 10 / x_phys; /* units / mm */
     priv.y_res = priv.y_max * 10 / y_phys; /* units / mm */
-    
+
     /*IOLog("pitch %dx%d num-electrodes %dx%d physical size %dx%d mm res %dx%d\n",
      x_pitch, y_pitch, x_electrode, y_electrode,
      x_phys / 10, y_phys / 10, priv.x_res, priv.y_res);*/
@@ -2579,6 +2568,9 @@ bool ALPS::alps_hw_init_rushmore_v3() {
         !alps_command_mode_write_reg(0xc2cb, 0x00)) {
         goto error;
     }
+    
+    if (alps_get_v3_v7_resolution(0xc2da))
+        goto error;
     
     regVal = alps_command_mode_read_reg(0xc2c6);
     if (regVal == -1)
@@ -2607,11 +2599,6 @@ error:
     alps_exit_command_mode();
     return false;
 }
-
-/*
- * Used during both passthrough mode initialization and touchpad enablement
- */
-
 
 /* Must be in command mode when calling this function */
 bool ALPS::alps_absolute_mode_v4() {
@@ -2691,11 +2678,16 @@ bool ALPS::alps_hw_init_v4() {
     return true;
     
 error:
+    /*
+     * Leaving the touchpad in command mode will essentially render
+     * it unusable until the machine reboots, so exit it here just
+     * to be safe
+     */
     alps_exit_command_mode();
     return false;
 }
 
-void ALPS::alps_get_otp_values_ss4_v2(unsigned char index)
+void ALPS::alps_get_otp_values_ss4_v2(unsigned char index, unsigned char otp[])
 {
     int cmd = 0;
     TPS2Request<4> request;
@@ -2717,6 +2709,11 @@ void ALPS::alps_get_otp_values_ss4_v2(unsigned char index)
             assert(request.commandsCount <= countof(request.commands));
             _device->submitRequestAndBlock(&request);
             
+            // SkyrilHD: Is this correct?
+            otp[0] = request.commands[1].inOrOut;
+            otp[1] = request.commands[2].inOrOut;
+            otp[2] = request.commands[3].inOrOut;
+            
             break;
             
         case 1:
@@ -2735,15 +2732,149 @@ void ALPS::alps_get_otp_values_ss4_v2(unsigned char index)
             assert(request.commandsCount <= countof(request.commands));
             _device->submitRequestAndBlock(&request);
             
+            // SkyrilHD: Is this correct?
+            otp[0] = request.commands[1].inOrOut;
+            otp[1] = request.commands[2].inOrOut;
+            otp[2] = request.commands[3].inOrOut;
+            
             break;
     }
 }
 
+void ALPS::alps_update_device_area_ss4_v2(unsigned char otp[][4], struct alps_data *priv)
+{
+    int num_x_electrode;
+    int num_y_electrode;
+    int x_pitch, y_pitch, x_phys, y_phys;
+    DEBUG_LOG("ALPS: Accessing 'Update Device Area'\n");
+    if (IS_SS4PLUS_DEV(priv->dev_id)) {
+        DEBUG_LOG("ALPS: Device is SS4_PLUS\n");
+        num_x_electrode =
+        SS4PLUS_NUMSENSOR_XOFFSET + (otp[0][2] & 0x0F);
+        num_y_electrode =
+        SS4PLUS_NUMSENSOR_YOFFSET + ((otp[0][2] >> 4) & 0x0F);
+
+        priv->x_max =
+            (num_x_electrode - 1) * SS4PLUS_COUNT_PER_ELECTRODE;
+        priv->y_max =
+            (num_y_electrode - 1) * SS4PLUS_COUNT_PER_ELECTRODE;
+
+        x_pitch = (otp[0][1] & 0x0F) + SS4PLUS_MIN_PITCH_MM;
+        y_pitch = ((otp[0][1] >> 4) & 0x0F) + SS4PLUS_MIN_PITCH_MM;
+
+    } else {
+        DEBUG_LOG("ALPS: Device is SS4\n");
+        num_x_electrode =
+            SS4_NUMSENSOR_XOFFSET + (otp[1][0] & 0x0F);
+        num_y_electrode =
+            SS4_NUMSENSOR_YOFFSET + ((otp[1][0] >> 4) & 0x0F);
+
+        priv->x_max =
+            (num_x_electrode - 1) * SS4_COUNT_PER_ELECTRODE;
+        priv->y_max =
+            (num_y_electrode - 1) * SS4_COUNT_PER_ELECTRODE;
+
+        x_pitch = ((otp[1][2] >> 2) & 0x07) + SS4_MIN_PITCH_MM;
+        y_pitch = ((otp[1][2] >> 5) & 0x07) + SS4_MIN_PITCH_MM;
+    }
+
+    x_phys = x_pitch * (num_x_electrode - 1); /* In 0.1 mm units */
+    y_phys = y_pitch * (num_y_electrode - 1); /* In 0.1 mm units */
+    
+    DEBUG_LOG("ALPS: Your dimensions are: %dx%d\n", x_phys, y_phys);
+
+    priv->x_res = priv->x_max * 10 / x_phys; /* units / mm */
+    priv->y_res = priv->y_max * 10 / y_phys; /* units / mm */
+    
+    //logical_max_x = x_phys;
+    //logical_max_y = y_phys;
+    
+    //physical_max_x = priv->x_max * 4;
+    //physical_max_y = priv->y_max * 3.5;
+    
+    //physical_max_x = priv->x_max * 10;
+    //physical_max_y = priv->y_max * 10;
+    
+    //logical_max_x = x_phys;
+    //logical_max_y = y_phys;
+    
+    physical_max_x = priv->x_max * manual_x_phy;
+    physical_max_y = priv->y_max * manual_y_phy;
+    
+    logical_max_x = priv->x_max * manual_x_log;
+    logical_max_y = priv->y_max * manual_y_log;
+    
+    setProperty(VOODOO_INPUT_LOGICAL_MAX_X_KEY, logical_max_x - logical_min_x, 32);
+    setProperty(VOODOO_INPUT_LOGICAL_MAX_Y_KEY, logical_max_y - logical_min_y, 32);
+    
+    setProperty(VOODOO_INPUT_PHYSICAL_MAX_X_KEY, physical_max_x, 32);
+    setProperty(VOODOO_INPUT_PHYSICAL_MAX_Y_KEY, physical_max_y, 32);
+    
+    setProperty(VOODOO_INPUT_TRANSFORM_KEY, 0ull, 32);
+    setProperty("VoodooInputSupported", kOSBooleanTrue);
+    
+    registerService();
+    
+    DEBUG_LOG("VoodooPS2Trackpad: logical %dx%d-%dx%d physical_max %dx%d upmm %dx%d",
+          logical_min_x, logical_min_y,
+          logical_max_x, logical_max_y,
+          physical_max_x, physical_max_y,
+          xupmm, yupmm);
+}
+
+void ALPS::alps_update_btn_info_ss4_v2(unsigned char otp[][4], struct alps_data *priv)
+{
+    unsigned char is_btnless;
+
+    if (IS_SS4PLUS_DEV(priv->dev_id))
+        is_btnless = (otp[1][0] >> 1) & 0x01;
+    else
+        is_btnless = (otp[1][1] >> 3) & 0x01;
+
+    if (is_btnless)
+        priv->flags |= ALPS_BUTTONPAD;
+}
+
+void ALPS::alps_update_dual_info_ss4_v2(unsigned char otp[][4], struct alps_data *priv)
+{
+    bool is_dual = false;
+    int reg_val = 0;
+
+    if (IS_SS4PLUS_DEV(priv->dev_id)) {
+        is_dual = (otp[0][0] >> 4) & 0x01;
+
+        if (!is_dual) {
+            /* For support TrackStick of Thinkpad L/E series */
+            if (alps_exit_command_mode())
+                if (alps_enter_command_mode())
+                    reg_val = alps_command_mode_read_reg(0xD7);
+            alps_exit_command_mode();
+            ps2_command_short(kDP_Enable);
+
+            if (reg_val == 0x0C || reg_val == 0x1D)
+                is_dual = true;
+        }
+    }
+
+    if (is_dual)
+        priv->flags |= ALPS_DUALPOINT |
+                    ALPS_DUALPOINT_WITH_PRESSURE;
+}
+
 void ALPS::alps_set_defaults_ss4_v2(struct alps_data *priv)
 {
-    alps_get_otp_values_ss4_v2(0);
-    alps_get_otp_values_ss4_v2(1);
+    unsigned char otp[2][4];
+
+    memset(otp, 0, sizeof(otp));
     
+    alps_get_otp_values_ss4_v2(0, &otp[1][0]);
+    alps_get_otp_values_ss4_v2(1, &otp[0][0]);
+    
+    alps_update_device_area_ss4_v2(otp, priv);
+
+    alps_update_btn_info_ss4_v2(otp, priv);
+
+    alps_update_dual_info_ss4_v2(otp, priv);
 }
 
 int ALPS::alps_dolphin_get_device_area(struct alps_data *priv)
@@ -2778,6 +2909,18 @@ int ALPS::alps_dolphin_get_device_area(struct alps_data *priv)
     status.bytes[1] = request.commands[2].inOrOut;
     status.bytes[2] = request.commands[3].inOrOut;
     
+    /*
+     * Dolphin's sensor line number is not fixed. It can be calculated
+     * by adding the device's register value with DOLPHIN_PROFILE_X/YOFFSET.
+     * Further more, we can get device's x_max and y_max by multiplying
+     * sensor line number with DOLPHIN_COUNT_PER_ELECTRODE.
+     *
+     * e.g. When we get register's sensor_x = 11 & sensor_y = 8,
+     *    real sensor line number X = 11 + 8 = 19, and
+     *    real sensor line number Y = 8 + 1 = 9.
+     *    So, x_max = (19 - 1) * 64 = 1152, and
+     *        y_max = (9 - 1) * 64 = 512.
+     */
     num_x_electrode = DOLPHIN_PROFILE_XOFFSET + (status.bytes[2] & 0x0F);
     num_y_electrode = DOLPHIN_PROFILE_YOFFSET + ((status.bytes[2] >> 4) & 0x0F);
     priv->x_bits = num_x_electrode;
@@ -2855,37 +2998,8 @@ bool ALPS::alps_hw_init_ss4_v2()
     
 }
 
-void ALPS::ps2_command(unsigned char value, UInt8 command)
-{
-    TPS2Request<2> request;
-    int cmdCount = 0;
-    
-    request.commands[cmdCount].command = kPS2C_SendMouseCommandAndCompareAck;
-    request.commands[cmdCount++].inOrOut = command;
-    request.commands[cmdCount].command = kPS2C_SendMouseCommandAndCompareAck;
-    request.commands[cmdCount++].inOrOut = value;
-    request.commandsCount = cmdCount;
-    assert(request.commandsCount <= countof(request.commands));
-    _device->submitRequestAndBlock(&request);
-    
-    //return request.commandsCount = cmdCount;
-}
-
-void ALPS::ps2_command_short(UInt8 command)
-{
-    TPS2Request<1> request;
-    int cmdCount = 0;
-    
-    request.commands[cmdCount].command = kPS2C_SendMouseCommandAndCompareAck;
-    request.commands[cmdCount++].inOrOut = command;
-    request.commandsCount = cmdCount;
-    assert(request.commandsCount <= countof(request.commands));
-    _device->submitRequestAndBlock(&request);
-    
-    //return request.commandsCount = cmdCount;
-}
-
 void ALPS::set_protocol() {
+    // MARK: Maybe make more universal to adapt to linux code
     priv.byte0 = 0x8f;
     priv.mask0 = 0x8f;
     priv.flags = ALPS_DUALPOINT;
@@ -2900,15 +3014,15 @@ void ALPS::set_protocol() {
         case ALPS_PROTO_V2:
             hw_init = &ALPS::alps_hw_init_v1_v2;
             process_packet = &ALPS::alps_process_packet_v1_v2;
+            //set_abs_params = alps_set_abs_params_st;
             priv.x_max = 1023;
             priv.y_max = 767;
-            //            set_abs_params = alps_set_abs_params_st;
             break;
             
         case ALPS_PROTO_V3:
             hw_init = &ALPS::alps_hw_init_v3;
             process_packet = &ALPS::alps_process_packet_v3;
-            //            set_abs_params = alps_set_abs_params_mt;
+            //set_abs_params = alps_set_abs_params_semi_mt;
             decode_fields = &ALPS::alps_decode_pinnacle;
             priv.nibble_commands = alps_v3_nibble_commands;
             priv.addr_command = kDP_MouseResetWrap;
@@ -2924,7 +3038,7 @@ void ALPS::set_protocol() {
         case ALPS_PROTO_V3_RUSHMORE:
             hw_init = &ALPS::alps_hw_init_rushmore_v3;
             process_packet = &ALPS::alps_process_packet_v3;
-            //            set_abs_params = alps_set_abs_params_mt;
+            //set_abs_params = alps_set_abs_params_semi_mt;
             decode_fields = &ALPS::alps_decode_rushmore;
             priv.nibble_commands = alps_v3_nibble_commands;
             priv.addr_command = kDP_MouseResetWrap;
@@ -2942,7 +3056,7 @@ void ALPS::set_protocol() {
         case ALPS_PROTO_V4:
             hw_init = &ALPS::alps_hw_init_v4;
             process_packet = &ALPS::alps_process_packet_v4;
-            //            set_abs_params = alps_set_abs_params_mt;
+            //set_abs_params = alps_set_abs_params_semi_mt;
             priv.nibble_commands = alps_v4_nibble_commands;
             priv.addr_command = kDP_SetDefaultsAndDisable;
             break;
@@ -2951,7 +3065,7 @@ void ALPS::set_protocol() {
             hw_init = &ALPS::alps_hw_init_dolphin_v1;
             process_packet = &ALPS::alps_process_touchpad_packet_v3_v5;
             decode_fields = &ALPS::alps_decode_dolphin;
-            //            set_abs_params = alps_set_abs_params_mt;
+            //set_abs_params = alps_set_abs_params_semi_mt;
             priv.nibble_commands = alps_v3_nibble_commands;
             priv.addr_command = kDP_MouseResetWrap;
             priv.byte0 = 0xc8;
@@ -2967,8 +3081,10 @@ void ALPS::set_protocol() {
             break;
             
         case ALPS_PROTO_V6:
+            // TODO: add support
             //hw_init = &ApplePS2ALPSGlidePoint::hwInitV6_version2;
             //process_packet = &ApplePS2ALPSGlidePoint::processPacketV6;
+            //set_abs_params = alps_set_abs_params_st;
             priv.nibble_commands = alps_v6_nibble_commands;
             priv.addr_command = kDP_MouseResetWrap;
             priv.byte0 = 0xc8;
@@ -2976,6 +3092,7 @@ void ALPS::set_protocol() {
             priv.flags = 0;
             priv.x_max = 2047;
             priv.y_max = 1535;
+            // SkyrilHD: Where does this come from?
             //decode_fields = &ApplePS2ALPSGlidePoint::decodePacketV6;
             break;
             
@@ -2983,6 +3100,7 @@ void ALPS::set_protocol() {
             hw_init = &ALPS::alps_hw_init_v7;
             process_packet = &ALPS::alps_process_packet_v7;
             decode_fields = &ALPS::alps_decode_packet_v7;
+            //set_abs_params = alps_set_abs_params_v7;
             priv.nibble_commands = alps_v3_nibble_commands;
             priv.addr_command = kDP_MouseResetWrap;
             priv.byte0 = 0x48;
@@ -2990,6 +3108,8 @@ void ALPS::set_protocol() {
             
             priv.x_max = 0xfff;
             priv.y_max = 0x7ff;
+            
+            set_resolution();
             
             if (priv.fw_ver[1] != 0xba){
                 priv.flags |= ALPS_BUTTONPAD;
@@ -3008,13 +3128,12 @@ void ALPS::set_protocol() {
             hw_init = &ALPS::alps_hw_init_ss4_v2;
             process_packet = &ALPS::alps_process_packet_ss4_v2;
             decode_fields = &ALPS::alps_decode_ss4_v2;
+            //set_abs_params = alps_set_abs_params_ss4_v2;
             priv.nibble_commands = alps_v3_nibble_commands;
             priv.addr_command = kDP_MouseResetWrap;
             priv.byte0 = 0x18;
             priv.mask0 = 0x18;
             priv.flags = 0;
-            
-            alps_set_defaults_ss4_v2(&priv);
             
             //TODO: V8: add detection of tarckstick using the "alps_set_defaults_ss4_v2(&priv)" funtcion
             if (priv.fw_ver[1] == 0x1) {
@@ -3024,6 +3143,7 @@ void ALPS::set_protocol() {
                 priv.flags |= ALPS_DUALPOINT |
                 ALPS_DUALPOINT_WITH_PRESSURE;
                 IOLog("ALPS: TrackStick detected... (WARNING: V8 TrackStick disabled)\n");
+                
             } else {
                 // buttonless
                 priv.x_max = 8176;
@@ -3031,6 +3151,8 @@ void ALPS::set_protocol() {
                 priv.flags |= ALPS_BUTTONPAD;
                 IOLog("ALPS: ButtonPad Detected...\n");
             }
+            
+            alps_set_defaults_ss4_v2(&priv);
             break;
     }
 }
@@ -3038,39 +3160,37 @@ void ALPS::set_protocol() {
 bool ALPS::matchTable(ALPSStatus_t *e7, ALPSStatus_t *ec) {
     const struct alps_model_info *model;
     int i;
-    
+  
     IOLog("ALPS: Touchpad with Signature { %d, %d, %d }", e7->bytes[0], e7->bytes[1], e7->bytes[2]);
-    
+  
     for (i = 0; i < ARRAY_SIZE(alps_model_data); i++) {
         model = &alps_model_data[i];
         
-        if (!memcmp(e7->bytes, model->signature, sizeof(model->signature)) &&
-            (!model->command_mode_resp ||
-             model->command_mode_resp == ec->bytes[2])) {
-            
-            priv.proto_version = model->proto_version;
-            
-            // log model version:
-            if (priv.proto_version == ALPS_PROTO_V1) {
-                IOLog("ALPS: Found an ALPS V1 TouchPad\n");
-            } else if (priv.proto_version == ALPS_PROTO_V2) {
-                IOLog("ALPS: Found an ALPS V2 TouchPad\n");
-            } else if (priv.proto_version == ALPS_PROTO_V3_RUSHMORE) {
-                IOLog("ALPS: Found an ALPS V3 Rushmore TouchPad\n!");
-            } else if (priv.proto_version == ALPS_PROTO_V4) {
-                IOLog("ALPS: Found an ALPS V4 TouchPad\n");
-            }else if (priv.proto_version == ALPS_PROTO_V6) {
-                IOLog("ALPS: Found an ALPS V6 TouchPad\n");
+        if (!memcmp(e7->bytes, model->signature, sizeof(model->signature))) {
+                
+                priv.proto_version = model->protocol_info.version;
+                
+                // log model version:
+                if (priv.proto_version == ALPS_PROTO_V1) {
+                    IOLog("ALPS: Found an ALPS V1 TouchPad\n");
+                } else if (priv.proto_version == ALPS_PROTO_V2) {
+                    IOLog("ALPS: Found an ALPS V2 TouchPad\n");
+                } else if (priv.proto_version == ALPS_PROTO_V3_RUSHMORE) {
+                    IOLog("ALPS: Found an ALPS V3 Rushmore TouchPad\n!");
+                } else if (priv.proto_version == ALPS_PROTO_V4) {
+                    IOLog("ALPS: Found an ALPS V4 TouchPad\n");
+                }else if (priv.proto_version == ALPS_PROTO_V6) {
+                    IOLog("ALPS: Found an ALPS V6 TouchPad\n");
+                }
+                
+                set_protocol();
+                
+                priv.flags = model->protocol_info.flags;
+                priv.byte0 = model->protocol_info.byte0;
+                priv.mask0 = model->protocol_info.mask0;
+                
+                return true;
             }
-            
-            set_protocol();
-            
-            priv.flags = model->flags;
-            priv.byte0 = model->byte0;
-            priv.mask0 = model->mask0;
-            
-            return true;
-        }
     }
     
     return false;
@@ -3109,7 +3229,11 @@ IOReturn ALPS::identify() {
     
     if (matchTable(&e7, &ec)) {
         return 0;
-        
+    
+    } else if (e7.bytes[0] == 0x73 && e7.bytes[1] == 0x02 && e7.bytes[2] == 0x64 &&
+               ec.bytes[2] == 0x8a) {
+        priv.proto_version = ALPS_PROTO_V4;
+        IOLog("ALPS: Found a V4 TouchPad with ID: E7=0x%02x 0x%02x 0x%02x, EC=0x%02x 0x%02x 0x%02x\n", e7.bytes[0], e7.bytes[1], e7.bytes[2], ec.bytes[0], ec.bytes[1], ec.bytes[2]);
     } else if (e7.bytes[0] == 0x73 && e7.bytes[1] == 0x03 && e7.bytes[2] == 0x50 &&
                ec.bytes[0] == 0x73 && (ec.bytes[1] == 0x01 || ec.bytes[1] == 0x02)) {
         priv.proto_version = ALPS_PROTO_V5;
@@ -3130,16 +3254,13 @@ IOReturn ALPS::identify() {
         IOLog("ALPS: Found a V3 Pinnacle TouchPad with ID: E7=0x%02x 0x%02x 0x%02x, EC=0x%02x 0x%02x 0x%02x\n", e7.bytes[0], e7.bytes[1], e7.bytes[2], ec.bytes[0], ec.bytes[1], ec.bytes[2]);
         
     } else if (e7.bytes[0] == 0x73 && e7.bytes[1] == 0x03 &&
-               e7.bytes[2] == 0x14 && ec.bytes[1] == 0x02) {
+               (e7.bytes[2] == 0x14 || e7.bytes[2] == 0x28)) {
         priv.proto_version = ALPS_PROTO_V8;
         IOLog("ALPS: Found a V8 TouchPad with ID: E7=0x%02x 0x%02x 0x%02x, EC=0x%02x 0x%02x 0x%02x\n", e7.bytes[0], e7.bytes[1], e7.bytes[2], ec.bytes[0], ec.bytes[1], ec.bytes[2]);
         
-        
-    } else if (e7.bytes[0] == 0x73 && e7.bytes[1] == 0x03 &&
-               e7.bytes[2] == 0x28 && ec.bytes[1] == 0x01) {
+    } else if (e7.bytes[0] == 0x73 && e7.bytes[1] == 0x03 && e7.bytes[2] == 0xc8) {
         priv.proto_version = ALPS_PROTO_V8;
-        IOLog("ALPS: Found a V8 Flare TouchPad with ID: E7=0x%02x 0x%02x 0x%02x, EC=0x%02x 0x%02x 0x%02x\n", e7.bytes[0], e7.bytes[1], e7.bytes[2], ec.bytes[0], ec.bytes[1], ec.bytes[2]);
-        
+        IOLog("ALPS: Found a unsupported V9 TouchPad with ID: E7=0x%02x 0x%02x 0x%02x, EC=0x%02x 0x%02x 0x%02x\n", e7.bytes[0], e7.bytes[1], e7.bytes[2], ec.bytes[0], ec.bytes[1], ec.bytes[2]);
         
     } else {
         IOLog("ALPS DRIVER: TouchPad didn't match any known IDs: E7=0x%02x 0x%02x 0x%02x, EC=0x%02x 0x%02x 0x%02x ... driver will now exit\n",
@@ -3147,881 +3268,819 @@ IOReturn ALPS::identify() {
         return kIOReturnInvalid;
     }
     
-    /* Save the Firmware version */
+    /* Save Device ID and Firmware version */
+    memcpy(priv.dev_id, e7.bytes, 3);
     memcpy(priv.fw_ver, ec.bytes, 3);
     set_protocol();
     return 0;
+}
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+void ALPS::setTouchPadEnable(bool enable) {
+    DEBUG_LOG("setTouchpadEnable enter\n");
+    //
+    // Instructs the trackpad to start or stop the reporting of data packets.
+    // It is safe to issue this request from the interrupt/completion context.
+    //
+    
+    if (enable) {
+        initTouchPad();
+    } else {
+        // to disable just reset the mouse
+        resetMouse();
+    }
+}
+
+void ALPS::packetReady() {
+    // empty the ring buffer, dispatching each packet...
+    while (_ringBuffer.count() >= priv.pktsize) {
+        //UInt8 *packet = _ringBuffer.tail();
+        if (priv.PSMOUSE_BAD_DATA == false) {
+            if (!ignoreall)
+                (this->*process_packet)(_ringBuffer.tail());
+            //(this->*process_packet)(packet);
+            // if (!ignoreall)
+            //     alps_parse_hw_state(_ringBuffer.tail());
+        } else {
+            IOLog("ALPS: an invalid or bare packet has been dropped...\n");
+            /* Might need to perform a full HW reset here if we keep receiving bad packets (consecutively) */
+        }
+        _packetByteCount = 0;
+        _ringBuffer.advanceTail(priv.pktsize);
+    }
+}
+
+void ALPS::ps2_command(unsigned char value, UInt8 command)
+{
+    TPS2Request<2> request;
+    int cmdCount = 0;
+    
+    request.commands[cmdCount].command = kPS2C_SendMouseCommandAndCompareAck;
+    request.commands[cmdCount++].inOrOut = command;
+    request.commands[cmdCount].command = kPS2C_SendMouseCommandAndCompareAck;
+    request.commands[cmdCount++].inOrOut = value;
+    request.commandsCount = cmdCount;
+    assert(request.commandsCount <= countof(request.commands));
+    _device->submitRequestAndBlock(&request);
+    
+    //return request.commandsCount = cmdCount;
+}
+
+void ALPS::ps2_command_short(UInt8 command)
+{
+    TPS2Request<1> request;
+    int cmdCount = 0;
+    
+    request.commands[cmdCount].command = kPS2C_SendMouseCommandAndCompareAck;
+    request.commands[cmdCount++].inOrOut = command;
+    request.commandsCount = cmdCount;
+    assert(request.commandsCount <= countof(request.commands));
+    _device->submitRequestAndBlock(&request);
+    
+    //return request.commandsCount = cmdCount;
 }
 
 /* ============================================================================================== */
 /* ===========================||\\PROCESS AND DISPATCH TO macOS//||============================== */
 /* ============================================================================================== */
 
-void ALPS::dispatchEventsWithInfo(int xraw, int yraw, int z, int fingers, UInt32 buttonsraw) {
-    uint64_t now_abs;
-    clock_get_uptime(&now_abs);
-    uint64_t now_ns;
-    absolutetime_to_nanoseconds(now_abs, &now_ns);
+
+void ALPS::set_resolution() {
+    physical_max_x = priv.x_max * 4;
+    physical_max_y = priv.y_max * 4.5;
     
-    // scale x & y to the axis which has the most resolution
-    if (xupmm < yupmm) {
-        xraw = xraw * yupmm / xupmm;
-    } else if (xupmm > yupmm) {
-        yraw = yraw * xupmm / yupmm;
-    }
+    logical_max_x = priv.x_max;
+    logical_max_y = priv.y_max;
     
-    /* Dr Hurt: Scale all touchpads' axes to 6000 to be able to the same divisors for all models */
-    xraw *= (6000 / ((priv.x_max + priv.y_max)/2));
-    yraw *= (6000 / ((priv.x_max + priv.y_max)/2));
+    setProperty(VOODOO_INPUT_LOGICAL_MAX_X_KEY, logical_max_x - logical_min_x, 32);
+    setProperty(VOODOO_INPUT_LOGICAL_MAX_Y_KEY, logical_max_y - logical_min_y, 32);
     
-    int x = xraw;
-    int y = yraw;
+    setProperty(VOODOO_INPUT_PHYSICAL_MAX_X_KEY, physical_max_x, 32);
+    setProperty(VOODOO_INPUT_PHYSICAL_MAX_Y_KEY, physical_max_y, 32);
     
-    fingers = z > z_finger ? fingers : 0;
+    setProperty(VOODOO_INPUT_TRANSFORM_KEY, 0ull, 32);
+    setProperty("VoodooInputSupported", kOSBooleanTrue);
     
-    // allow middle click to be simulated the other two physical buttons
-    UInt32 buttons = buttonsraw;
-    lastbuttons = buttons;
+    registerService();
     
-    // allow middle button to be simulated with two buttons down
-    if (!clickpadtype || fingers == 3) {
-        buttons = middleButton(buttons, now_abs, fingers == 3 ? fromPassthru : fromTrackpad);
-        DEBUG_LOG("New buttons value after check for middle click: %d\n", buttons);
-    }
-    
-    // recalc middle buttons if finger is going down
-    if (0 == last_fingers && fingers > 0) {
-        buttons = middleButton(buttonsraw | passbuttons, now_abs, fromCancel);
-    }
-    
-    if (last_fingers > 0 && fingers > 0 && last_fingers != fingers) {
-        // ignore deltas for a while after finger change
-        ignoredeltas = ignoredeltasstart;
-    }
-    
-    if (last_fingers != fingers) {
-        DEBUG_LOG("Finger change, reset averages\n");
-        // reset averages after finger change
-        x_undo.reset();
-        y_undo.reset();
-        x_avg.reset();
-        y_avg.reset();
-    }
-    
-    // unsmooth input (probably just for testing)
-    // by default the trackpad itself does a simple decaying average (1/2 each)
-    // we can undo it here
-    if (unsmoothinput) {
-        x = x_undo.filter(x);
-        y = y_undo.filter(y);
-    }
-    
-    // smooth input by unweighted average
-    if (smoothinput) {
-        x = x_avg.filter(x);
-        y = y_avg.filter(y);
-    }
-    
-    // distance from primary
-    // two finger zoom settings?
-    if (1) {
-        int dxx = x - lastx;
-        int dyy = y - lasty;
-        int ds = ((dxx * dxx) + (dyy * dyy)) >> 4;
-        int last = secondaryfingerdistance_history.newest();
-        int change = (ds - last);
-        int count = secondaryfingerdistance_history.count();
-        fingerzooming = 0;
-        if (count > 3) {
-            //proper zooming threshold value?
-            if (abs(change) > 50000) {
-                fingerzooming = change;
-            }
-        }
-        secondaryfingerdistance_history.filter(ds);
-    }
-    
-    if (ignoredeltas) {
-        DEBUG_LOG("ALPS: Still ignoring deltas. Value=%d\n", ignoredeltas);
-        lastx = x;
-        lasty = y;
-        if (--ignoredeltas == 0) {
-            x_undo.reset();
-            y_undo.reset();
-            x_avg.reset();
-            y_avg.reset();
-        }
-    }
-    
-    // deal with "OutsidezoneNoAction When Typing"
-    if (outzone_wt && z > z_finger && now_ns - keytime < maxaftertyping &&
-        (x < zonel || x > zoner || y < zoneb || y > zonet)) {
-        DEBUG_LOG("Ignore touch input after typing\n");
-        // touch input was shortly after typing and outside the "zone"
-        // ignore it...
+    DEBUG_LOG("VoodooPS2Trackpad: logical %dx%d-%dx%d physical_max %dx%d upmm %dx%d",
+          logical_min_x, logical_min_y,
+          logical_max_x, logical_max_y,
+          physical_max_x, physical_max_y,
+          xupmm, yupmm);
+}
+
+// port from VoodooPS2SynapticsTouchpad.cpp; huge credits to @usr-sse2
+
+#define sqr(x) ((x) * (x))
+int ALPS::dist(int physicalFinger, int virtualFinger) {
+    const auto &phy = fingerStates[physicalFinger];
+    const auto &virt = virtualFingerStates[virtualFinger];
+    return sqr(phy.x - virt.x_avg.newest()) + sqr(phy.y - virt.y_avg.newest());
+}
+
+void ALPS::assignVirtualFinger(int physicalFinger) {
+    if (physicalFinger < 0 || physicalFinger >= MAX_TOUCHES) {
+        IOLog("VoodooPS2ALPS::assignVirtualFinger ERROR: invalid physical finger %d", physicalFinger);
         return;
     }
-    
-    // if trackpad input is supposed to be ignored, then don't do anything
-    if (ignoreall) {
-        DEBUG_LOG("ignoreall is set, returning\n");
-        return;
-    }
-    
-#ifdef DEBUG
-    int tm1 = touchmode;
-#endif
-    
-    /*
-     Three-finger drag should work the following way:
-     When three fingers touch the touchpad, start dragging
-     While dragging, ignore touches with not 3 fingers
-     When all fingers are released, go to DRAGNOTOUCH mode
-     In DRAGNOTOUCH mode:
-     one or two fingers can be placed on the touchpad, and it prolongs the drag stop timer
-     if one or two fingers MOVE on the touchpad or are RELEASED, dragging is stopped (click to stop)
-     when three fingers are on the touchpad, continue dragging in DRAGLOCK mode
-     */
-    
-    bool _threefingerdrag = (threefingerdrag && !fourfingersdetected);
-    
-    if(isFingerTouch(z) && (touchmode == MODE_DRAGLOCK || touchmode == MODE_DRAG) && _threefingerdrag && fingers != 1) {
-        last_fingers=fingers;
-        return;
-    }
-    
-    if (touchmode == MODE_DRAGNOTOUCH && _threefingerdrag && fingers != 1) {
-        last_fingers=fingers;
-        return;
-    }
-    
-    DEBUG_LOG("VoodooPS2::Mode: %d\n", touchmode);
-    if (z < z_finger && isTouchMode()) {
-        // Finger has been lifted
-        DEBUG_LOG("finger lifted after touch\n");
-        xrest = yrest = scrollrest = 0;
-        inSwipeLeft = inSwipeRight = inSwipeUp = inSwipeDown = 0;
-        inSwipe4Left = inSwipe4Right = inSwipe4Up = inSwipe4Down = 0;
-        xmoved = ymoved = 0;
-        untouchtime = now_ns;
-        
-        DEBUG_LOG("finger lifted -> touchmode: %d history: %d", touchmode, dy_history.count());
-        DEBUG_LOG("PS2: wastriple: %d wasdouble: %d touchtime: %llu", wastriple, wasdouble, touchtime);
-        
-        // check for scroll momentum start
-        if ((MODE_MTOUCH == touchmode || MODE_VSCROLL == touchmode) && momentumscroll && momentumscrolltimer) {
-            // releasing when we were in touchmode -- check for momentum scroll
-            if (dy_history.count() > momentumscrollsamplesmin &&
-                (momentumscrollinterval = time_history.newest() - time_history.oldest())) {
-                momentumscrollsum = dy_history.sum();
-                momentumscrollcurrent = momentumscrolltimer * momentumscrollsum;
-                momentumscrollrest1 = 0;
-                momentumscrollrest2 = 0;
-                setTimerTimeout(scrollTimer, momentumscrolltimer);
-            } else
-                
-                if (dx_history.count() > momentumscrollsamplesmin &&
-                    (xmomentumscrollinterval = xtime_history.newest() - xtime_history.oldest()))
-                {
-                    xmomentumscrollsum = -dx_history.sum();
-                    xmomentumscrollcurrent = momentumscrolltimer * xmomentumscrollsum;
-                    xmomentumscrollrest1 = 0;
-                    xmomentumscrollrest2 = 0;
-                    setTimerTimeout(xscrollTimer, momentumscrolltimer);
-                }
-        }
-        time_history.reset();
-        dy_history.reset();
-        xtime_history.reset();
-        dx_history.reset();
-        
-        if (now_ns - touchtime < maxtaptime && clicking) {
-            switch (touchmode) {
-                case MODE_DRAG:
-                    if (!immediateclick) {
-                        buttons &= ~0x7;
-                        dispatchRelativePointerEventX(0, 0, buttons | 0x1, now_abs);
-                        dispatchRelativePointerEventX(0, 0, buttons, now_abs);
-                    }
-                    if (wastriple && rtap) {
-                        buttons |= !swapdoubletriple ? 0x4 : 0x02;
-                    } else if (wasdouble && rtap) {
-                        buttons |= !swapdoubletriple ? 0x2 : 0x04;
-                    } else {
-                        buttons |= 0x1;
-                    }
-                    touchmode = MODE_NOTOUCH;
-                    break;
-                    
-                case MODE_DRAGLOCK:
-                    touchmode = MODE_NOTOUCH;
-                    break;
-                    
-                default: //dispatch taps
-                    if (wastriple && rtap)
-                    {
-                        buttons |= !swapdoubletriple ? 0x4 : 0x02;
-                        touchmode=MODE_NOTOUCH;
-                    }
-                    else if (wasdouble && rtap)
-                    {
-                        buttons |= !swapdoubletriple ? 0x2 : 0x04;
-                        touchmode=MODE_NOTOUCH;
-                    }
-                    else
-                    {
-                        buttons |= 0x1;
-                        touchmode=dragging ? MODE_PREDRAG : MODE_NOTOUCH;
-                    }
-                    break;
-            }
-        }
-        else {
-            if ((touchmode==MODE_DRAG || touchmode==MODE_DRAGLOCK)
-                && (draglock || draglocktemp || (dragTimer && dragexitdelay)))
-            {
-                touchmode=MODE_DRAGNOTOUCH;
-                if (!draglock && !draglocktemp)
-                {
-                    cancelTimer(dragTimer);
-                    setTimerTimeout(dragTimer, dragexitdelay);
-                }
-            } else {
-                touchmode = MODE_NOTOUCH;
-                draglocktemp = 0;
-            }
-        }
-        wasdouble = false;
-        wastriple = false;
-    }
-    
-    // cancel pre-drag mode if second tap takes too long
-    if (touchmode == MODE_PREDRAG && now_ns - untouchtime >= maxdragtime) {
-        DEBUG_LOG("cancel pre-drag since second tap took too long\n");
-        touchmode = MODE_NOTOUCH;
-    }
-    
-    // Note: This test should probably be done somewhere else, especially if to
-    // implement more gestures in the future, because this information we are
-    // erasing here (time of touch) might be useful for certain gestures...
-    
-    // cancel tap if touch point moves too far
-    if (isTouchMode() && isFingerTouch(z) && last_fingers == fingers) {
-        int dy = abs(touchy-y);
-        int dx = abs(touchx-x);
-        DEBUG_LOG("PS2: Cancel DX: %d Cancel DY: %d", dx, dy);
-        if (!wasdouble && !wastriple && (dx > tapthreshx || dy > tapthreshy)) {
-            touchtime = 0;
-        }
-        else if (dx > dblthreshx || dy > dblthreshy) {
-            touchtime = 0;
-        }
-    }
-    
-#ifdef DEBUG
-    int tm2 = touchmode;
-#endif
-    int dx = 0, dy = 0;
-    
-    if ((touchmode != MODE_MTOUCH) || (touchmode == MODE_MTOUCH && fingers != 0)) {
-        if (secondaryfingerdistance_history.count() > 0) {
-            secondaryfingerdistance_history.reset();
-            fingerzooming = 0;
-        }
-    }
-    
-    switch (touchmode) {
-        case MODE_DRAG:
-        case MODE_DRAGLOCK:
-            if (MODE_DRAGLOCK == touchmode || (!immediateclick || now_ns - touchtime > maxdbltaptime)) {
-                buttons |= 0x1;
-            }
-            // fall through
-        case MODE_MOVE:
-            if (last_fingers == fingers && z<=zlimit)
-            {
-                if (now_ns - touchtime > 100000000) {
-                    if(wasScroll) {
-                        wasScroll = false;
-                        ignoredeltas = ignoredeltasstart;
-                        break;
-                    }
-                    dx = x-lastx+xrest;
-                    dy = lasty-y+yrest;
-                    xrest = dx % divisorx;
-                    yrest = dy % divisory;
-                    if (abs(dx) > bogusdxthresh || abs(dy) > bogusdythresh)
-                        dx = dy = xrest = yrest = 0;
-                }
-            }
+    for (int j = 0; j < MAX_TOUCHES; j++) {
+        virtual_finger_state &vfj = virtualFingerStates[j];
+        if (!vfj.touch) {
+            fingerStates[physicalFinger].virtualFingerIndex = j;
+            vfj.touch = true;
+            vfj.x_avg.reset();
+            vfj.y_avg.reset();
+            assignFingerType(vfj);
             break;
-            
-        case MODE_MTOUCH:
-            switch (fingers) {
+        }
+    }
+}
+
+void ALPS::assignFingerType(virtual_finger_state &vf) {
+    vf.fingerType = kMT2FingerTypeUndefined;
+    for (MT2FingerType i = kMT2FingerTypeIndexFinger; i < kMT2FingerTypeCount; i = (MT2FingerType)(i + 1))
+        if (freeFingerTypes[i]) {
+            freeFingerTypes[i] = false;
+            vf.fingerType = i;
+            break;
+        }
+    
+}
+
+void ALPS::alps_parse_hw_state(const UInt8 buf[], struct alps_fields &f)
+{
+    // Check if input is disabled via ApplePS2Keyboard request
+    if (ignoreall)
+        return;
+    
+    // get fingercounts from packets
+    int fingers = 0;
+    
+    fingers = f.fingers;
+    
+    DEBUG_LOG("There are currently %d finger(s) accessing alps_parse_hw_state\n", f.fingers);
+    
+    bool prev_left = left;
+    bool prev_right = right;
+    bool prev_middle = middle;
+    bool prev_left_ts = left_ts;
+    
+    left = f.left;
+    right = f.right | f.ts_right;
+    middle = f.middle | f.ts_middle;
+    left_ts = f.ts_left;
+    
+    if (fingers >= 2) {
+        fingerStates[1].x = f.mt[1].x;
+        fingerStates[1].y = f.mt[1].y;
+        fingerStates[1].z = f.pressure;
+        
+        if (fingerStates[1].x > X_MAX_POSITIVE)
+            fingerStates[1].x -= 1 << ABS_POS_BITS;
+          else if (fingerStates[1].x == X_MAX_POSITIVE)
+              fingerStates[1].x = XMAX;
+
+          if (fingerStates[1].y > Y_MAX_POSITIVE)
+              fingerStates[1].y -= 1 << ABS_POS_BITS;
+          else if (fingerStates[1].y == Y_MAX_POSITIVE)
+              fingerStates[1].y = YMAX;
+    }
+        // normal "packet"
+        // my port of synaptics_parse_hw_state from synaptics.c from Linux Kernel
+    fingerStates[0].x = f.mt[0].x;
+    fingerStates[0].y = f.mt[0].y;
+    fingerStates[0].z = f.pressure;
+    
+    DEBUG_LOG("ALPS: fingerStates[0] report: x: %d, y: %d, z: %d\n", fingerStates[0].x, fingerStates[0].y, fingerStates[0].z);
+    
+    if (fingerStates[0].x > X_MAX_POSITIVE)
+        fingerStates[0].x -= 1 << ABS_POS_BITS;
+    else if (fingerStates[0].x == X_MAX_POSITIVE)
+        fingerStates[0].x = XMAX;
+    
+    if (fingerStates[0].y > Y_MAX_POSITIVE)
+        fingerStates[0].y -= 1 << ABS_POS_BITS;
+    else if (fingerStates[0].y == Y_MAX_POSITIVE)
+        fingerStates[0].y = YMAX;
+
+    // count the number of fingers
+    // my port of synaptics_process_packet from synaptics.c from Linux Kernel
+    int fingerCount = 0;
+    if (fingerStates[0].z == 0) {
+        fingerCount = 0;
+        switch (fingers) {
+            case 0:
+                fingerCount = 0;
+                break;
+            case 1:
+                fingerCount = 1;
+                break;
+            case 2:
+                fingerCount = 2;
+                break;
+            case 3:
+                fingerCount = 3;
+                break;
+            case 4:
+                fingerCount = 4;
+                break;
+        }
+    }
+    
+    clampedFingerCount = fingerCount;
+    
+    if (clampedFingerCount > MAX_TOUCHES)
+        clampedFingerCount = MAX_TOUCHES;
+    
+    if (renumberFingers())
+        sendTouchData();
+
+    AbsoluteTime timestamp;
+    clock_get_uptime(&timestamp);
+    // Physical left button (for non-Clickpads)
+    // Only use this if trackpad is not a clickpad
+    if (!(priv.flags & ALPS_BUTTONPAD)) {
+        if (left && !prev_left)
+            dispatchRelativePointerEvent(0, 0, 0x01, timestamp);
+        else if (prev_left && !left)
+            dispatchRelativePointerEvent(0, 0, 0x00, timestamp);
+    }
+    // Physical right button (non-passthrough)
+    if (right && !prev_right)
+        dispatchRelativePointerEvent(0, 0, 0x02, timestamp);
+    else if (prev_right && !right)
+        dispatchRelativePointerEvent(0, 0, 0x00, timestamp);
+    // Physical middle button (non-passthrough)
+    if (middle && !prev_middle)
+        dispatchRelativePointerEvent(0, 0, 0x04, timestamp);
+    else if (prev_middle && !middle)
+        dispatchRelativePointerEvent(0, 0, 0x00, timestamp);
+    // Physical left button (Trackstick)
+    if (left_ts && !prev_left_ts)
+        dispatchRelativePointerEvent(0, 0, 0x01, timestamp);
+    else if (prev_left_ts && !left_ts)
+        dispatchRelativePointerEvent(0, 0, 0x00, timestamp);
+}
+
+template <typename TValue, typename TLimit, typename TMargin>
+static void clip_no_update_limits(TValue& value, TLimit minimum, TLimit maximum, TMargin margin)
+{
+    if (value < minimum)
+        value = minimum;
+    if (value > maximum)
+        value = maximum;
+}
+
+template <typename TValue, typename TLimit, typename TMargin>
+static void clip(TValue& value, TLimit& minimum, TLimit& maximum, TMargin margin, bool &dimensions_changed)
+{
+    if (value < minimum - margin) {
+        dimensions_changed = true;
+        minimum = value + margin;
+    }
+    if (value > maximum + margin) {
+        dimensions_changed = true;
+        maximum = value - margin;
+    }
+    clip_no_update_limits(value, minimum, maximum, margin);
+}
+
+void ALPS::freeAndMarkVirtualFingers() {
+    memset(freeFingerTypes, true, kMT2FingerTypeCount);
+    freeFingerTypes[kMT2FingerTypeUndefined] = false;
+    
+    for (int i = 0; i < MAX_TOUCHES; i++) { // free up all virtual fingers
+        auto &vfi = virtualFingerStates[i];
+        vfi.touch = false;
+        vfi.x_avg.reset(); // maybe it should be done only for unpressed fingers?
+        vfi.y_avg.reset();
+        vfi.pressure = 0;
+    }
+    for (int i = 0; i < clampedFingerCount; i++) { // mark virtual fingers as used
+        int j = fingerStates[i].virtualFingerIndex;
+        if (j == -1) {
+            IOLog("alps_parse_hw_state: WTF!? Finger %d has no virtual finger", i);
+            continue;
+        }
+        auto &vfj = virtualFingerStates[j];
+        vfj.touch = true;
+        freeFingerTypes[vfj.fingerType] = false;
+    }
+    for (int i = 0; i < MAX_TOUCHES; i++) {
+        auto &vfi = virtualFingerStates[i];
+        if (!vfi.touch)
+            vfi.fingerType = kMT2FingerTypeUndefined;
+    }
+}
+
+static void clone(alps_hw_state &dst, const alps_hw_state &src) {
+    dst.x = src.x;
+    dst.y = src.y;
+    dst.z = src.z;
+}
+
+int ALPS::upperFingerIndex() const {
+    return fingerStates[0].y < fingerStates[1].y ? 1 : 0;
+}
+
+const alps_hw_state& ALPS::upperFinger() const {
+    return fingerStates[upperFingerIndex()];
+}
+
+void ALPS::swapFingers(int dst, int src) {
+    int j = fingerStates[src].virtualFingerIndex;
+    const auto &vfj = virtualFingerStates[j];
+    fingerStates[dst].x = vfj.x_avg.average();
+    fingerStates[dst].y = vfj.y_avg.average();
+    fingerStates[dst].virtualFingerIndex = j;
+    assignVirtualFinger(src);
+}
+
+#define FINGER_DIST 1000000
+
+bool ALPS::renumberFingers() {
+    const auto &f0 = fingerStates[0];
+    const auto &f1 = fingerStates[1];
+    auto &f2 = fingerStates[2];
+    auto &f3 = fingerStates[3];
+    auto &f4 = fingerStates[4];
+
+    if (clampedFingerCount == lastFingerCount && clampedFingerCount >= 3) {
+        // update imaginary finger states
+        if (f0.virtualFingerIndex != -1 && f1.virtualFingerIndex != -1) {
+            if (clampedFingerCount >= 4) {
+                const auto &fi = upperFinger();
+                const auto &fiv = virtualFingerStates[fi.virtualFingerIndex];
+                for (int j = 2; j < clampedFingerCount; j++) {
+                    auto &fj = fingerStates[j];
+                    fj.x += fi.x - fiv.x_avg.newest();
+                    fj.y += fi.y - fiv.y_avg.newest();
+                    fj.z = fi.z;
+
+                    clip_no_update_limits(fj.x, logical_min_x, logical_max_x, margin_size_x);
+                    clip_no_update_limits(fj.y, logical_min_y, logical_max_y, margin_size_y);
+                }
+            }
+            else if (clampedFingerCount == 3) {
+                const auto &f0v = virtualFingerStates[f0.virtualFingerIndex];
+                const auto &f1v = virtualFingerStates[f1.virtualFingerIndex];
+                auto &f2 = fingerStates[2];
+                f2.x += ((f0.x - f0v.x_avg.newest()) + (f1.x - f1v.x_avg.newest())) / 2;
+                f2.y += ((f0.y - f0v.y_avg.newest()) + (f1.y - f1v.y_avg.newest())) / 2;
+                f2.z = (f0.z + f1.z) / 2;
+
+                clip_no_update_limits(f2.x, logical_min_x, logical_max_x, margin_size_x);
+                clip_no_update_limits(f2.y, logical_min_y, logical_max_y, margin_size_y);
+            }
+        }
+        else
+            IOLog("alps_parse_hw_state: WTF - have %d fingers, but first 2 don't have virtual finger", clampedFingerCount);
+    }
+    
+    // We really need to send the "no touch" event
+    // multiple times, because if we don't do it and return,
+    // gestures like desktop switching or inertial scrolling
+    // got stuck midway until the next touch.
+    //if(!lastFingerCount && !clampedFingerCount) {
+    //    return 0;
+    //}
+    
+    // Finger type detection:
+    // We think that fingers are added beginning with the index finger,
+    // then middle, ring and little.
+    // However, when the finger count reaches 4, the lowest finger becomes thumb,
+    // but other fingers don't change their types.
+    // All fingers preserve their types during the gesture.
+    // Though it would be nice to see what MT2 does.
+
+    if (clampedFingerCount == lastFingerCount && clampedFingerCount == 1) {
+        int i = 0;
+        int j = fingerStates[i].virtualFingerIndex;
+        int d = dist(i, j);
+        if (d > FINGER_DIST) { // this number was determined experimentally
+            // Prevent jumps by unpressing finger. Other way could be leaving the old finger pressed.
+            DEBUG_LOG("alps_parse_hw_state: unpressing finger: dist is %d", d);
+            auto &vfj = virtualFingerStates[j];
+            vfj.x_avg.reset();
+            vfj.y_avg.reset();
+            vfj.pressure = 0;
+            vfj.fingerType = kMT2FingerTypeUndefined;
+            clampedFingerCount = 0;
+        }
+    }
+    if (clampedFingerCount != lastFingerCount) {
+        if (clampedFingerCount > lastFingerCount && clampedFingerCount >= 3) {
+            // Skip sending touch data once because we need to wait for the next extended packet
+            if (wasSkipped)
+                wasSkipped = false;
+            else {
+                DEBUG_LOG("alps_parse_hw_state: Skip sending touch data");
+                wasSkipped = true;
+                return false;
+            }
+        }
+
+        if (lastFingerCount == 0) {
+            // Assign to identity mapping
+            for (int i = 0; i < clampedFingerCount; i++) {
+                auto &fi = fingerStates[i];
+                fi.virtualFingerIndex = i;
+                auto &vfi = virtualFingerStates[i];
+                vfi.touch = true;
+                assignFingerType(vfi);
+                vfi.x_avg.reset();
+                vfi.y_avg.reset();
+                if (i >= 2) // more than 3 fingers added simultaneously
+                    clone(fi, upperFinger()); // Copy from the upper finger
+            }
+        }
+        else if (clampedFingerCount > lastFingerCount && !hadLiftFinger) {
+            // First finger already exists
+            // Can add 1, 2 or 3 fingers at once
+            // Newly added finger is always in secondary finger packet
+            switch (clampedFingerCount - lastFingerCount) {
                 case 1:
-                    if (last_fingers != fingers) break;
-                    
-                    // transition from multitouch to single touch
-                    // user could be letting go - ignore single for a few
-                    // packets to see if they completely let go before
-                    // starting to move w/ single finger
-                    if (!wsticky && !scrolldebounce && !ignoresingle)
-                    {
-                        cancelTimer(scrollDebounceTIMER);
-                        setTimerTimeout(scrollDebounceTIMER, scrollexitdelay);
-                        scrolldebounce = true;
-                        wasScroll = true;
-                        dx_history.reset();
-                        xtime_history.reset();
-                        dy_history.reset();
-                        time_history.reset();
-                        touchmode=MODE_MOVE;
-                        break;
-                    }
-                    
-                    // Decrement ignore single counter
-                    if (ignoresingle)
-                        ignoresingle--;
-                    
+                    if (lastFingerCount >= 2)
+                        swapFingers(lastFingerCount, 1);
+                    else // lastFingerCount = 1
+                        assignVirtualFinger(1);
                     break;
-                case 2: // two finger
-                    if (fingerzooming != 0) {
-                        if (fingerzooming > 0)
-                            _device->dispatchKeyboardMessage(kPS2M_zoomIn, &now_abs);
-                        else
-                            _device->dispatchKeyboardMessage(kPS2M_zoomOut, &now_abs);
-                        break;
+                case 2:
+                    if (lastFingerCount == 1) { // added second and third
+                        assignVirtualFinger(1);
+                        clone(f2, upperFinger()); // We don't know better
+                        assignVirtualFinger(2);
                     }
-                    if (last_fingers != fingers) {
-                        break;
-                    }
-                    if (palm && z > zlimit) {
-                        break;
-                    }
-                    if (palm_wt && now_ns - keytime < maxaftertyping) {
-                        break;
-                    }
-                    dy = (wvdivisor) ? (y-lasty+yrest) : 0;
-                    dx = (whdivisor&&hscroll) ? (x-lastx+xrest) : 0;
-                    yrest = (wvdivisor) ? dy % wvdivisor : 0;
-                    xrest = (whdivisor&&hscroll) ? dx % whdivisor : 0;
-                    // check for stopping or changing direction
-                    DEBUG_LOG("fingers dy: %d", dy);
-                    if ((dy < 0) != (dy_history.newest() < 0) || dy == 0) {
-                        // stopped or changed direction, clear history
-                        dy_history.reset();
-                        time_history.reset();
-                    }
-                    if ((dx < 0) != (dx_history.newest() < 0) || dx == 0)
-                    {
-                        // stopped or changed direction, clear history
-                        dx_history.reset();
-                        xtime_history.reset();
-                    }
-                    // put movement and time in history for later
-                    dx_history.filter(dx);
-                    xtime_history.filter(now_ns);
-                    dy_history.filter(dy);
-                    time_history.filter(now_ns);
-                    //REVIEW: filter out small movements (Mavericks issue)
-                    if (abs(dx) < scrolldxthresh)
-                    {
-                        xrest = dx;
-                        dx = 0;
-                    }
-                    if (abs(dy) < scrolldythresh)
-                    {
-                        yrest = dy;
-                        dy = 0;
-                    }
-                    if (0 != dy || 0 != dx)
-                    {
-                        // Don't move unless user is moved fingers far enough to know this wasn't a two finger tap
-                        // Gets rid of scrolling while trying to tap 
-                        if (!touchtime)
-                            dispatchScrollWheelEventX(wvdivisor ? dy / wvdivisor : 0, (whdivisor && hscroll) ? -dx / whdivisor : 0, 0, now_abs);
-                        //dispatchScrollWheelEvent(whdivisor ? dx / whdivisor : 0, (wvdivisor && vscroll) ? -dy / wvdivisor : 0, 0, now_abs);
-                        dx = dy = 0;
-                        ignoresingle = 3;
+                    else { // added third and fourth
+                        swapFingers(lastFingerCount, 1);
+
+                        // add fourth
+                        clone(f3, upperFinger());
+                        assignVirtualFinger(3);
                     }
                     break;
-                    
-                case 3: // three finger
-                    if (last_fingers != fingers) {
-                        break;
-                    }
-                    
-                    if (threefingerhorizswipe || threefingervertswipe) {
-                        
-                        // Now calculate total movement since 3 fingers down (add to total)
-                        xmoved += lastx-x;
-                        ymoved += y-lasty;
-                        
-                        // dispatching 3 finger movement
-                        if (ymoved > swipedy && !inSwipeUp && !inSwipe4Up && threefingervertswipe) {
-                            inSwipeUp = 1;
-                            inSwipeDown = 0;
-                            ymoved = 0;
-                            _device->dispatchKeyboardMessage(kPS2M_swipeUp, &now_abs);
-                            break;
-                        }
-                        if (ymoved < -swipedy && !inSwipeDown && !inSwipe4Down && threefingervertswipe) {
-                            inSwipeDown = 1;
-                            inSwipeUp = 0;
-                            ymoved = 0;
-                            _device->dispatchKeyboardMessage(kPS2M_swipeDown, &now_abs);
-                            break;
-                        }
-                        if (xmoved < -swipedx && !inSwipeRight && !inSwipe4Right && threefingerhorizswipe) {
-                            inSwipeRight = 1;
-                            inSwipeLeft = 0;
-                            xmoved = 0;
-                            _device->dispatchKeyboardMessage(kPS2M_swipeRight, &now_abs);
-                            break;
-                        }
-                        if (xmoved > swipedx && !inSwipeLeft && !inSwipe4Left && threefingerhorizswipe) {
-                            inSwipeLeft = 1;
-                            inSwipeRight = 0;
-                            xmoved = 0;
-                            _device->dispatchKeyboardMessage(kPS2M_swipeLeft, &now_abs);
-                            break;
-                        }
-                    }
+                case 3:
+                    assignVirtualFinger(1);
+                    clone(f2, upperFinger());
+                    assignVirtualFinger(2);
+                    clone(f3, upperFinger());
+                    assignVirtualFinger(3);
                     break;
-                    
-                case 4: // four fingers
-                    if (last_fingers != fingers) {
-                        break;
-                    }
-                    
-                    //if (fourfingersdetected)
-                    // {
-                    // Now calculate total movement since 4 fingers down (add to total)
-                    xmoved += lastx-x;
-                    ymoved += y-lasty;
-                    
-                    // dispatching 4 finger movement
-                    if (ymoved > swipedy && !inSwipe4Up) {
-                        inSwipe4Up = 1; inSwipeUp = 0;
-                        inSwipe4Down = 0;
-                        ymoved = 0;
-                        _device->dispatchKeyboardMessage(kPS2M_swipe4Up, &now_abs);
-                        break;
-                    }
-                    if (ymoved < -swipedy && !inSwipe4Down) {
-                        inSwipe4Down = 1; inSwipeDown = 0;
-                        inSwipe4Up = 0;
-                        ymoved = 0;
-                        _device->dispatchKeyboardMessage(kPS2M_swipe4Down, &now_abs);
-                        break;
-                    }
-                    if (xmoved < -swipedx && !inSwipe4Right) {
-                        inSwipe4Right = 1; inSwipeRight = 0;
-                        inSwipe4Left = 0;
-                        xmoved = 0;
-                        _device->dispatchKeyboardMessage(kPS2M_swipe4Right, &now_abs);
-                        break;
-                    }
-                    if (xmoved > swipedx && inSwipe4Left) {
-                        inSwipe4Left = 1; inSwipeLeft = 0;
-                        inSwipe4Right = 0;
-                        xmoved = 0;
-                        _device->dispatchKeyboardMessage(kPS2M_swipe4Left, &now_abs);
-                        break;
-                    }
-                    //}
-            }
-            break;
-        case MODE_DRAGNOTOUCH:
-            buttons |= 0x1;
-            // fall through
-        case MODE_PREDRAG:
-            if (!immediateclick && (!palm_wt || now_ns - keytime >= maxaftertyping)) {
-                buttons |= 0x1;
-            }
-        case MODE_NOTOUCH:
-            break;
-            
-        default:
-            ; // nothing
-    }
-    
-    // capture time of tap, and watch for double/triple tap
-    if (isFingerTouch(z)) {
-        // taps don't count if too close to typing or if currently in momentum scroll
-        if ((!palm_wt || now_ns - keytime >= maxaftertyping) && !momentumscrollcurrent && !xmomentumscrollcurrent) {
-            
-            if (!isTouchMode()) {
-                touchtime = now_ns;
-            }
-            
-            if (last_fingers < fingers) {
-                touchx = x;
-                touchy = y;
-            }
-            
-            DEBUG_LOG("PS2:Checking Fingers");
-            wasdouble = fingers == 2 || (wasdouble && last_fingers != fingers);// && !scrolldebounce;
-            wastriple = fingers == 3 || (wastriple && last_fingers != fingers);// && !scrolldebounce;
-        }
-        
-        if(!scrolldebounce && momentumscrollcurrent){
-            // any touch cancels momentum scroll
-            momentumscrollcurrent = 0;
-            setTimerTimeout(scrollDebounceTIMER,scrollexitdelay);
-            scrolldebounce = true;
-        }
-        
-        if(!scrolldebounce && xmomentumscrollcurrent){
-            // any touch cancels momentum scroll
-            xmomentumscrollcurrent = 0;
-            setTimerTimeout(scrollDebounceTIMER,scrollexitdelay);
-            scrolldebounce = true;
-        }
-    }
-    // switch modes, depending on input
-    if (touchmode == MODE_PREDRAG && isFingerTouch(z)) {
-        touchmode = MODE_DRAG;
-        draglocktemp = _modifierdown & draglocktempmask;
-    }
-    if (touchmode == MODE_DRAGNOTOUCH && isFingerTouch(z) && (!_threefingerdrag || (_threefingerdrag && fingers == 1))) {
-        if (dragTimer)
-            cancelTimer(dragTimer);
-        touchmode=MODE_DRAGLOCK;
-    }
-    if (MODE_MTOUCH != touchmode && fingers > 1 && isFingerTouch(z)) {
-        if (fingers == 1 && _threefingerdrag)
-        {
-            touchmode = MODE_DRAG;
-        }
-        else
-            touchmode=MODE_MTOUCH;
-        tracksecondary=false;
-    }
-    
-    if (touchmode == MODE_NOTOUCH && z > z_finger && !scrolldebounce) {
-        touchmode = MODE_MOVE;
-    }
-    
-    // pointer jumpy fix;
-#if 1
-    if (!(fingers == 0 ||
-          touchmode == MODE_VSCROLL || touchmode == MODE_HSCROLL ||
-          momentumscrollcurrent != 0 || xmomentumscrollcurrent != 0)) {
-        
-        if (skippyThresh > 0) {
-            skippyThresh--;
-            if (abs(dx) > 100 && abs(dy) > 100) {
-                dx = 0;
-                dy = 0;
+                case 4:
+                    assignVirtualFinger(1);
+                    clone(f2, upperFinger());
+                    assignVirtualFinger(2);
+                    clone(f3, upperFinger());
+                    assignVirtualFinger(3);
+                    clone(f4, upperFinger());
+                    assignVirtualFinger(4);
+                    break;
+                default:
+                    IOLog("alps_parse_hw_state: WTF!? fc=%d lfc=%d", clampedFingerCount, lastFingerCount);
             }
         }
-        if (lastdx == 0 && dx != 0) {
-            dx = 0;
-            lastdx = 1;
-        } else {
-            lastdx = dx;
-        }
-        if (lastdy == 0 && dy != 0) {
-            dy = 0;
-            lastdy = 1;
-        } else {
-            lastdy = dy;
-        }
-        if (dx == 0 && dy == 0) {
-            skippyThresh = 8;
-        } else {
-            skippyThresh--;
-        }
-    }
-#endif
-    
-    // filter out middle mouse click if middle button scroll is true
-    dispatchRelativePointerEventX(dx / divisorx, dy / divisory, buttons, now_abs);
-    
-    // always save last seen position for calculating deltas later
-    lastx = x;
-    lasty = y;
-    //b4last = last_fingers;
-    last_fingers = fingers;
-    
-#ifdef DEBUG
-    DEBUG_LOG("ps2: fingers=%d, dx=%d, dy=%d (%d,%d) z=%d mode=(%d,%d,%d) buttons=%d wasdouble=%d wastriple=%d\n", fingers, dx, dy, x, y, z, tm1, tm2, touchmode, buttons, wasdouble, wastriple);
-#endif
-}
-
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-void ALPS::
-dispatchRelativePointerEventWithPacket(UInt8 *packet,
-                                       UInt32 packetSize) {
-    //
-    // Process the three byte relative format packet that was retrieved from the
-    // trackpad. The format of the bytes is as follows:
-    //
-    //  7  6  5  4  3  2  1  0
-    // -----------------------
-    // YO XO YS XS  1  M  R  L
-    // X7 X6 X5 X4 X3 X3 X1 X0  (X delta)
-    // Y7 Y6 Y5 Y4 Y3 Y2 Y1 Y0  (Y delta)
-    //
-    
-    UInt32 buttons = 0;
-    SInt32 dx, dy;
-    
-    if ((packet[0] & 0x1)) buttons |= 0x1;  // left button   (bit 0 in packet)
-    if ((packet[0] & 0x2)) buttons |= 0x2;  // right button  (bit 1 in packet)
-    if ((packet[0] & 0x4)) buttons |= 0x4;  // middle button (bit 2 in packet)
-    
-    dx = packet[1];
-    if (dx) {
-        dx = packet[1] - ((packet[0] << 4) & 0x100);
-    }
-    
-    dy = packet[2];
-    if (dy) {
-        dy = ((packet[0] << 3) & 0x100) - packet[2];
-    }
-    
-    uint64_t now_abs;
-    clock_get_uptime(&now_abs);
-    IOLog("ALPS: Dispatch relative PS2 packet: dx=%d, dy=%d, buttons=%d\n", dx, dy, buttons);
-    dispatchRelativePointerEventX(dx, dy, buttons, now_abs);
-}
-
-// =============================================================================
-// VoodooPS2AlpsBase Implementation  ///////////////////////////////////////////
-// =============================================================================
-
-void ALPS::onScrollTimerX(void)
-{
-    //
-    // This will be invoked by our workloop timer event source to implement
-    // momentum scroll.
-    //
-    
-    if (!xmomentumscrollcurrent)
-        return;
-    
-    uint64_t now_abs;
-    clock_get_uptime(&now_abs);
-    
-    int64_t dx64 = xmomentumscrollcurrent / (int64_t)xmomentumscrollinterval + xmomentumscrollrest2;
-    int dx = (int)dx64;
-    if (abs(dx) > momentumscrollthreshy)
-    {
-        // dispatch the scroll event
-        dispatchScrollWheelEventX(0, whdivisor ? dx / whdivisor : 0, 0, now_abs);
-        xmomentumscrollrest2 = whdivisor ? dx % whdivisor : 0;
-        
-        // adjust momentumscrollcurrent
-        xmomentumscrollcurrent = xmomentumscrollcurrent * momentumscrollmultiplier +  xmomentumscrollrest1;
-        xmomentumscrollrest1 = xmomentumscrollcurrent % momentumscrolldivisor;
-        xmomentumscrollcurrent /= momentumscrolldivisor;
-        
-        // start another timer
-        setTimerTimeout(xscrollTimer, momentumscrolltimer);
-    }
-    else
-    {
-        // no more scrolling...
-        xmomentumscrollcurrent = 0;
-    }
-}
-
-void ALPS::onScrollTimer(void)
-{
-    if (!momentumscrollcurrent)
-        return;
-    
-    uint64_t now_abs;
-    clock_get_uptime(&now_abs);
-    
-    if (xmomentumscrollsum !=0) {
-        
-        int64_t dy64 = momentumscrollcurrent / (int64_t)momentumscrollinterval + momentumscrollrest2;
-        int dy = (int)dy64;
-        if (abs(dy) > momentumscrollthreshy)
-        {
-            // dispatch the scroll event
-            dispatchScrollWheelEventX(wvdivisor ? dy / wvdivisor : 0, 0, 0, now_abs);
-            xmomentumscrollrest2 = wvdivisor ? dy % wvdivisor : 0;
+        else if (clampedFingerCount > lastFingerCount && hadLiftFinger) {
+            for (int i = 0; i < MAX_TOUCHES; i++) // clean virtual finger numbers
+                fingerStates[i].virtualFingerIndex = -1;
             
-            // adjust momentumscrollcurrent
-            momentumscrollcurrent = momentumscrollcurrent * momentumscrollmultiplier +  momentumscrollrest1;
-            momentumscrollrest1 = momentumscrollcurrent % momentumscrolldivisor;
-            momentumscrollcurrent /= momentumscrolldivisor;
+            int maxMinDist = 0, maxMinDistIndex = -1;
+            int secondMaxMinDist = 0, secondMaxMinDistIndex = -1;
+
+            // find new physical finger for each existing virtual finger
+            for (int j = 0; j < MAX_TOUCHES; j++) {
+                if (!virtualFingerStates[j].touch)
+                    continue; // free
+                int minDist = INT_MAX, minIndex = -1;
+                for (int i = 0; i < lastFingerCount; i++) {
+                    if (fingerStates[i].virtualFingerIndex != -1)
+                        continue; // already taken
+                    int d = dist(i, j);
+                    if (d < minDist) {
+                        minDist = d;
+                        minIndex = i;
+                    }
+                }
+                if (minIndex == -1) {
+                    IOLog("alps_parse_hw_state: WTF!? minIndex is -1");
+                    continue;
+                }
+                if (minDist > maxMinDist) {
+                    secondMaxMinDist = maxMinDist;
+                    secondMaxMinDistIndex = maxMinDistIndex;
+                    maxMinDist = minDist;
+                    maxMinDistIndex = minIndex;
+                }
+                fingerStates[minIndex].virtualFingerIndex = j;
+            }
             
-            // start another timer
-            setTimerTimeout(scrollTimer, momentumscrolltimer);
-        }
-        else
-        {
-            // no more scrolling...
-            momentumscrollcurrent = 0;
-        }
-    }
-}
+            // assign new virtual fingers for all new fingers
+            for (int i = 0; i < min(2, clampedFingerCount); i++) // third and fourth 'fingers' are handled separately
+                if (fingerStates[i].virtualFingerIndex == -1)
+                    assignVirtualFinger(i); // here OK
 
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+            if (clampedFingerCount == 3) {
+                DEBUG_LOG("alps_parse_hw_state: adding third finger, maxMinDist=%d", maxMinDist);
+                f2.z = (f0.z + f1.z) / 2;
+                if (maxMinDist > FINGER_DIST && maxMinDistIndex >= 0) {
+                    // i-th physical finger was replaced, save its old coordinates to the 3rd physical finger and map it to a new virtual finger.
+                    // The third physical finger should now be mapped to the old fingerStates[i].virtualFingerIndex.
+                    swapFingers(2, maxMinDistIndex);
+                    DEBUG_LOG("alps_parse_hw_state: swapped, saving location");
+                }
+                else {
+                    // existing fingers didn't change or were swapped, so we don't know the location of the third finger
+                    const auto &fj = upperFinger();
 
-void ALPS::onButtonTimer(void)
-{
-    uint64_t now_abs;
-    clock_get_uptime(&now_abs);
-    
-    middleButton(lastbuttons, now_abs, fromTimer);
-}
-
-UInt32 ALPS::middleButton(UInt32 buttons, uint64_t now_abs, MBComingFrom from)
-{
-    if (!_fakemiddlebutton || _buttonCount <= 2 || (ignoreall && fromTrackpad == from))
-        return buttons;
-    
-    // cancel timer if we see input before timeout has fired, but after expired
-    bool timeout = false;
-    uint64_t now_ns;
-    absolutetime_to_nanoseconds(now_abs, &now_ns);
-    if (fromTimer == from || fromCancel == from || now_ns - _buttontime > _maxmiddleclicktime)
-        timeout = true;
-    
-    //
-    // A state machine to simulate middle buttons with two buttons pressed
-    // together.
-    //
-    switch (_mbuttonstate)
-    {
-            // no buttons down, waiting for something to happen
-        case STATE_NOBUTTONS:
-            if (fromCancel != from)
-            {
-                if (buttons & 0x4)
-                    _mbuttonstate = STATE_NOOP;
-                else if (0x3 == buttons)
-                    _mbuttonstate = STATE_MIDDLE;
-                else if (0x0 != buttons)
-                {
-                    // only single button, so delay this for a bit
-                    _pendingbuttons = buttons;
-                    _buttontime = now_ns;
-                    setTimerTimeout(_buttonTimer, _maxmiddleclicktime);
-                    _mbuttonstate = STATE_WAIT4TWO;
+                    f2.x = fj.x;
+                    f2.y = fj.y;
+                    assignVirtualFinger(2);
+                    DEBUG_LOG("alps_parse_hw_state: not swapped, taking upper finger position");
                 }
             }
-            break;
-            
-            // waiting for second button to come down or timeout
-        case STATE_WAIT4TWO:
-            if (!timeout && 0x3 == buttons)
-            {
-                _pendingbuttons = 0;
-                cancelTimer(_buttonTimer);
-                _mbuttonstate = STATE_MIDDLE;
+            else if (clampedFingerCount >= 4) {
+                // Is it possible that both 0 and 1 fingers were swapped with 2 and 3?
+                DEBUG_LOG("alps_parse_hw_state: adding third and fourth fingers, maxMinDist=%d, secondMaxMinDist=%d", maxMinDist, secondMaxMinDist);
+                f2.z = f3.z = (f0.z + f1.z) / 2;
+
+                // Possible situations:
+                // 1. maxMinDist ≤ 1000000, lastFingerCount = 3 - no fingers swapped, just adding 4th finger
+                // 2. maxMinDist ≤ 1000000, lastFingerCount = 2 - no fingers swapped, just adding 3rd and 4th fingers
+                // 3. maxMinDist > 1000000, secondMaxMinDist ≤ 1000000, lastFingerCount = 3 - i'th finger was swapped with 4th, 3rd left in place (i∈{0,1}):
+                //      4th.xy = i'th.xy
+                //      p2v[2] = j
+                //      p2v[i] = next free
+                // 4. maxMinDist > 1000000, secondMaxMinDist > 1000000, lastFingerCount = 3 - i'th finger was swapped with 3rd and k'th finger was swapped with 4th (i,k∈{0,1}):
+                //      is it possible that only imaginary finger was left in place?!
+                // 5. maxMinDist > 1000000, secondMaxMinDist ≤ 1000000, lastFingerCount = 2 - one finger swapped, one finger left in place.
+
+
+                if (maxMinDist > FINGER_DIST && maxMinDistIndex >= 0) {
+                    if (lastFingerCount < 3) {
+                        // i-th physical finger was replaced, save its old coordinates to the 3rd physical finger and map it to a new virtual finger.
+                        // The third physical finger should now be mapped to the old fingerStates[i].virtualFingerIndex.
+                        swapFingers(2, maxMinDistIndex);
+                        if (secondMaxMinDist > FINGER_DIST && secondMaxMinDistIndex >= 0) {
+                            // both fingers were swapped with new ones
+                            // i-th physical finger was replaced, save its old coordinates to the 4th physical finger and map it to a new virtual finger.
+                            // The fourth physical finger should now be mapped to the old fingerStates[i].virtualFingerIndex.
+                            swapFingers(3, secondMaxMinDistIndex);
+                        }
+                        else {
+                            // fourth finger is new
+                            clone(f3, upperFinger());
+                            assignVirtualFinger(3);
+                        }
+                    }
+                    else {
+                        // i-th physical finger was replaced, save its old coordinates to the 4th physical finger and map it to a new virtual finger.
+                        // The fourth physical finger should now be mapped to the old fingerStates[i].virtualFingerIndex.
+                        swapFingers(3, maxMinDistIndex);
+                        if (secondMaxMinDist > FINGER_DIST && secondMaxMinDistIndex >= 0) {
+                            IOLog("alps_parse_hw_state: WTF, I thought it is impossible: fc=%d, lfc=%d, mdi=%d(%d), smdi=%d(%d)", clampedFingerCount, lastFingerCount, maxMinDist, maxMinDistIndex, secondMaxMinDist, secondMaxMinDistIndex);
+                        }
+                    }
+                    DEBUG_LOG("alps_parse_hw_state: swapped, saving location");
+                }
+                else {
+                    // existing fingers didn't change or were swapped, so we don't know the location of the third and fourth fingers
+                    const auto &fj = upperFinger();
+                    clone(f2, fj);
+                    if (lastFingerCount < 3)
+                        assignVirtualFinger(2);
+                    clone(f3, fj);
+                    assignVirtualFinger(3);
+                    DEBUG_LOG("alps_parse_hw_state: not swapped, cloning existing fingers");
+                }
+                if (clampedFingerCount >= 5) {
+                    // Don't bother with 5th finger, always clone
+                    clone(f4, upperFinger());
+                    assignVirtualFinger(4);
+                    DEBUG_LOG("cloning 5th finger");
+                }
             }
-            else if (timeout || buttons != _pendingbuttons)
-            {
-                if (fromTimer == from || !(buttons & _pendingbuttons))
-                    dispatchRelativePointerEventX(0, 0, buttons|_pendingbuttons, now_abs);
-                _pendingbuttons = 0;
-                cancelTimer(_buttonTimer);
-                if (0x0 == buttons)
-                    _mbuttonstate = STATE_NOBUTTONS;
-                else
-                    _mbuttonstate = STATE_NOOP;
+            freeAndMarkVirtualFingers();
+        }
+        else if (clampedFingerCount < lastFingerCount) {
+            // Set hadLiftFinger if lifted some fingers
+            // Reset hadLiftFinger if lifted all fingers
+            hadLiftFinger = clampedFingerCount > 0;
+
+            // some fingers removed, need renumbering
+            bool used[MAX_TOUCHES];
+            for (int i = 0; i < MAX_TOUCHES; i++) { // clean virtual finger numbers
+                fingerStates[i].virtualFingerIndex = -1;
+                used[i] = false;
             }
-            break;
-            
-            // both buttons down and delivering middle button
-        case STATE_MIDDLE:
-            if (0x0 == buttons)
-                _mbuttonstate = STATE_NOBUTTONS;
-            else if (0x3 != (buttons & 0x3))
-            {
-                // only single button, so delay to see if we get to none
-                _pendingbuttons = buttons;
-                _buttontime = now_ns;
-                setTimerTimeout(_buttonTimer, _maxmiddleclicktime);
-                _mbuttonstate = STATE_WAIT4NONE;
+            for (int i = 0; i < clampedFingerCount; i++) {
+                // find new virtual finger number with nearest coordinates for this finger
+                int minDist = INT_MAX, minIndex = -1;
+                for (int j = 0; j < MAX_TOUCHES; j++) {
+                    if (!virtualFingerStates[j].touch || used[j])
+                        continue;
+                    int d = dist(i, j);
+                    if (d < minDist) {
+                        minDist = d;
+                        minIndex = j;
+                    }
+                }
+                fingerStates[i].virtualFingerIndex = minIndex;
+                if (minIndex == -1) {
+                    IOLog("alps_parse_hw_state: WTF: renumbering failed, minIndex for %d is -1", i);
+                    continue;
+                }
+                used[minIndex] = true;
             }
-            break;
-            
-            // was middle button, but one button now up, waiting for second to go up
-        case STATE_WAIT4NONE:
-            if (!timeout && 0x0 == buttons)
-            {
-                _pendingbuttons = 0;
-                cancelTimer(_buttonTimer);
-                _mbuttonstate = STATE_NOBUTTONS;
-            }
-            else if (timeout || buttons != _pendingbuttons)
-            {
-                if (fromTimer == from)
-                    dispatchRelativePointerEventX(0, 0, buttons|_pendingbuttons, now_abs);
-                _pendingbuttons = 0;
-                cancelTimer(_buttonTimer);
-                if (0x0 == buttons)
-                    _mbuttonstate = STATE_NOBUTTONS;
-                else
-                    _mbuttonstate = STATE_NOOP;
-            }
-            break;
-            
-        case STATE_NOOP:
-            if (0x0 == buttons)
-                _mbuttonstate = STATE_NOBUTTONS;
-            break;
+            freeAndMarkVirtualFingers();
+        }
     }
     
-    // modify buttons after new state set
-    switch (_mbuttonstate)
-    {
-        case STATE_MIDDLE:
-            buttons = 0x4;
-            break;
-            
-        case STATE_WAIT4NONE:
-        case STATE_WAIT4TWO:
-            buttons &= ~0x3;
-            break;
-            
-        case STATE_NOBUTTONS:
-        case STATE_NOOP:
-            break;
+    for (int i = 0; i < clampedFingerCount; i++) {
+        const auto &fi = fingerStates[i];
+        DEBUG_LOG("alps_parse_hw_state: finger %d -> virtual finger %d", i, fi.virtualFingerIndex);
+        if (fi.virtualFingerIndex < 0 || fi.virtualFingerIndex >= MAX_TOUCHES) {
+            IOLog("alps_parse_hw_state: ERROR: invalid physical finger %d", fi.virtualFingerIndex);
+            continue;
+        }
+        virtual_finger_state &fiv = virtualFingerStates[fi.virtualFingerIndex];
+        fiv.x_avg.filter(fi.x);
+        fiv.y_avg.filter(fi.y);
+        fiv.pressure = fi.z;
+        // Only use this if trackpad is a clickpad
+        if (priv.flags & ALPS_BUTTONPAD)
+            fiv.button = left;
+        else
+            fiv.button = 0;
     }
     
-    // return modified buttons
-    return buttons;
+    // Thumb detection. Must happen after setting coordinates (filter)
+    if (clampedFingerCount > lastFingerCount && clampedFingerCount >= 4) {
+        // find the lowest finger
+        int lowestFingerIndex = -1;
+        int min_y = INT_MAX;
+        for (int i = 0; i < MAX_TOUCHES; i++) {
+            const auto &vfi = virtualFingerStates[i];
+            DEBUG_LOG("finger %d: touch %d, y %d", i, vfi.touch, vfi.y_avg.average());
+            if (vfi.touch && vfi.y_avg.average() < min_y) {
+                lowestFingerIndex = i;
+                min_y = vfi.y_avg.average();
+            }
+        }
+        DEBUG_LOG("lowest finger: %d", lowestFingerIndex);
+        if (lowestFingerIndex == -1)
+            IOLog("alps_parse_hw_state: WTF?! lowest finger not found!");
+        else {
+            auto &vf = virtualFingerStates[lowestFingerIndex];
+            freeFingerTypes[vf.fingerType] = true;
+            vf.fingerType = kMT2FingerTypeThumb;
+            freeFingerTypes[kMT2FingerTypeThumb] = false;
+        }
+    }
+    
+    DEBUG_LOG("alps_parse_hw_state: lastFingerCount=%d clampedFingerCount=%d left=%d", lastFingerCount,  clampedFingerCount, left);
+    return true;
 }
 
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+void ALPS::sendTouchData() {
+    // Ignore input for specified time after keyboard usage
+    AbsoluteTime timestamp;
+    clock_get_uptime(&timestamp);
+    uint64_t timestamp_ns;
+    absolutetime_to_nanoseconds(timestamp, &timestamp_ns);
+    
+    if (timestamp_ns - keytime < maxaftertyping)
+        return;
 
-void ALPS::onDragTimer(void)
-{
-    if (MODE_DRAGNOTOUCH==touchmode)
-    {
-        touchmode=MODE_NOTOUCH;
+    if (lastFingerCount != clampedFingerCount) {
+        lastFingerCount = clampedFingerCount;
+        return; // Skip while fingers are placed on the touchpad or removed
+    }
+
+    static_assert(VOODOO_INPUT_MAX_TRANSDUCERS >= MAX_TOUCHES, "Trackpad supports too many fingers");
+
+    bool dimensions_changed = false;
+
+    int transducers_count = 0;
+    for(int i = 0; i < MAX_TOUCHES; i++) {
+        const auto& state = virtualFingerStates[i];
+        if (!state.touch)
+            continue;
+
+        auto& transducer = inputEvent.transducers[transducers_count++];
+
+        transducer.type = FINGER;
+        transducer.isValid = true;
+        transducer.supportsPressure = false;
         
-        uint64_t now_abs;
-        clock_get_uptime(&now_abs);
-        UInt32 buttons = middleButton(lastbuttons & ~0x01, now_abs, fromPassthru);
-        DEBUG_LOG("ps2: onDragTimer, button = %d\n", buttons);
-        if (!(mousemiddlescroll && buttons == 4)) dispatchRelativePointerEventX(0, 0, buttons, now_abs);
+        int posX = state.x_avg.average();
+        int posY = state.y_avg.average();
+
+        clip(posX, logical_min_x, logical_max_x, margin_size_x, dimensions_changed);
+        clip(posY, logical_min_y, logical_max_y, margin_size_y, dimensions_changed);
+
+        posX -= logical_min_x;
+        posY = logical_max_y + 1 - posY;
+        
+        DEBUG_LOG("alps_parse_hw_state finger[%d] x=%d y=%d raw_x=%d raw_y=%d", i, posX, posY, state.x_avg.average(), state.y_avg.average());
+
+        transducer.previousCoordinates = transducer.currentCoordinates;
+
+        transducer.currentCoordinates.x = posX;
+        transducer.currentCoordinates.y = posY;
+        transducer.timestamp = timestamp;
+
+        switch (_forceTouchMode)
+        {
+            case FORCE_TOUCH_BUTTON: // Physical button is translated into force touch instead of click
+                transducer.isPhysicalButtonDown = false;
+                transducer.currentCoordinates.pressure = state.button ? 255 : 0;
+                break;
+
+            case FORCE_TOUCH_THRESHOLD: // Force touch is touch with pressure over threshold
+                transducer.isPhysicalButtonDown = state.button;
+                transducer.currentCoordinates.pressure = state.pressure > _forceTouchPressureThreshold ? 255 : 0;
+                break;
+
+            case FORCE_TOUCH_VALUE: // Pressure is passed to system as is
+                transducer.isPhysicalButtonDown = state.button;
+                transducer.currentCoordinates.pressure = state.pressure;
+                break;
+                
+            case FORCE_TOUCH_CUSTOM: // Pressure is passed, but with locking
+                transducer.isPhysicalButtonDown = state.button;
+                
+                if (clampedFingerCount != 1) {
+                    transducer.currentCoordinates.pressure = state.pressure > _forceTouchPressureThreshold ? 255 : 0;
+                    break;
+                }
+                
+                double value;
+                if (state.pressure >= _forceTouchCustomDownThreshold) {
+                    value = 1.0;
+                } else if (state.pressure <= _forceTouchCustomUpThreshold) {
+                    value = 0.0;
+                } else {
+                    double base = ((double) (state.pressure - _forceTouchCustomUpThreshold)) / ((double) (_forceTouchCustomDownThreshold - _forceTouchCustomUpThreshold));
+                    value = 1;
+                    for (int i = 0; i < _forceTouchCustomPower; ++i) {
+                        value *= base;
+                    }
+                }
+                transducer.currentCoordinates.pressure = (int) (value * 255);
+                break;
+
+            case FORCE_TOUCH_DISABLED:
+            default:
+                transducer.isPhysicalButtonDown = state.button;
+                transducer.currentCoordinates.pressure = 0;
+                break;
+
+        }
+
+        transducer.isTransducerActive = 1;
+        transducer.currentCoordinates.width = state.pressure / 2;
+        if (state.fingerType == kMT2FingerTypeUndefined)
+            IOLog("alps_parse_hw_state: WTF!? finger type is undefined");
+        if (state.fingerType < kMT2FingerTypeUndefined || state.fingerType > kMT2FingerTypeLittleFinger)
+            IOLog("alps_parse_hw_state: WTF!? finger type is out of range");
+        if (freeFingerTypes[state.fingerType])
+            IOLog("alps_parse_hw_state: WTF!? finger type is marked free");
+        transducer.fingerType = state.fingerType;
+        transducer.secondaryId = i;
     }
-    else
-    {
-        //REVIEW: for debugging...
-        IOLog("rehab: onDragTimer called with unexpected mode = %d\n", touchmode);
-    }
-    //TODO: cancel dragnotouch mode, revert to notouch
-    //TODO: send lbutton up without modifying other buttons
-    //TODO: find other places the timer should be cancelled.
-}
+    
+    for (int i = 0; i < transducers_count; i++)
+        for (int j = i + 1; j < transducers_count; j++)
+            if (inputEvent.transducers[i].fingerType == inputEvent.transducers[j].fingerType)
+                IOLog("alps_parse_hw_state: WTF!? equal finger types");
+    
+    if (transducers_count != clampedFingerCount)
+        IOLog("alps_parse_hw_state: WTF?! tducers_count %d clampedFingerCount %d", transducers_count, clampedFingerCount);
+
+    // create new VoodooI2CMultitouchEvent
+    inputEvent.contact_count = transducers_count;
+    inputEvent.timestamp = timestamp;
 
 
-void ALPS::onScrollDebounceTimer(void)
-{
-    scrolldebounce = false;
+    if (dimensions_changed) {
+        VoodooInputDimensions d;
+        d.min_x = logical_min_x;
+        d.max_x = logical_max_x;
+        d.min_y = logical_min_y;
+        d.max_y = logical_max_y;
+        super::messageClient(kIOMessageVoodooInputUpdateDimensionsMessage, voodooInputInstance, &d, sizeof(VoodooInputDimensions));
+    }
+
+    // send the event into the multitouch interface
+    // send the 0 finger message only once
+    if (inputEvent.contact_count != 0 || lastSentFingerCount != 0) {
+        super::messageClient(kIOMessageVoodooInputMessage, voodooInputInstance, &inputEvent, sizeof(VoodooInputEvent));
+    }
+    lastFingerCount = clampedFingerCount;
+    lastSentFingerCount = inputEvent.contact_count;
 }
+
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 void ALPS::initTouchPad()
@@ -4055,112 +4114,41 @@ void ALPS::setParamPropertiesGated(OSDictionary * config)
         return;
     
     const struct {const char *name; int *var;} int32vars[]={
-        {"FingerZ",                            &z_finger},
-        {"DivisorX",                        &divisorx},
-        {"DivisorY",                        &divisory},
-        {"EdgeRight",                        &redge},
-        {"EdgeLeft",                        &ledge},
-        {"EdgeTop",                            &tedge},
-        {"EdgeBottom",                        &bedge},
-        {"VerticalScrollDivisor",            &vscrolldivisor},
-        {"HorizontalScrollDivisor",            &hscrolldivisor},
-        {"CircularScrollDivisor",            &cscrolldivisor},
-        {"CenterX",                            &centerx},
-        {"CenterY",                            &centery},
-        {"CircularScrollTrigger",            &ctrigger},
-        {"MultiFingerWLimit",                &wlimit},
-        {"MultiFingerVerticalDivisor",        &wvdivisor},
-        {"MultiFingerHorizontalDivisor",    &whdivisor},
-        {"ZLimit",                          &zlimit},
+        {"FingerZ",                         &z_finger},
         {"MouseMultiplierX",                &mousemultiplierx},
         {"MouseMultiplierY",                &mousemultipliery},
-        {"MouseScrollMultiplierX",          &mousescrollmultiplierx},
-        {"MouseScrollMultiplierY",          &mousescrollmultipliery},
         {"WakeDelay",                       &wakedelay},
-        {"TapThresholdX",                   &tapthreshx},
-        {"TapThresholdY",                   &tapthreshy},
-        {"DoubleTapThresholdX",             &dblthreshx},
-        {"DoubleTapThresholdY",             &dblthreshy},
-        {"ZoneLeft",                        &zonel},
-        {"ZoneRight",                       &zoner},
-        {"ZoneTop",                         &zonet},
-        {"ZoneBottom",                      &zoneb},
-        {"DisableZoneLeft",                 &diszl},
-        {"DisableZoneRight",                &diszr},
-        {"DisableZoneTop",                  &diszt},
-        {"DisableZoneBottom",               &diszb},
-        {"DisableZoneControl",              &diszctrl},
         {"Resolution",                      &_resolution},
         {"ScrollResolution",                &_scrollresolution},
-        {"SwipeDeltaX",                     &swipedx},
-        {"SwipeDeltaY",                     &swipedy},
-        {"MouseCount",                      &mousecount},
-        {"RightClickZoneLeft",              &rczl},
-        {"RightClickZoneRight",             &rczr},
-        {"RightClickZoneTop",               &rczt},
-        {"RightClickZoneBottom",            &rczb},
-        {"HIDScrollZoomModifierMask",       &scrollzoommask},
         {"ButtonCount",                     &_buttonCount},
-        {"DragLockTempMask",                &draglocktempmask},
-        {"MomentumScrollThreshY",           &momentumscrollthreshy},
-        {"MomentumScrollMultiplier",        &momentumscrollmultiplier},
-        {"MomentumScrollDivisor",           &momentumscrolldivisor},
-        {"MomentumScrollSamplesMin",        &momentumscrollsamplesmin},
-        {"FingerChangeIgnoreDeltas",        &ignoredeltasstart},
-        {"BogusDeltaThreshX",               &bogusdxthresh},
-        {"BogusDeltaThreshY",               &bogusdythresh},
         {"UnitsPerMMX",                     &xupmm},
         {"UnitsPerMMY",                     &yupmm},
-        {"ScrollDeltaThreshX",              &scrolldxthresh},
-        {"ScrollDeltaThreshY",              &scrolldythresh},
-        //{"TrackpadThreeFingerVertSwipeGesture", &threefingervertswipe},
-        //{"TrackpadThreeFingerHorizSwipeGesture", &threefingerhorizswipe},
-        //{"TrackpadTwoFingerFromRightEdgeSwipeGesture", &notificationcenter},
+        {"MinLogicalXOverride",             &minXOverride},
+        {"MinLogicalYOverride",             &minYOverride},
+        {"MaxLogicalXOverride",             &maxXOverride},
+        {"MaxLogicalYOverride",             &maxYOverride},
+        {"ForceTouchMode",                  (int*)&_forceTouchMode}, // 0 - disable, 1 - left button, 2 - pressure threshold, 3 - pass pressure value
+        {"ForceTouchPressureThreshold",     &_forceTouchPressureThreshold}, // used in mode 2
+        {"ForceTouchCustomDownThreshold",   &_forceTouchCustomDownThreshold}, // used in mode 4
+        {"ForceTouchCustomUpThreshold",     &_forceTouchCustomUpThreshold}, // used in mode 4
+        {"ForceTouchCustomPower",           &_forceTouchCustomPower}, // used in mode 4
+        {"LogicalXMultiplier",              &manual_x_log},
+        {"LogicalYMultiplier",              &manual_y_log},
+        {"PhysicalXMultiplier",             &manual_x_phy},
+        {"PhysicalYMultiplier",             &manual_y_phy},
     };
     const struct {const char *name; int *var;} boolvars[]={
-        {"StickyHorizontalScrolling",        &hsticky},
-        {"StickyVerticalScrolling",            &vsticky},
-        {"StickyMultiFingerScrolling",        &wsticky},
-        {"StabilizeTapping",                &tapstable},
         {"DisableLEDUpdate",                &noled},
-        {"SmoothInput",                     &smoothinput},
-        {"UnsmoothInput",                   &unsmoothinput},
         {"SkipPassThrough",                 &skippassthru},
-        {"SwapDoubleTriple",                &swapdoubletriple},
-        {"ClickPadTrackBoth",               &clickpadtrackboth},
-        {"ImmediateClick",                  &immediateclick},
-        {"MouseMiddleScroll",               &mousemiddlescroll},
-        {"FakeMiddleButton",                &_fakemiddlebutton},
     };
     const struct {const char* name; bool* var;} lowbitvars[]={
-        {"Clicking",                        &clicking},
-        {"Dragging",                        &dragging},
-        {"TrackpadRightClick",              &rtap},
-        {"DragLock",                        &draglock},
-        {"TrackpadHorizScroll",             &hscroll},
-        {"TrackpadVertScroll",              &vscroll},
-        {"TrackpadScroll",                  &scroll},
-        {"OutsidezoneNoAction When Typing", &outzone_wt},
-        {"PalmNoAction Permanent",          &palm},
-        {"PalmNoAction When Typing",        &palm_wt},
         {"USBMouseStopsTrackpad",           &usb_mouse_stops_trackpad},
-        {"TrackpadMomentumScroll",          &momentumscroll},
     };
     const struct {const char* name; uint64_t* var; } int64vars[]={
-        {"MaxDragTime",                     &maxdragtime},
-        {"MaxTapTime",                      &maxtaptime},
-        {"HIDClickTime",                    &maxdbltaptime},
         {"QuietTimeAfterTyping",            &maxaftertyping},
-        {"MomentumScrollTimer",             &momentumscrolltimer},
-        {"ClickPadClickTime",               &clickpadclicktime},
         {"MiddleClickTime",                 &_maxmiddleclicktime},
-        {"DragExitDelayTime",               &dragexitdelay},
-        {"ScrollExitDelayTime",             &scrollexitdelay},
     };
-    
-    int oldmousecount = mousecount;
-    bool old_usb_mouse_stops_trackpad = usb_mouse_stops_trackpad;
-    
+
     OSBoolean *bl;
     OSNumber *num;
     // 64-bit config items
@@ -4199,66 +4187,14 @@ void ALPS::setParamPropertiesGated(OSDictionary * config)
             setProperty(lowbitvars[i].name, *lowbitvars[i].var ? 1 : 0, 32);
         }
     }
-    
-    if ((num = OSDynamicCast(OSNumber, config->getObject("TrackpadThreeFingerDrag"))))
-    {
-        threefingerdrag = num->unsigned32BitValue() ? true : false;
-        // DON'T set this property! It is not setting but an indicator of supported feature.
-        //setProperty("TrackpadThreeFingerDrag", threefingerdrag ? kOSBooleanTrue: kOSBooleanFalse);
-    }
-    else if ((bl = OSDynamicCast(OSBoolean, config->getObject("TrackpadThreeFingerDrag"))))
-    {
-        threefingerdrag = bl->isTrue();
-        // DON'T set this property! It is not setting but an indicator of supported feature.
-        //setProperty("TrackpadThreeFingerDrag", threefingerdrag ? kOSBooleanTrue: kOSBooleanFalse);
-    }
-    
-    // special case for MaxDragTime (which is really max time for a double-click)
-    // we can let it go no more than 230ms because otherwise taps on
-    // the menu bar take too long if drag mode is enabled.  The code in that case
-    // has to "hold button 1 down" for the duration of maxdragtime because if
-    // it didn't then dragging on the caption of a window will not work
-    // (some other apps too) because these apps will see a double tap+hold as
-    // a single click, then double click and they don't go into drag mode when
-    // initiated with a double click.
-    //
-    // same thing going on with the forward/back buttons in Finder, except the
-    // timeout OS X is using is different (shorter)
-    //
-    // this all happens during MODE_PREDRAG
-    //
-    // summary:
-    //  if the code releases button 1 after a tap, then dragging windows
-    //    breaks
-    //  if the maxdragtime is too large (200ms is small enough, 500ms is too large)
-    //    then clicking on menus breaks because the system sees it as a long
-    //    press and hold
-    //
-    // fyi:
-    //  also tried to allow release of button 1 during MODE_PREDRAG, and then when
-    //   attempting to initiate the drag (in the case the second touch comes soon
-    //   enough), modifying the time such that it is not seen as a double tap.
-    //  unfortunately, that destroys double tap as well, probably because the
-    //   system is confused seeing input "out of order"
-    
-    //if (maxdragtime > 230000000)
-    //    maxdragtime = 230000000;
-    
-    // DivisorX and DivisorY cannot be zero, but don't crash if they are...
-    if (!divisorx)
-        divisorx = 1;
-    if (!divisory)
-        divisory = 1;
-    
+
     // bogusdeltathreshx/y = 0 is MAX_INT
     if (!bogusdxthresh)
         bogusdxthresh = 0x7FFFFFFF;
     if (!bogusdythresh)
         bogusdythresh = 0x7FFFFFFF;
-    
-    //REVIEW: this should be done maybe only when necessary...
-    touchmode=MODE_NOTOUCH;
-    
+
+    /* // TODO: Add this function
     // check for special terminating sequence from PS2Daemon
     if (-1 == mousecount)
     {
@@ -4266,7 +4202,7 @@ void ALPS::setParamPropertiesGated(OSDictionary * config)
         touchpadShutdown();
         mousecount = oldmousecount;
     }
-    
+
     // disable trackpad when USB mouse is plugged in
     // check for mouse count changing...
     if ((oldmousecount != 0) != (mousecount != 0) || old_usb_mouse_stops_trackpad != usb_mouse_stops_trackpad)
@@ -4275,6 +4211,7 @@ void ALPS::setParamPropertiesGated(OSDictionary * config)
         ignoreall = (mousecount != 0) && usb_mouse_stops_trackpad;
         touchpadToggled();
     }
+    */
 }
 
 IOReturn ALPS::setParamProperties(OSDictionary* dict)
@@ -4313,16 +4250,16 @@ void ALPS::setDevicePowerState( UInt32 whatToDo )
             //
             // Disable touchpad (synchronous).
             //
-            
+
             setTouchPadEnable( false );
             break;
-            
+
         case kPS2C_EnableDevice:
             //
             // Must not issue any commands before the device has
             // completed its power-on self-test and calibration.
             //
-            
+
             IOSleep(wakedelay);
             
             // Reset and enable the touchpad.
@@ -4386,11 +4323,12 @@ void ALPS::receiveMessage(int message, void* data)
                 0x200000,   // 0x3f
             };
 #ifdef SIMULATE_PASSTHRU
+            /*
             static int buttons = 0;
             int button;
             switch (pInfo->adbKeyCode)
             {
-                    // make right Alt,Menu,Ctrl into three button passthru
+                // make right Alt,Menu,Ctrl into three button passthru
                 case 0x36:
                     button = 0x1;
                     goto dispatch_it;
@@ -4415,12 +4353,13 @@ void ALPS::receiveMessage(int message, void* data)
                     dispatchEventsWithPacket(packet, 6);
                     pInfo->eatKey = true;
             }
+            */
 #endif
             switch (pInfo->adbKeyCode)
             {
-                    // don't store key time for modifier keys going down
-                    // track modifiers for scrollzoom feature...
-                    // (note: it turns out we didn't need to do this, but leaving this code in for now in case it is useful)
+                // don't store key time for modifier keys going down
+                // track modifiers for scrollzoom feature...
+                // (note: it turns out we didn't need to do this, but leaving this code in for now in case it is useful)
                 case 0x38:  // left shift
                 case 0x3c:  // right shift
                 case 0x3b:  // left control
@@ -4440,29 +4379,10 @@ void ALPS::receiveMessage(int message, void* data)
                     break;
                     
                 default:
-                    momentumscrollcurrent = 0;  // keys cancel momentum scroll
-                    xmomentumscrollcurrent = 0;
                     keytime = pInfo->time;
             }
             break;
         }
     }
     
-}
-
-// Acidanthera VoodooPS2
-bool ALPS::handleOpen(IOService *forClient, IOOptionBits options, void *arg) {
-    if (forClient && forClient->getProperty(VOODOO_INPUT_IDENTIFIER)) {
-        voodooInputInstance = forClient;
-        voodooInputInstance->retain();
-        
-        return true;
-    }
-    
-    return super::handleOpen(forClient, options, arg);
-}
-
-void ALPS::handleClose(IOService *forClient, IOOptionBits options) {
-    OSSafeReleaseNULL(voodooInputInstance);
-    super::handleClose(forClient, options);
 }
