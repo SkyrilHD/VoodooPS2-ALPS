@@ -3384,7 +3384,7 @@ void ALPS::assignFingerType(virtual_finger_state &vf) {
     
 }
 
-void ALPS::alps_parse_hw_state(const UInt8 buf[], struct alps_fields &g)
+void ALPS::alps_parse_hw_state(const UInt8 buf[], struct alps_fields &f)
 {
     // Check if input is disabled via ApplePS2Keyboard request
     if (ignoreall)
@@ -3393,7 +3393,7 @@ void ALPS::alps_parse_hw_state(const UInt8 buf[], struct alps_fields &g)
     UInt8 *packet = _ringBuffer.tail();
     // get fingercounts from packets
     int fingers = 0;
-    struct alps_fields f;
+    //struct alps_fields f;
     
     memset(&f, 0, sizeof(alps_fields));
     
