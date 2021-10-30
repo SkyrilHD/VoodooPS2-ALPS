@@ -1481,7 +1481,7 @@ void ALPS::alps_process_trackstick_packet_v7(UInt8 *packet)
 void ALPS::alps_process_touchpad_packet_v7(UInt8 *packet){
     struct alps_fields f;
     
-    //alps_parse_hw_state(_ringBuffer.tail(), f);
+    alps_parse_hw_state(_ringBuffer.tail(), f);
 }
 
 void ALPS::alps_process_packet_v7(UInt8 *packet){
