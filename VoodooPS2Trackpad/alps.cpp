@@ -3403,7 +3403,6 @@ void ALPS::alps_parse_hw_state(const UInt8 buf[], struct alps_fields &f)
     f.mt[0].y = priv.y_max - f.mt[0].y;
     f.mt[1].y = priv.y_max - f.mt[1].y;
     
-    // TODO: maybe move this to alps_parse_hw_state
     // scale x & y to the axis which has the most resolution
     if (xupmm < yupmm) {
         f.mt[0].x = f.mt[0].x * yupmm / xupmm;
