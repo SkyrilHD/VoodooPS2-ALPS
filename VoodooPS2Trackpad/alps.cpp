@@ -3301,9 +3301,6 @@ void ALPS::packetReady() {
             if (!ignoreall)
                 //(this->*process_packet)(_ringBuffer.tail());
                 alps_parse_hw_state(_ringBuffer.tail(), f);
-            //(this->*process_packet)(packet);
-            // if (!ignoreall)
-            //     alps_parse_hw_state(_ringBuffer.tail());
         } else {
             IOLog("ALPS: an invalid or bare packet has been dropped...\n");
             /* Might need to perform a full HW reset here if we keep receiving bad packets (consecutively) */
