@@ -1502,7 +1502,7 @@ void ALPS::alps_process_touchpad_packet_v7(UInt8 *packet){
     f.mt[0].x *= (6000 / ((priv.x_max + priv.y_max)/2));
     f.mt[1].y *= (6000 / ((priv.x_max + priv.y_max)/2));
     
-    alps_parse_hw_state(_ringBuffer.tail(), f);
+    //alps_parse_hw_state(_ringBuffer.tail(), f);
 }
 
 void ALPS::alps_process_packet_v7(UInt8 *packet){
@@ -3293,12 +3293,14 @@ void ALPS::setTouchPadEnable(bool enable) {
 }
 
 void ALPS::packetReady() {
+    struct alps_fields f;
     // empty the ring buffer, dispatching each packet...
     while (_ringBuffer.count() >= priv.pktsize) {
         //UInt8 *packet = _ringBuffer.tail();
         if (priv.PSMOUSE_BAD_DATA == false) {
             if (!ignoreall)
-                (this->*process_packet)(_ringBuffer.tail());
+                //(this->*process_packet)(_ringBuffer.tail());
+                alps_parse_hw_state(_ringBuffer.tail(), f);
             //(this->*process_packet)(packet);
             // if (!ignoreall)
             //     alps_parse_hw_state(_ringBuffer.tail());
@@ -3409,14 +3411,37 @@ void ALPS::assignFingerType(virtual_finger_state &vf) {
     
 }
 
-void ALPS::alps_parse_hw_state(const UInt8 buf[], struct alps_fields &f)
+void ALPS::alps_parse_hw_state(const UInt8 buf[], struct alps_fields &g)
 {
     // Check if input is disabled via ApplePS2Keyboard request
     if (ignoreall)
         return;
     
+    UInt8 *packet = _ringBuffer.tail();
     // get fingercounts from packets
     int fingers = 0;
+    struct alps_fields f;
+    
+    memset(&f, 0, sizeof(alps_fields));
+    
+    (this->alps_decode_packet_v7)(&f, packet);
+    
+    /* Reverse y co-ordinates to have 0 at bottom for gestures to work */
+    f.mt[0].y = priv.y_max - f.mt[0].y;
+    f.mt[1].y = priv.y_max - f.mt[1].y;
+    
+    // TODO: maybe move this to alps_parse_hw_state
+    // scale x & y to the axis which has the most resolution
+    if (xupmm < yupmm) {
+        f.mt[0].x = f.mt[0].x * yupmm / xupmm;
+    } else if (xupmm > yupmm) {
+        f.mt[0].y = f.mt[0].y * xupmm / yupmm;
+    }
+    
+    /* Dr Hurt: Scale all touchpads' axes to 6000 to be able to the same divisors for all models */
+    f.mt[0].x *= (6000 / ((priv.x_max + priv.y_max)/2));
+    f.mt[1].y *= (6000 / ((priv.x_max + priv.y_max)/2));
+    
     
     fingers = f.fingers;
     
