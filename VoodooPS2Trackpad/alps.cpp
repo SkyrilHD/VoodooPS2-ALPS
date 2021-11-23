@@ -3357,7 +3357,7 @@ int ALPS::dist(int physicalFinger, int virtualFinger) {
 
 void ALPS::assignVirtualFinger(int physicalFinger) {
     if (physicalFinger < 0 || physicalFinger >= MAX_TOUCHES) {
-        IOLog("VoodooPS2ALPS::assignVirtualFinger ERROR: invalid physical finger %d", physicalFinger);
+        IOLog("VoodooPS2ALPS::assignVirtualFinger ERROR: invalid physical finger %d\n", physicalFinger);
         return;
     }
     for (int j = 0; j < MAX_TOUCHES; j++) {
@@ -3381,7 +3381,6 @@ void ALPS::assignFingerType(virtual_finger_state &vf) {
             vf.fingerType = i;
             break;
         }
-    
 }
 
 void ALPS::alps_parse_hw_state(const UInt8 buf[], struct alps_fields &f)
@@ -3558,6 +3557,7 @@ void ALPS::freeAndMarkVirtualFingers() {
         vfi.y_avg.reset();
         vfi.pressure = 0;
     }
+    
     for (int i = 0; i < clampedFingerCount; i++) { // mark virtual fingers as used
         int j = fingerStates[i].virtualFingerIndex;
         if (j == -1) {
@@ -3568,6 +3568,7 @@ void ALPS::freeAndMarkVirtualFingers() {
         vfj.touch = true;
         freeFingerTypes[vfj.fingerType] = false;
     }
+    
     for (int i = 0; i < MAX_TOUCHES; i++) {
         auto &vfi = virtualFingerStates[i];
         if (!vfi.touch)
@@ -3887,7 +3888,7 @@ bool ALPS::renumberFingers() {
                 }
                 fingerStates[i].virtualFingerIndex = minIndex;
                 if (minIndex == -1) {
-                    IOLog("alps_parse_hw_state: WTF: renumbering failed, minIndex for %d is -1", i);
+                    IOLog("alps_parse_hw_state: WTF: renumbering failed, minIndex for %d is -1\n", i);
                     continue;
                 }
                 used[minIndex] = true;
@@ -4041,11 +4042,11 @@ void ALPS::sendTouchData() {
         transducer.isTransducerActive = 1;
         transducer.currentCoordinates.width = state.pressure / 2;
         if (state.fingerType == kMT2FingerTypeUndefined)
-            IOLog("alps_parse_hw_state: WTF!? finger type is undefined");
+            IOLog("alps_parse_hw_state: WTF!? finger type is undefined\n");
         if (state.fingerType < kMT2FingerTypeUndefined || state.fingerType > kMT2FingerTypeLittleFinger)
-            IOLog("alps_parse_hw_state: WTF!? finger type is out of range");
+            IOLog("alps_parse_hw_state: WTF!? finger type is out of range\n");
         if (freeFingerTypes[state.fingerType])
-            IOLog("alps_parse_hw_state: WTF!? finger type is marked free");
+            IOLog("alps_parse_hw_state: WTF!? finger type is marked free\n");
         transducer.fingerType = state.fingerType;
         transducer.secondaryId = i;
     }
