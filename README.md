@@ -33,6 +33,11 @@ The aim of this driver is to improve the usability of ALPS touchpads in macOS an
 
 Force Touch has been disabled for ALPS trackpads as they do not suport width/pressure report. So, the best option is to keep Force Touch disabled.
 
+## Old driver
+
+If you want to use the old VoodooPS2 driver for compatibility reasons, you can use the first version of the driver which can be found [here](https://github.com/SkyrilHD/VoodooPS2-ALPS/releases/tag/1.0.0).
+However, this version does not support Magic Trackpad 2 emulation but has fixes like scrolling by 1Revenger1 and smooth horizontal scrolling compared to DrHurt's latest VoodooPS2 kext.
+
 # Credits
 
 - SkyrilHD (for porting VoodooInput to ALPS)
