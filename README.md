@@ -1,16 +1,18 @@
 # VoodooPS2-ALPS
 
-This driver has been ported from 1Revenger1's VoodooPS2 fork by DrHurt to support Magic Trackpad 2 emulation.
+This new VoodooPS2 kext, made for ALPS touchpads, adds support for Magic Trackpad 2 emulation in order to use macOS native driver instead of handling all gestures itself.
+
+This driver is a fork of DrHurt's VoodooPS2 repo with included fixes by 1Revenger1.
 
 The aim of this driver is to improve the usability of ALPS touchpads in macOS and merge the code with acidanthera's VoodooPS2 repo.
 
 ## Driver Features:
 
 - Supports ALPS hardware version V7
-    - not supported: V1, V2, V3, V5, V6, V8
-- Supports Mac OS 10.12 to 11.0
+    - not supported/tested: V1, V2, V3, V5, V6, V8
+- Supports macOS 10.13 to 11.0
 - Look up & data detectors
-- Secondary click (with two fingers, in bottom left corner*, in bottom right corner*)
+- Secondary click (with two fingers, in bottom left corner, in bottom right corner)
 - Tap to click
 - Scrolling
 - Zoom in or out
@@ -22,10 +24,10 @@ The aim of this driver is to improve the usability of ALPS touchpads in macOS an
 - Mission Control (with three or four fingers)
 - App Exposé (with three or four fingers)
 - Dragging with or without drag lock (configured in 'Accessibility'/'Universal Access' prefpane)
-- Three finger drag (configured in 'Accessibility'/'Universal Access' prefpane, may work unreliably**)
+- Three finger drag (configured in 'Accessibility'/'Universal Access' prefpane, may work unreliably)
 - Launchpad (may work unreliably)
 - Show Desktop (may work unreliably)
-- Screen zoom (configured in 'Accessibility'/'Universal Access' -> Zoom -> Advanced -> Controls -> Use trackpad gesture to zoom)
+- Screen zoom (configured in 'Accessibility'/'Universal Access' -> Zoom -> Advanced -> Controls -> Use trackpad gesture to zoom, may work unreliably)
 
 ## Force Touch
 
