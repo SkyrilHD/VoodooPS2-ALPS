@@ -1,5 +1,8 @@
 VoodooPS2 Changelog
 ============================
+#### v1.0.4
+- fixed random finger jumps with 2 fingers on V7 (hacky solution)
+
 #### v1.0.3
 - made version bumping easier
 - ported codes from Linux
