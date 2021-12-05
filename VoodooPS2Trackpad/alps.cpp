@@ -1509,7 +1509,7 @@ void ALPS::alps_process_touchpad_packet_v7(UInt8 *packet){
     
     fingers = f.fingers;
     
-    DEBUG_LOG("There are currently %d finger(s) accessing alps_process_touchpad_packet_v7\n", f.fingers);
+    DEBUG_LOG("ALPS: Amount of finger(s) accessing alps_process_touchpad_packet_v7: %d\n", f.fingers);
     
     if (fingers >= 2) {
         fingerStates[1].x = f.mt[1].x;
