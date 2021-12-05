@@ -5,6 +5,7 @@ VoodooPS2 Changelog
 - made V7 independent from alps_parse_hw_state
 - separated buttons to its own function
 - replaced packetReady code with pre-VoodooInput
+- add partial support for V3 and V5 (needs testing)
 
 #### v1.0.3
 - made version bumping easier
