@@ -3525,31 +3525,6 @@ void ALPS::alps_parse_hw_state(const UInt8 buf[], struct alps_fields &f)
     // get fingercounts from packets
     int fingers = 0;
     
-    if(priv.proto_version == ALPS_PROTO_V7) {
-        UInt8 *packet = _ringBuffer.tail();
-        
-        //struct alps_fields f;
-        
-        memset(&f, 0, sizeof(alps_fields));
-        
-        (this->alps_decode_packet_v7)(&f, packet);
-        
-        /* Reverse y co-ordinates to have 0 at bottom for gestures to work */
-        f.mt[0].y = priv.y_max - f.mt[0].y;
-        f.mt[1].y = priv.y_max - f.mt[1].y;
-        
-        // scale x & y to the axis which has the most resolution
-        if (xupmm < yupmm) {
-            f.mt[0].x = f.mt[0].x * yupmm / xupmm;
-        } else if (xupmm > yupmm) {
-            f.mt[0].y = f.mt[0].y * xupmm / yupmm;
-        }
-        
-        /* Dr Hurt: Scale all touchpads' axes to 6000 to be able to the same divisors for all models */
-        f.mt[0].x *= (6000 / ((priv.x_max + priv.y_max)/2));
-        f.mt[1].y *= (6000 / ((priv.x_max + priv.y_max)/2));
-    }
-    
     fingers = f.fingers;
     
     DEBUG_LOG("There are currently %d finger(s) accessing alps_parse_hw_state\n", f.fingers);
