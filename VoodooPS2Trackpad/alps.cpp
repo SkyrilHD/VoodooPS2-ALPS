@@ -3367,9 +3367,10 @@ void ALPS::setTouchPadEnable(bool enable) {
 void ALPS::packetReady() {
     // empty the ring buffer, dispatching each packet...
     while (_ringBuffer.count() >= priv.pktsize) {
+        UInt8 *packet = _ringBuffer.tail();
         if (priv.PSMOUSE_BAD_DATA == false) {
             if (!ignoreall)
-                (this->*process_packet)(_ringBuffer.tail());
+                (this->*process_packet)(packet);
         } else {
             IOLog("ALPS: an invalid or bare packet has been dropped...\n");
             /* Might need to perform a full HW reset here if we keep receiving bad packets (consecutively) */
