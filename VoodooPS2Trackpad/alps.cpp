@@ -1573,6 +1573,8 @@ void ALPS::alps_process_touchpad_packet_v7(UInt8 *packet){
     
     if (renumberFingers())
         sendTouchData();
+    
+    alps_buttons(f);
 }
 
 void ALPS::alps_process_packet_v7(UInt8 *packet){
@@ -3472,6 +3474,45 @@ void ALPS::assignFingerType(virtual_finger_state &vf) {
             vf.fingerType = i;
             break;
         }
+}
+
+void ALPS::alps_buttons(struct alps_fields &f)
+{
+    bool prev_left = left;
+    bool prev_right = right;
+    bool prev_middle = middle;
+    bool prev_left_ts = left_ts;
+    
+    left = f.left;
+    right = f.right | f.ts_right;
+    middle = f.middle | f.ts_middle;
+    left_ts = f.ts_left;
+    
+    AbsoluteTime timestamp;
+    clock_get_uptime(&timestamp);
+    // Physical left button (for non-Clickpads)
+    // Only use this if trackpad is not a clickpad
+    if (!(priv.flags & ALPS_BUTTONPAD)) {
+        if (left && !prev_left)
+            dispatchRelativePointerEvent(0, 0, 0x01, timestamp);
+        else if (prev_left && !left)
+            dispatchRelativePointerEvent(0, 0, 0x00, timestamp);
+    }
+    // Physical right button (non-passthrough)
+    if (right && !prev_right)
+        dispatchRelativePointerEvent(0, 0, 0x02, timestamp);
+    else if (prev_right && !right)
+        dispatchRelativePointerEvent(0, 0, 0x00, timestamp);
+    // Physical middle button (non-passthrough)
+    if (middle && !prev_middle)
+        dispatchRelativePointerEvent(0, 0, 0x04, timestamp);
+    else if (prev_middle && !middle)
+        dispatchRelativePointerEvent(0, 0, 0x00, timestamp);
+    // Physical left button (Trackstick)
+    if (left_ts && !prev_left_ts)
+        dispatchRelativePointerEvent(0, 0, 0x01, timestamp);
+    else if (prev_left_ts && !left_ts)
+        dispatchRelativePointerEvent(0, 0, 0x00, timestamp);
 }
 
 void ALPS::alps_parse_hw_state(const UInt8 buf[], struct alps_fields &f)
