@@ -1,7 +1,10 @@
 VoodooPS2 Changelog
 ============================
 #### v1.0.4
-- fixed random finger jumps with 2 fingers on V7 (hacky solution)
+- fixed random finger jumps with 2 fingers on V7
+- made V7 independent from alps_parse_hw_state
+- separated buttons to its own function
+- replaced packetReady code with pre-VoodooInput
 
 #### v1.0.3
 - made version bumping easier
