@@ -3183,6 +3183,8 @@ void ALPS::set_protocol() {
             priv.nibble_commands = alps_v3_nibble_commands;
             priv.addr_command = kDP_MouseResetWrap;
             
+            set_resolution();
+            
             if (alps_probe_trackstick_v3_v7(ALPS_REG_BASE_PINNACLE)) {
                 priv.flags &= ~ALPS_DUALPOINT;
             } else {
@@ -3200,6 +3202,8 @@ void ALPS::set_protocol() {
             priv.addr_command = kDP_MouseResetWrap;
             priv.x_bits = 16;
             priv.y_bits = 12;
+            
+            set_resolution();
             
             if (alps_probe_trackstick_v3_v7(ALPS_REG_BASE_RUSHMORE)) {
                 priv.flags &= ~ALPS_DUALPOINT;
@@ -3233,6 +3237,8 @@ void ALPS::set_protocol() {
             priv.y_bits = 12;
             
             alps_dolphin_get_device_area(&priv);
+            
+            set_resolution();
             
             break;
             
@@ -3524,43 +3530,6 @@ void ALPS::set_resolution() {
               xupmm, yupmm);
 }
 
-// port from VoodooPS2SynapticsTouchpad.cpp; huge credits to @usr-sse2
-
-#define sqr(x) ((x) * (x))
-int ALPS::dist(int physicalFinger, int virtualFinger) {
-    const auto &phy = fingerStates[physicalFinger];
-    const auto &virt = virtualFingerStates[virtualFinger];
-    return sqr(phy.x - virt.x_avg.newest()) + sqr(phy.y - virt.y_avg.newest());
-}
-
-void ALPS::assignVirtualFinger(int physicalFinger) {
-    if (physicalFinger < 0 || physicalFinger >= MAX_TOUCHES) {
-        IOLog("VoodooPS2ALPS::assignVirtualFinger ERROR: invalid physical finger %d\n", physicalFinger);
-        return;
-    }
-    for (int j = 0; j < MAX_TOUCHES; j++) {
-        virtual_finger_state &vfj = virtualFingerStates[j];
-        if (!vfj.touch) {
-            fingerStates[physicalFinger].virtualFingerIndex = j;
-            vfj.touch = true;
-            vfj.x_avg.reset();
-            vfj.y_avg.reset();
-            assignFingerType(vfj);
-            break;
-        }
-    }
-}
-
-void ALPS::assignFingerType(virtual_finger_state &vf) {
-    vf.fingerType = kMT2FingerTypeUndefined;
-    for (MT2FingerType i = kMT2FingerTypeIndexFinger; i < kMT2FingerTypeCount; i = (MT2FingerType)(i + 1))
-        if (freeFingerTypes[i]) {
-            freeFingerTypes[i] = false;
-            vf.fingerType = i;
-            break;
-        }
-}
-
 void ALPS::alps_buttons(struct alps_fields &f)
 {
     bool prev_left = left;
@@ -3598,6 +3567,43 @@ void ALPS::alps_buttons(struct alps_fields &f)
         dispatchRelativePointerEvent(0, 0, 0x01, timestamp);
     else if (prev_left_ts && !left_ts)
         dispatchRelativePointerEvent(0, 0, 0x00, timestamp);
+}
+
+// port from VoodooPS2SynapticsTouchpad.cpp; huge credits to @usr-sse2
+
+#define sqr(x) ((x) * (x))
+int ALPS::dist(int physicalFinger, int virtualFinger) {
+    const auto &phy = fingerStates[physicalFinger];
+    const auto &virt = virtualFingerStates[virtualFinger];
+    return sqr(phy.x - virt.x_avg.newest()) + sqr(phy.y - virt.y_avg.newest());
+}
+
+void ALPS::assignVirtualFinger(int physicalFinger) {
+    if (physicalFinger < 0 || physicalFinger >= MAX_TOUCHES) {
+        IOLog("VoodooPS2ALPS::assignVirtualFinger ERROR: invalid physical finger %d\n", physicalFinger);
+        return;
+    }
+    for (int j = 0; j < MAX_TOUCHES; j++) {
+        virtual_finger_state &vfj = virtualFingerStates[j];
+        if (!vfj.touch) {
+            fingerStates[physicalFinger].virtualFingerIndex = j;
+            vfj.touch = true;
+            vfj.x_avg.reset();
+            vfj.y_avg.reset();
+            assignFingerType(vfj);
+            break;
+        }
+    }
+}
+
+void ALPS::assignFingerType(virtual_finger_state &vf) {
+    vf.fingerType = kMT2FingerTypeUndefined;
+    for (MT2FingerType i = kMT2FingerTypeIndexFinger; i < kMT2FingerTypeCount; i = (MT2FingerType)(i + 1))
+        if (freeFingerTypes[i]) {
+            freeFingerTypes[i] = false;
+            vf.fingerType = i;
+            break;
+        }
 }
 
 void ALPS::alps_parse_hw_state(const UInt8 buf[], struct alps_fields &f)
