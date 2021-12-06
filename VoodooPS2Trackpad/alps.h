@@ -692,14 +692,9 @@ protected:
     bool                _messageHandlerInstalled;
     RingBuffer<UInt8, kPacketLength*32> _ringBuffer;
     UInt32              _packetByteCount;
-    UInt8               _lastdata;
     UInt16              _touchPadVersion;
 
     IOCommandGate*      _cmdGate;
-    
-    int skippyThresh;
-    int lastdx;
-    int lastdy;
     
     OSArray* transducers;
     
@@ -757,17 +752,10 @@ protected:
     int clampedFingerCount;
     bool wasSkipped;
     int z_finger;
-    int threefingervertswipe;
-    int threefingerhorizswipe;
-    int draglocktemp;
-    int noled;
     uint64_t maxaftertyping;
-    int mousemultiplierx, mousemultipliery;
     int wakedelay;
-    int skippassthru;
     int _resolution, _scrollresolution;
     int _buttonCount;
-    int ignoredeltasstart;
     int minXOverride, minYOverride, maxXOverride, maxYOverride;
     int bogusdxthresh, bogusdythresh;
     int manual_x_log, manual_y_log;
@@ -775,43 +763,18 @@ protected:
     
     int rightclick_corner;
 
-    // three finger and four finger state
-    uint8_t inSwipeLeft, inSwipeRight;
-    uint8_t inSwipeUp, inSwipeDown;
-    uint8_t inSwipe4Left, inSwipe4Right;
-    uint8_t inSwipe4Up, inSwipe4Down;
-    int xmoved, ymoved;
-
-    // state related to secondary packets/extendedwmode
-    int lastx2, lasty2;
-    bool tracksecondary;
-    int xrest2, yrest2;
-    bool clickedprimary;
-    bool _extendedwmode;
-
     // normal state
-    int lastx, lasty, last_fingers, b4last;
+    int last_fingers;
     UInt32 lastbuttons;
     UInt32 lastTrackStickButtons, lastTouchpadButtons;
-    int ignoredeltas;
     int ignoresingle;
-    int xrest, yrest, scrollrest;
     int touchx, touchy;
-    uint64_t touchtime;
-    uint64_t untouchtime;
-    bool wasdouble,wastriple;
     bool scrolldebounce;
     uint64_t keytime;
     bool ignoreall;
-    UInt32 passbuttons;
 #ifdef SIMULATE_PASSTHRU
     UInt32 trackbuttons;
 #endif
-    bool passthru;
-    bool ledpresent;
-    bool _reportsv;
-    int clickpadtype;   //0=not, 1=1button, 2=2button, 3=reserved
-    UInt32 _clickbuttons;  //clickbuttons to merge into buttons
     bool usb_mouse_stops_trackpad;
 
     int _modifierdown; // state of left+right control keys
@@ -838,10 +801,6 @@ protected:
     bool wasScroll = false;
     SimpleAverage<int, 32> dy_history;
     SimpleAverage<uint64_t, 32> time_history;
-    IOTimerEventSource* scrollTimer;
-
-    // timer for drag delay
-    IOTimerEventSource* dragTimer;
     
     IOTimerEventSource* scrollDebounceTIMER;
     

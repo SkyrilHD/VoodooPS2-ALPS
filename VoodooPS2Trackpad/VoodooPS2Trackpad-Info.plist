@@ -42,8 +42,6 @@
 				<dict>
 					<key>DisableDevice</key>
 					<false/>
-					<key>DisableLEDUpdating</key>
-					<false/>
 					<key>DoubleSmoothness</key>
 					<true/>
 					<key>DragLockTempMask</key>

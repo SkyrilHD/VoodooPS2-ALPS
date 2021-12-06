@@ -319,21 +319,12 @@ bool ALPS::init(OSDictionary *dict) {
     _powerControlHandlerInstalled = false;
     _messageHandlerInstalled = false;
     _packetByteCount = 0;
-    _lastdata = 0;
     _cmdGate = 0;
     
     // set defaults for configuration items
-    
     z_finger=45;
-    threefingervertswipe=true;
-    threefingerhorizswipe=true;
-    draglocktemp=0;
-    noled = false;
     maxaftertyping = 500000000;
-    mousemultiplierx = 20;
-    mousemultipliery = 20;
     wakedelay = 1000;
-    skippassthru = false;
     _resolution = 2300;
     _scrollresolution = 2300;
     _buttonCount = 2;
@@ -345,24 +336,9 @@ bool ALPS::init(OSDictionary *dict) {
     minXOverride = maxXOverride = minYOverride = maxYOverride = -1;
     margin_size_x = margin_size_y = 0;
     
-    _extendedwmode=false;
-    
     // intialize state
-    
-    lastx=0;
-    lasty=0;
     last_fingers=0;
-    xrest=0;
-    yrest=0;
     lastbuttons=0;
-    
-    // intialize state for secondary packets/extendedwmode
-    xrest2=0;
-    yrest2=0;
-    clickedprimary=false;
-    lastx2=0;
-    lasty2=0;
-    tracksecondary=false;
     
     // state for middle button
     _buttonTimer = 0;
@@ -371,35 +347,13 @@ bool ALPS::init(OSDictionary *dict) {
     _buttontime = 0;
     _maxmiddleclicktime = 100000000;
     
-    ignoredeltas=0;
-    ignoredeltasstart=0;
-    scrollrest=0;
-    touchtime=untouchtime=0;
-    wastriple=wasdouble=false;
     keytime = 0;
     ignoreall = false;
-    passbuttons = 0;
-    passthru = false;
-    ledpresent = false;
-    clickpadtype = 0;
-    _clickbuttons = 0;
-    _reportsv = false;
     usb_mouse_stops_trackpad = true;
     _modifierdown = 0;
     
     _forceTouchMode = FORCE_TOUCH_DISABLED;
     _forceTouchPressureThreshold = 100;
-    
-    inSwipeLeft=inSwipeRight=inSwipeDown=inSwipeUp=0;
-    xmoved=ymoved=0;
-    
-    scrollTimer = 0;
-    
-    dragTimer = 0;
-    
-    skippyThresh=0;
-    lastdx=0;
-    lastdy=0;
     
     IOLog("VoodooPS2TouchPad Base Driver loaded...\n");
     
@@ -413,14 +367,6 @@ bool ALPS::init(OSDictionary *dict) {
     OSSafeReleaseNULL(config);
     
     memset(&inputEvent, 0, sizeof(VoodooInputEvent));
-    
-    // Intialize Variables
-    lastx=0;
-    lasty=0;
-    last_fingers=0;
-    xrest=0;
-    yrest=0;
-    lastbuttons=0;
     
     return true;
 }
@@ -548,12 +494,6 @@ void ALPS::stop(IOService *provider) {
     IOWorkLoop* pWorkLoop = getWorkLoop();
     if (pWorkLoop)
     {
-        if (scrollTimer)
-        {
-            pWorkLoop->removeEventSource(scrollTimer);
-            scrollTimer->release();
-            scrollTimer = 0;
-        }
         if (_buttonTimer)
         {
             pWorkLoop->removeEventSource(_buttonTimer);
@@ -4258,12 +4198,6 @@ void ALPS::initTouchPad()
     _packetByteCount = 0;
     _ringBuffer.reset();
     
-    // clear passbuttons, just in case buttons were down when system
-    // went to sleep (now just assume they are up)
-    passbuttons = 0;
-    _clickbuttons = 0;
-    tracksecondary=false;
-    
     // clear state of control key cache
     _modifierdown = 0;
     
@@ -4280,8 +4214,6 @@ void ALPS::setParamPropertiesGated(OSDictionary * config)
     
     const struct {const char *name; int *var;} int32vars[]={
         {"FingerZ",                         &z_finger},
-        {"MouseMultiplierX",                &mousemultiplierx},
-        {"MouseMultiplierY",                &mousemultipliery},
         {"WakeDelay",                       &wakedelay},
         {"Resolution",                      &_resolution},
         {"ScrollResolution",                &_scrollresolution},
@@ -4302,10 +4234,10 @@ void ALPS::setParamPropertiesGated(OSDictionary * config)
         {"PhysicalXMultiplier",             &manual_x_phy},
         {"PhysicalYMultiplier",             &manual_y_phy},
     };
+    /*
     const struct {const char *name; int *var;} boolvars[]={
-        {"DisableLEDUpdate",                &noled},
-        {"SkipPassThrough",                 &skippassthru},
     };
+    */
     const struct {const char* name; bool* var;} lowbitvars[]={
         {"USBMouseStopsTrackpad",           &usb_mouse_stops_trackpad},
     };
@@ -4314,7 +4246,7 @@ void ALPS::setParamPropertiesGated(OSDictionary * config)
         {"MiddleClickTime",                 &_maxmiddleclicktime},
     };
     
-    OSBoolean *bl;
+    //OSBoolean *bl;
     OSNumber *num;
     // 64-bit config items
     for (int i = 0; i < countof(int64vars); i++) {
@@ -4325,6 +4257,7 @@ void ALPS::setParamPropertiesGated(OSDictionary * config)
             setProperty(int64vars[i].name, *int64vars[i].var, 64);
         }
     }
+    /*
     // boolean config items
     for (int i = 0; i < countof(boolvars); i++) {
         if ((bl=OSDynamicCast (OSBoolean,config->getObject (boolvars[i].name))))
@@ -4334,6 +4267,7 @@ void ALPS::setParamPropertiesGated(OSDictionary * config)
             setProperty(boolvars[i].name, *boolvars[i].var ? kOSBooleanTrue : kOSBooleanFalse);
         }
     }
+    */
     // 32-bit config items
     for (int i = 0; i < countof(int32vars);i++) {
         if ((num=OSDynamicCast (OSNumber,config->getObject (int32vars[i].name))))
