@@ -6,6 +6,7 @@ VoodooPS2 Changelog
 - separated buttons to its own function
 - replaced packetReady code with pre-VoodooInput
 - add partial support for V3 and V5 (needs testing)
+- removed some legacy codes
 
 #### v1.0.3
 - made version bumping easier
