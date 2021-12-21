@@ -37,6 +37,10 @@
 
 #include "ApplePS2Device.h"
 
+// TODO: Remove later; fixes compilation errors
+// Published property for devices to express interest in receiving messages
+#define kDeliverNotifications   "RM,deliverNotifications"
+
 #define EXPORT __attribute__((visibility("default")))
 
 class IOPlatformExpert;
