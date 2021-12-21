@@ -31,6 +31,9 @@
 #include "VoodooInputMultitouch/VoodooInputTransducer.h"
 #include "VoodooInputMultitouch/VoodooInputMessages.h"
 
+#undef NULL
+#define NULL 0
+
 enum {
     kTapEnabled = 0x01
 };
