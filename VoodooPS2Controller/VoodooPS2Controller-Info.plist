@@ -25,13 +25,16 @@
 		<key>ACPI PS/2 Nub</key>
 		<dict>
 			<key>CFBundleIdentifier</key>
-			<string>com.skyrilhd.PS2Controller</string>
+			<string>as.acidanthera.voodoo.driver.PS2Controller</string>
+			<key>FindMouseDelay</key>
+			<integer>100</integer>
 			<key>IOClass</key>
 			<string>AppleACPIPS2Nub</string>
 			<key>IONameMatch</key>
 			<array>
 				<string>PNP0303</string>
 				<string>PNP030B</string>
+				<string>PNP0320</string>
 			</array>
 			<key>IOProviderClass</key>
 			<string>IOACPIPlatformDevice</string>
@@ -46,7 +49,7 @@
 		<key>ApplePS2Controller</key>
 		<dict>
 			<key>CFBundleIdentifier</key>
-			<string>com.skyrilhd.PS2Controller</string>
+			<string>as.acidanthera.voodoo.driver.PS2Controller</string>
 			<key>IOClass</key>
 			<string>ApplePS2Controller</string>
 			<key>IONameMatch</key>
@@ -58,7 +61,7 @@
 				<key>Default</key>
 				<dict>
 					<key>MouseWakeFirst</key>
-					<true/>
+					<false/>
 					<key>WakeDelay</key>
 					<integer>10</integer>
 				</dict>
@@ -101,26 +104,18 @@
 						<key>WakeDelay</key>
 						<integer>0</integer>
 					</dict>
-				</dict>
-				<key>Lenovo</key>
-				<dict>
-					<key>Haswell-Ideapad</key>
-					<dict>
-						<key>WakeDelay</key>
-						<integer>0</integer>
-					</dict>
-					<key>U430</key>
-					<string>Haswell-Ideapad</string>
+					<key>ProBook-102</key>
+					<string>ProBook</string>
+					<key>ProBook-87</key>
+					<string>ProBook</string>
 				</dict>
 			</dict>
-			<key>RM,Build</key>
-			<string>${CONFIGURATION}-${LOGNAME}</string>
-			<key>RM,Version</key>
-			<string>${PRODUCT_NAME} ${MODULE_VERSION}</string>
+			<key>RM,deliverNotifications</key>
+			<true/>
 		</dict>
 	</dict>
 	<key>OSBundleCompatibleVersion</key>
-	<string>1.0.0</string>
+	<string>${MODULE_VERSION}</string>
 	<key>OSBundleLibraries</key>
 	<dict>
 		<key>com.apple.iokit.IOACPIFamily</key>
