@@ -10,6 +10,7 @@
 		7105998A2773842E007082FD /* libkmod.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 710599892773842E007082FD /* libkmod.a */; };
 		7105998B27738459007082FD /* libkmod.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 710599892773842E007082FD /* libkmod.a */; };
 		7105998C27738473007082FD /* libkmod.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 710599892773842E007082FD /* libkmod.a */; };
+		7105998D27738497007082FD /* VoodooPS2Common.h in Headers */ = {isa = PBXBuildFile; fileRef = 71C22F1D26E183A100FE8589 /* VoodooPS2Common.h */; };
 		71A0A5CA26E1493300530E0F /* VoodooInputTransducer.h in Headers */ = {isa = PBXBuildFile; fileRef = 71A0A5C626E1493300530E0F /* VoodooInputTransducer.h */; };
 		71A0A5CB26E1493300530E0F /* VoodooInputEvent.h in Headers */ = {isa = PBXBuildFile; fileRef = 71A0A5C726E1493300530E0F /* VoodooInputEvent.h */; };
 		71A0A5CC26E1493300530E0F /* VoodooInputMessages.h in Headers */ = {isa = PBXBuildFile; fileRef = 71A0A5C826E1493300530E0F /* VoodooInputMessages.h */; };
@@ -251,6 +252,7 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7105998D27738497007082FD /* VoodooPS2Common.h in Headers */,
 				71A0A5CB26E1493300530E0F /* VoodooInputEvent.h in Headers */,
 				71A0A5CD26E1493300530E0F /* MultitouchHelpers.h in Headers */,
 				84833FB2161B62A900845294 /* alps.h in Headers */,
