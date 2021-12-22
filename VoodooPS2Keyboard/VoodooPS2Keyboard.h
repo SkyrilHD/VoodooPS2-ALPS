@@ -2,13 +2,13 @@
  * Copyright (c) 1998-2000 Apple Computer, Inc. All rights reserved.
  *
  * @APPLE_LICENSE_HEADER_START@
- * 
+ *
  * The contents of this file constitute Original Code as defined in and
  * are subject to the Apple Public Source License Version 1.1 (the
  * "License").  You may not use this file except in compliance with the
  * License.  Please obtain a copy of the License at
  * http://www.apple.com/publicsource and read it before using this file.
- * 
+ *
  * This Original Code and all software distributed under the License are
  * distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, EITHER
  * EXPRESS OR IMPLIED, AND APPLE HEREBY DISCLAIMS ALL SUCH WARRANTIES,
@@ -16,7 +16,7 @@
  * FITNESS FOR A PARTICULAR PURPOSE OR NON-INFRINGEMENT.  Please see the
  * License for the specific language governing rights and limitations
  * under the License.
- * 
+ *
  * @APPLE_LICENSE_HEADER_END@
  */
 
@@ -24,9 +24,11 @@
 #define _APPLEPS2KEYBOARD_H
 
 #include <libkern/c++/OSBoolean.h>
-#include "ApplePS2KeyboardDevice.h"
+#include "../VoodooPS2Controller/ApplePS2KeyboardDevice.h"
 #include <IOKit/hidsystem/IOHIKeyboard.h>
+
 #include <IOKit/acpi/IOACPIPlatformDevice.h>
+
 #include <IOKit/IOCommandGate.h>
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -79,7 +81,6 @@ private:
     UInt8                       _lastdata;
     bool                        _interruptHandlerInstalled;
     bool                        _powerControlHandlerInstalled;
-    bool                        _messageHandlerInstalled;
     UInt8                       _ledState;
     IOCommandGate*              _cmdGate;
 
@@ -97,35 +98,24 @@ private:
     int                         _logscancodes;
     UInt32                      _f12ejectdelay;
     enum { kTimerSleep, kTimerEject } _timerFunc;
+    bool                        _remapPrntScr;
+    bool                        _numLockSupport;
+    bool                        _numLockOnAtBoot;
     
     // dealing with sleep key delay
     IOTimerEventSource*         _sleepEjectTimer;
     UInt32                      _maxsleeppresstime;
 
-    // configuration items for swipe actions
-    UInt16                      _actionSwipeUp[16];
-    UInt16                      _actionSwipeDown[16];
-    UInt16                      _actionSwipeLeft[16];
-    UInt16                      _actionSwipeRight[16];
-    UInt16                      _actionSwipe4Up[16];
-    UInt16                      _actionSwipe4Down[16];
-    UInt16                      _actionSwipe4Left[16];
-    UInt16                      _actionSwipe4Right[16];
-    
-    UInt16                      _actionZoomIn[16];
-    UInt16                      _actionZoomOut[16];
-
-    // ACPI support for screen brightness
-    IOACPIPlatformDevice *      _provider;
-    int *                       _brightnessLevels;
-    int                         _brightnessCount;
-
     // ACPI support for keyboard backlight
+    IOACPIPlatformDevice *      _provider;
     int *                       _backlightLevels;
     int                         _backlightCount;
     
     // special hack for Envy brightness access, while retaining F2/F3 functionality
     bool                        _brightnessHack;
+    
+    // Toggle keyboard input along with touchpad when Windows+printscreen is pressed
+    bool                        _disableInput;
     
     // macro processing
     OSData**                    _macroTranslation;
@@ -136,16 +126,20 @@ private:
     uint64_t                    _macroMaxTime;
     IOTimerEventSource*         _macroTimer;
     
+    // fix caps lock led
+    bool                        _ignoreCapsLedChange;
+
     virtual bool dispatchKeyboardEventWithPacket(const UInt8* packet);
     virtual void setLEDs(UInt8 ledState);
     virtual void setKeyboardEnable(bool enable);
     virtual void initKeyboard();
     virtual void setDevicePowerState(UInt32 whatToDo);
-    void sendKeySequence(UInt16* pKeys);
     void modifyKeyboardBacklight(int adbKeyCode, bool goingDown);
     void modifyScreenBrightness(int adbKeyCode, bool goingDown);
     inline bool checkModifierState(UInt16 mask)
         { return mask == (_PS2modifierState & mask); }
+    inline bool checkModifierStateAny(UInt16 mask)
+        { return (_PS2modifierState & mask); }
     
     void loadCustomPS2Map(OSArray* pArray);
     void loadBreaklessPS2(OSDictionary* dict, const char* name);
@@ -174,7 +168,6 @@ protected:
 
 public:
     bool init(OSDictionary * dict) override;
-    void free() override;
     ApplePS2Keyboard * probe(IOService * provider, SInt32 * score) override;
 
     bool start(IOService * provider) override;
@@ -183,12 +176,10 @@ public:
     virtual PS2InterruptResult interruptOccurred(UInt8 scanCode);
     virtual void packetReady();
     
-    virtual void receiveMessage(int message, void* data);
-    
     UInt32 deviceType() override;
     UInt32 interfaceID() override;
     
-  	IOReturn setParamProperties(OSDictionary* dict) override;
+      IOReturn setParamProperties(OSDictionary* dict) override;
     IOReturn setProperties (OSObject *props) override;
     
     IOReturn message(UInt32 type, IOService* provider, void* argument) override;
