@@ -224,6 +224,30 @@ ALPS *ALPS::probe(IOService *provider, SInt32 *score) {
     
     _device = (ApplePS2MouseDevice *) provider;
     
+    // find config specific to Platform Profile
+    OSDictionary* list = OSDynamicCast(OSDictionary, getProperty(kPlatformProfile));
+    OSDictionary* config = _device->getController()->makeConfigurationNode(list, "ALPS TouchPad");
+    if (config)
+    {
+        // if DisableDevice is Yes, then do not load at all...
+        OSBoolean* disable = OSDynamicCast(OSBoolean, config->getObject(kDisableDevice));
+        if (disable && disable->isTrue())
+        {
+            config->release();
+            _device = 0;
+            return 0;
+        }
+#ifdef DEBUG
+        // save configuration for later/diagnostics...
+        setProperty(kMergedConfiguration, config);
+#endif
+        //
+        // Load settings specific to Platform Profile
+        //
+        setParamPropertiesGated(config);
+        OSSafeReleaseNULL(config);
+    }
+    
     _device->lock();
     resetMouse();
     
@@ -298,24 +322,6 @@ bool ALPS::init(OSDictionary *dict) {
     
     memset(&inputEvent, 0, sizeof(VoodooInputEvent));
     
-    // find config specific to Platform Profile
-    OSDictionary* list = OSDynamicCast(OSDictionary, dict->getObject(kPlatformProfile));
-    OSDictionary* config = ApplePS2Controller::makeConfigurationNode(list);
-    if (config)
-    {
-        // if DisableDevice is Yes, then do not load at all...
-        OSBoolean* disable = OSDynamicCast(OSBoolean, config->getObject(kDisableDevice));
-        if (disable && disable->isTrue())
-        {
-            config->release();
-            return false;
-        }
-#ifdef DEBUG
-        // save configuration for later/diagnostics...
-        setProperty(kMergedConfiguration, config);
-#endif
-    }
-    
     // initialize state...
     _device = NULL;
     _interruptHandlerInstalled = false;
@@ -361,13 +367,6 @@ bool ALPS::init(OSDictionary *dict) {
     IOLog("VoodooPS2TouchPad Base Driver loaded...\n");
     
     setProperty("Revision", 24, 32);
-    
-    //
-    // Load settings specific to Platform Profile
-    //
-    
-    setParamPropertiesGated(config);
-    OSSafeReleaseNULL(config);
     
     memset(&inputEvent, 0, sizeof(VoodooInputEvent));
     
