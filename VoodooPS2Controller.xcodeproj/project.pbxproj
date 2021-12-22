@@ -122,6 +122,7 @@
 				84167818161B55B2002C60E6 /* VoodooPS2Controller */,
 				8416782E161B5613002C60E6 /* VoodooPS2Keyboard */,
 				84167856161B56C4002C60E6 /* VoodooPS2Trackpad */,
+				C3F4FFB4CAD4F7E3223541CC /* Products */,
 				84167815161B55B2002C60E6 /* Frameworks */,
 			);
 			sourceTree = "<group>";
@@ -130,7 +131,6 @@
 			isa = PBXGroup;
 			children = (
 				71059988277380BF007082FD /* libkmod.a */,
-				C3F4FFB4CAD4F7E3223541CC /* Products */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
