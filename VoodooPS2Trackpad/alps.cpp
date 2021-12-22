@@ -468,6 +468,9 @@ bool ALPS::start( IOService * provider )
                                        OSMemberFunctionCast(PS2PowerControlAction, this, &ALPS::setDevicePowerState) );
     _powerControlHandlerInstalled = true;
     
+    /*
+     // MARK: Remove?
+
     //
     // Install message hook for keyboard to trackpad communication
     //
@@ -475,6 +478,7 @@ bool ALPS::start( IOService * provider )
     _device->installMessageAction( this,
                                   OSMemberFunctionCast(PS2MessageAction, this, &ALPS::receiveMessage));
     _messageHandlerInstalled = true;
+     */
     
     return true;
 }
@@ -529,6 +533,8 @@ void ALPS::stop(IOService *provider) {
         _device->uninstallPowerControlAction();
         _powerControlHandlerInstalled = false;
     }
+    /*
+     MARK: Remove?
     
     //
     // Uninstall message handler.
@@ -538,7 +544,7 @@ void ALPS::stop(IOService *provider) {
         _device->uninstallMessageAction();
         _messageHandlerInstalled = false;
     }
-    
+     */
     resetMouse();
     
     //
