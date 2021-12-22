@@ -22,7 +22,7 @@
 	<string>${MODULE_VERSION}</string>
 	<key>IOKitPersonalities</key>
 	<dict>
-		<key>ALPS TouchPad</key>
+		<key>ALPS GlidePoint</key>
 		<dict>
 			<key>CFBundleIdentifier</key>
 			<string>com.skyrilhd.PS2Trackpad</string>
@@ -32,14 +32,31 @@
 			<integer>6000</integer>
 			<key>IOProviderClass</key>
 			<string>ApplePS2MouseDevice</string>
-			<key>MT Built-in</key>
-			<true/>
-			<key>MTHIDDevice</key>
-			<true/>
 			<key>Platform Profile</key>
 			<dict>
 				<key>Default</key>
 				<dict>
+					<key>Darwin 16+</key>
+					<dict>
+						<key>ApplePreferenceCapability</key>
+						<true/>
+						<key>ApplePreferenceIdentifier</key>
+						<string>com.apple.AppleMultitouchTrackpad</string>
+						<key>MT Built-in</key>
+						<true/>
+						<key>MTHIDDevice</key>
+						<true/>
+						<key>SupportsGestureScrolling</key>
+						<true/>
+						<key>TrackpadEmbedded</key>
+						<true/>
+						<key>TrackpadFourFingerGestures</key>
+						<true/>
+						<key>TrackpadSecondaryClickCorners</key>
+						<true/>
+						<key>TrackpadThreeFingerDrag</key>
+						<false/>
+					</dict>
 					<key>DisableDevice</key>
 					<false/>
 					<key>DoubleSmoothness</key>
@@ -81,6 +98,50 @@
 					<key>WakeDelay</key>
 					<integer>1000</integer>
 				</dict>
+				<key>HPQOEM</key>
+				<dict>
+					<key>1411</key>
+					<string>ProBook</string>
+					<key>1619</key>
+					<string>ProBook</string>
+					<key>161C</key>
+					<string>ProBook</string>
+					<key>164F</key>
+					<string>ProBook</string>
+					<key>167C</key>
+					<string>ProBook</string>
+					<key>167E</key>
+					<string>ProBook</string>
+					<key>1680</key>
+					<string>ProBook</string>
+					<key>179B</key>
+					<string>ProBook</string>
+					<key>179C</key>
+					<string>ProBook</string>
+					<key>17A9</key>
+					<string>ProBook</string>
+					<key>17F0</key>
+					<string>ProBook</string>
+					<key>17F3</key>
+					<string>ProBook</string>
+					<key>17F6</key>
+					<string>ProBook</string>
+					<key>1942</key>
+					<string>ProBook</string>
+					<key>1949</key>
+					<string>ProBook</string>
+					<key>198F</key>
+					<string>ProBook</string>
+					<key>ProBook</key>
+					<dict>
+						<key>DisableDevice</key>
+						<true/>
+					</dict>
+					<key>ProBook-102</key>
+					<string>ProBook</string>
+					<key>ProBook-87</key>
+					<string>ProBook</string>
+				</dict>
 			</dict>
 			<key>ProductID</key>
 			<integer>547</integer>
@@ -101,6 +162,8 @@
 	</dict>
 	<key>OSBundleLibraries</key>
 	<dict>
+		<key>as.acidanthera.voodoo.driver.PS2Controller</key>
+		<string>${MODULE_VERSION}</string>
 		<key>com.apple.iokit.IOHIDFamily</key>
 		<string>1.0.0b1</string>
 		<key>com.apple.kpi.iokit</key>
@@ -109,8 +172,6 @@
 		<string>9.0.0</string>
 		<key>com.apple.kpi.mach</key>
 		<string>9.0.0</string>
-		<key>com.skyrilhd.PS2Controller</key>
-		<string>${MODULE_VERSION}</string>
 	</dict>
 	<key>OSBundleRequired</key>
 	<string>Console</string>
