@@ -2,13 +2,13 @@
  * Copyright (c) 1998-2000 Apple Computer, Inc. All rights reserved.
  *
  * @APPLE_LICENSE_HEADER_START@
- * 
+ *
  * The contents of this file constitute Original Code as defined in and
  * are subject to the Apple Public Source License Version 1.1 (the
  * "License").  You may not use this file except in compliance with the
  * License.  Please obtain a copy of the License at
  * http://www.apple.com/publicsource and read it before using this file.
- * 
+ *
  * This Original Code and all software distributed under the License are
  * distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, EITHER
  * EXPRESS OR IMPLIED, AND APPLE HEREBY DISCLAIMS ALL SUCH WARRANTIES,
@@ -16,7 +16,7 @@
  * FITNESS FOR A PARTICULAR PURPOSE OR NON-INFRINGEMENT.  Please see the
  * License for the specific language governing rights and limitations
  * under the License.
- * 
+ *
  * @APPLE_LICENSE_HEADER_END@
  */
 
@@ -29,10 +29,36 @@ OSDefineMetaClassAndStructors(ApplePS2Device, IOService);
 // ApplePS2Device Class Implementation
 //
 
+bool ApplePS2Device::init(size_t port)
+{
+  _port = port;
+  return super::init();
+}
+
 bool ApplePS2Device::attach(IOService * provider)
 {
   if (!super::attach(provider))
       return false;
+
+  _workloop        = IOWorkLoop::workLoop();
+  _interruptSource = IOInterruptEventSource::interruptEventSource(this,
+    OSMemberFunctionCast(IOInterruptEventAction, this, &ApplePS2Device::packetAction));
+    
+  if (!_interruptSource || !_workloop)
+  {
+      OSSafeReleaseNULL(_workloop);
+      OSSafeReleaseNULL(_interruptSource);
+      return false;
+  }
+    
+  if (_workloop->addEventSource(_interruptSource) != kIOReturnSuccess)
+  {
+      OSSafeReleaseNULL(_workloop);
+      OSSafeReleaseNULL(_interruptSource);
+      return false;
+  }
+    
+  setProperty(kPortKey, _port, 8);
 
   assert(_controller == 0);
   _controller = (ApplePS2Controller*)provider;
@@ -49,6 +75,14 @@ void ApplePS2Device::detach( IOService * provider )
   _controller->release();
   _controller = 0;
 
+  if (_interruptSource && _workloop)
+  {
+      _workloop->removeEventSource(_interruptSource);
+  }
+    
+  OSSafeReleaseNULL(_interruptSource);
+  OSSafeReleaseNULL(_workloop);
+    
   super::detach(provider);
 }
 
@@ -70,6 +104,7 @@ void ApplePS2Device::freeRequest(PS2Request * request)
 
 bool ApplePS2Device::submitRequest(PS2Request * request)
 {
+  request->port = _port;
   return _controller->submitRequest(request);
 }
 
@@ -77,6 +112,7 @@ bool ApplePS2Device::submitRequest(PS2Request * request)
 
 void ApplePS2Device::submitRequestAndBlock(PS2Request * request)
 {
+  request->port = _port;
   _controller->submitRequestAndBlock(request);
 }
 
@@ -102,54 +138,93 @@ void ApplePS2Device::unlock()
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 void ApplePS2Device::installInterruptAction(OSObject *         target,
-                                                    PS2InterruptAction interruptAction,
-                                                    PS2PacketAction packetAction)
+                                            PS2InterruptAction interruptAction,
+                                            PS2PacketAction packetAction)
 {
-    _controller->installInterruptAction(_deviceType, target, interruptAction, packetAction);
+    _client = target;
+    _controller->installInterruptAction(_port);
+    _interrupt_action = interruptAction;
+    _packet_action = packetAction;
 }
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 void ApplePS2Device::uninstallInterruptAction()
 {
-    _controller->uninstallInterruptAction(_deviceType);
+    _controller->uninstallInterruptAction(_port);
+    _interrupt_action = nullptr;
+    _packet_action = nullptr;
+    _client = nullptr;
 }
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-void ApplePS2Device::installPowerControlAction(
-                                                       OSObject *            target,
-                                                       PS2PowerControlAction action)
+void ApplePS2Device::installPowerControlAction(OSObject *            target,
+                                               PS2PowerControlAction action)
 {
-    _controller->installPowerControlAction(_deviceType, target, action);
+    _power_action = action;
 }
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 void ApplePS2Device::uninstallPowerControlAction()
 {
-    _controller->uninstallPowerControlAction(_deviceType);
+    _power_action = nullptr;
 }
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-void ApplePS2Device::installMessageAction(OSObject* target, PS2MessageAction action)
+void ApplePS2Device::dispatchMessage(int message, void *data)
 {
-    _controller->installMessageAction(_deviceType, target, action);
+    _controller->dispatchMessage(message, data);
 }
 
-void ApplePS2Device::uninstallMessageAction()
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+ApplePS2Controller* ApplePS2Device::getController()
 {
-    _controller->uninstallMessageAction(_deviceType);
+    return _controller;
 }
 
-void ApplePS2Device::dispatchMouseMessage(int message, void *data)
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+PS2InterruptResult ApplePS2Device::interruptAction(UInt8 data)
 {
-    _controller->dispatchMessage(kDT_Mouse, message, data);
+    if (_client == nullptr || _interrupt_action == nullptr)
+    {
+        return kPS2IR_packetBuffering;
+    }
+    
+    return (*_interrupt_action)(_client, data);
 }
 
-void ApplePS2Device::dispatchKeyboardMessage(int message, void *data)
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+void ApplePS2Device::packetActionInterrupt()
 {
-    _controller->dispatchMessage(kDT_Keyboard, message, data);
+    _interruptSource->interruptOccurred(0, 0, 0);
 }
 
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+void ApplePS2Device::powerAction(UInt32 whatToDo)
+{
+    if (_client == nullptr || _power_action == nullptr)
+    {
+        return;
+    }
+    
+    (*_power_action)(_client, whatToDo);
+}
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+void ApplePS2Device::packetAction(IOInterruptEventSource *, int)
+{
+    if (_client == nullptr || _packet_action == nullptr)
+    {
+        return;
+    }
+    
+    (*_packet_action)(_client);
+}
