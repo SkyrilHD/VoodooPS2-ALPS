@@ -226,7 +226,7 @@ ALPS *ALPS::probe(IOService *provider, SInt32 *score) {
     
     // find config specific to Platform Profile
     OSDictionary* list = OSDynamicCast(OSDictionary, getProperty(kPlatformProfile));
-    OSDictionary* config = _device->getController()->makeConfigurationNode(list, "ALPS TouchPad");
+    OSDictionary* config = _device->getController()->makeConfigurationNode(list, "ALPS GlidePoint");
     if (config)
     {
         // if DisableDevice is Yes, then do not load at all...
