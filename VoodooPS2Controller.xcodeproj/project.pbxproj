@@ -80,9 +80,9 @@
 		84833FAC161B62A900845294 /* alps.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = alps.h; sourceTree = "<group>"; };
 		84DD1979162D496E0044D061 /* AppleACPIPS2Nub.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = AppleACPIPS2Nub.cpp; sourceTree = "<group>"; };
 		84DD197A162D496E0044D061 /* AppleACPIPS2Nub.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AppleACPIPS2Nub.h; sourceTree = "<group>"; };
-		C3F4F603A234F724795A2FBD /* VoodooPS2Trackpad.kext */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.kernel-extension"; name = VoodooPS2Trackpad.kext; path = "../../Library/Caches/appCode20/DerivedData/VoodooPS2Controller-5fc0befb/Build/Products/Debug/VoodooPS2Trackpad.kext"; sourceTree = "<group>"; };
-		C3F4FA022A4265DD37A85F4D /* VoodooPS2Controller.kext */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.kernel-extension"; name = VoodooPS2Controller.kext; path = "../../Library/Caches/appCode20/DerivedData/VoodooPS2Controller-5fc0befb/Build/Products/Debug/VoodooPS2Controller.kext"; sourceTree = "<group>"; };
-		C3F4FAC34E9069A684BFE9E1 /* VoodooPS2Keyboard.kext */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.kernel-extension"; name = VoodooPS2Keyboard.kext; path = "../../Library/Caches/appCode20/DerivedData/VoodooPS2Controller-5fc0befb/Build/Products/Debug/VoodooPS2Keyboard.kext"; sourceTree = "<group>"; };
+		C3F4F603A234F724795A2FBD /* VoodooPS2Trackpad.kext */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; name = VoodooPS2Trackpad.kext; path = ../Products/Debug/VoodooPS2Controller.kext/Contents/PlugIns/VoodooPS2Trackpad.kext; sourceTree = BUILT_PRODUCTS_DIR; };
+		C3F4FA022A4265DD37A85F4D /* VoodooPS2Controller.kext */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = VoodooPS2Controller.kext; sourceTree = BUILT_PRODUCTS_DIR; };
+		C3F4FAC34E9069A684BFE9E1 /* VoodooPS2Keyboard.kext */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; name = VoodooPS2Keyboard.kext; path = ../Products/Debug/VoodooPS2Controller.kext/Contents/PlugIns/VoodooPS2Keyboard.kext; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
