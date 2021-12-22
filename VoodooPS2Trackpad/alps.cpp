@@ -157,36 +157,6 @@ static const struct alps_model_info alps_model_data[] = {
     { { 0x73, 0x02, 0x50 }, { ALPS_PROTO_V2, 0xcf, 0xcf, ALPS_FOUR_BUTTONS } },        /* Dell Vostro 1400 */
 };
 
-/*
- static const struct alps_protocol_info alps_v3_protocol_data = {
- ALPS_PROTO_V3, 0x8f, 0x8f, ALPS_DUALPOINT | ALPS_DUALPOINT_WITH_PRESSURE
- };
- 
- static const struct alps_protocol_info alps_v3_rushmore_data = {
- ALPS_PROTO_V3_RUSHMORE, 0x8f, 0x8f, ALPS_DUALPOINT | ALPS_DUALPOINT_WITH_PRESSURE
- };
- 
- static const struct alps_protocol_info alps_v4_protocol_data = {
- ALPS_PROTO_V4, 0x8f, 0x8f, 0
- };
- 
- static const struct alps_protocol_info alps_v5_protocol_data = {
- ALPS_PROTO_V5, 0xc8, 0xd8, 0
- };
- 
- static const struct alps_protocol_info alps_v7_protocol_data = {
- ALPS_PROTO_V7, 0x48, 0x48, ALPS_DUALPOINT | ALPS_DUALPOINT_WITH_PRESSURE
- };
- 
- static const struct alps_protocol_info alps_v8_protocol_data = {
- ALPS_PROTO_V8, 0x18, 0x18, 0
- };
- 
- static const struct alps_protocol_info alps_v9_protocol_data = {
- ALPS_PROTO_V9, 0xc8, 0xc8, 0
- };
- */
-
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 // =============================================================================
@@ -3092,7 +3062,6 @@ bool ALPS::alps_hw_init_ss4_v2()
 }
 
 void ALPS::set_protocol() {
-    // MARK: Maybe make more universal to adapt to linux code
     priv.byte0 = 0x8f;
     priv.mask0 = 0x8f;
     priv.flags = ALPS_DUALPOINT;
