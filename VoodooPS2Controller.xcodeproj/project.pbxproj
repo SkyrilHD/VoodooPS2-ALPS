@@ -669,7 +669,7 @@
 				);
 				MODULE_NAME = com.skyrilhd.VoodooPS2Controller;
 				OTHER_CFLAGS = "-fno-stack-protector";
-				PRODUCT_BUNDLE_IDENTIFIER = com.skyrilhd.PS2Controller;
+				PRODUCT_BUNDLE_IDENTIFIER = as.acidanthera.voodoo.driver.PS2Controller;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRIP_INSTALLED_PRODUCT = YES;
 				STRIP_STYLE = "non-global";
@@ -691,7 +691,7 @@
 				);
 				MODULE_NAME = com.skyrilhd.VoodooPS2Controller;
 				OTHER_CFLAGS = "-fno-stack-protector";
-				PRODUCT_BUNDLE_IDENTIFIER = com.skyrilhd.PS2Controller;
+				PRODUCT_BUNDLE_IDENTIFIER = as.acidanthera.voodoo.driver.PS2Controller;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRIP_INSTALLED_PRODUCT = YES;
 				STRIP_STYLE = "non-global";
@@ -709,7 +709,7 @@
 				INFOPLIST_FILE = "VoodooPS2Keyboard/VoodooPS2Keyboard-Info.plist";
 				MODULE_NAME = com.skyrilhd.VoodooPS2Keyboard;
 				OTHER_CFLAGS = "-fno-stack-protector";
-				PRODUCT_BUNDLE_IDENTIFIER = com.skyrilhd.PS2Keyboard;
+				PRODUCT_BUNDLE_IDENTIFIER = as.acidanthera.voodoo.driver.PS2Keyboard;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRIP_INSTALLED_PRODUCT = YES;
 				STRIP_STYLE = "non-global";
@@ -727,7 +727,7 @@
 				INFOPLIST_FILE = "VoodooPS2Keyboard/VoodooPS2Keyboard-Info.plist";
 				MODULE_NAME = com.skyrilhd.VoodooPS2Keyboard;
 				OTHER_CFLAGS = "-fno-stack-protector";
-				PRODUCT_BUNDLE_IDENTIFIER = com.skyrilhd.PS2Keyboard;
+				PRODUCT_BUNDLE_IDENTIFIER = as.acidanthera.voodoo.driver.PS2Keyboard;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRIP_INSTALLED_PRODUCT = YES;
 				STRIP_STYLE = "non-global";
