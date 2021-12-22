@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		7105998A2773842E007082FD /* libkmod.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 710599892773842E007082FD /* libkmod.a */; };
+		7105998B27738459007082FD /* libkmod.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 710599892773842E007082FD /* libkmod.a */; };
+		7105998C27738473007082FD /* libkmod.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 710599892773842E007082FD /* libkmod.a */; };
 		71A0A5CA26E1493300530E0F /* VoodooInputTransducer.h in Headers */ = {isa = PBXBuildFile; fileRef = 71A0A5C626E1493300530E0F /* VoodooInputTransducer.h */; };
 		71A0A5CB26E1493300530E0F /* VoodooInputEvent.h in Headers */ = {isa = PBXBuildFile; fileRef = 71A0A5C726E1493300530E0F /* VoodooInputEvent.h */; };
 		71A0A5CC26E1493300530E0F /* VoodooInputMessages.h in Headers */ = {isa = PBXBuildFile; fileRef = 71A0A5C826E1493300530E0F /* VoodooInputMessages.h */; };
@@ -47,6 +50,7 @@
 
 /* Begin PBXFileReference section */
 		71059988277380BF007082FD /* libkmod.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libkmod.a; path = MacKernelSDK/Library/x86_64/libkmod.a; sourceTree = "<group>"; };
+		710599892773842E007082FD /* libkmod.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libkmod.a; path = usr/lib/libkmod.a; sourceTree = SDKROOT; };
 		71A0A5C626E1493300530E0F /* VoodooInputTransducer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = VoodooInputTransducer.h; path = VoodooInput/Debug/VoodooInput.kext/Contents/Resources/VoodooInputMultitouch/VoodooInputTransducer.h; sourceTree = SOURCE_ROOT; };
 		71A0A5C726E1493300530E0F /* VoodooInputEvent.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = VoodooInputEvent.h; path = VoodooInput/Debug/VoodooInput.kext/Contents/Resources/VoodooInputMultitouch/VoodooInputEvent.h; sourceTree = SOURCE_ROOT; };
 		71A0A5C826E1493300530E0F /* VoodooInputMessages.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = VoodooInputMessages.h; path = VoodooInput/Debug/VoodooInput.kext/Contents/Resources/VoodooInputMultitouch/VoodooInputMessages.h; sourceTree = SOURCE_ROOT; };
@@ -85,6 +89,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7105998A2773842E007082FD /* libkmod.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -92,6 +97,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7105998B27738459007082FD /* libkmod.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -99,6 +105,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7105998C27738473007082FD /* libkmod.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -130,6 +137,7 @@
 		84167815161B55B2002C60E6 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				710599892773842E007082FD /* libkmod.a */,
 				71059988277380BF007082FD /* libkmod.a */,
 			);
 			name = Frameworks;
