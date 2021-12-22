@@ -4371,30 +4371,27 @@ void ALPS::setDevicePowerState( UInt32 whatToDo )
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-void ALPS::receiveMessage(int message, void* data)
-{
-    //
+IOReturn ALPS::message(UInt32 type, IOService* provider, void* argument) {
     // Here is where we receive messages from the keyboard driver
     //
     // This allows for the keyboard driver to enable/disable the trackpad
     // when a certain keycode is pressed.
     //
     // It also allows the trackpad driver to learn the last time a key
-    //  has been pressed, so it can implement various "ignore trackpad
-    //  input while typing" options.
-    //
-    switch (message)
+    // has been pressed, so it can implement various "ignore trackpad
+    // input while typing" options.
+    switch (type)
     {
         case kPS2M_getDisableTouchpad:
         {
-            bool* pResult = (bool*)data;
+            bool* pResult = (bool*)argument;
             *pResult = !ignoreall;
             break;
         }
-            
+
         case kPS2M_setDisableTouchpad:
         {
-            bool enable = *((bool*)data);
+            bool enable = *((bool*)argument);
             // ignoreall is true when trackpad has been disabled
             if (enable == ignoreall)
             {
@@ -4404,12 +4401,27 @@ void ALPS::receiveMessage(int message, void* data)
             }
             break;
         }
-            
+
+        case kPS2M_resetTouchpad:
+        {
+            int *reqCode = (int *)argument;
+            DEBUG_LOG("ALPS::kPS2M_resetTouchpad reqCode: %d\n", *reqCode);
+            if (*reqCode == 1) {
+                setTouchPadEnable(false);
+                IOSleep(wakedelay);
+
+                ignoreall = false;
+                
+                setTouchPadEnable(true);
+            }
+            break;
+        }
+
         case kPS2M_notifyKeyPressed:
         {
             // just remember last time key pressed... this can be used in
             // interrupt handler to detect unintended input while typing
-            PS2KeyInfo* pInfo = (PS2KeyInfo*)data;
+            PS2KeyInfo* pInfo = (PS2KeyInfo*)argument;
             static const int masks[] =
             {
                 0x10,       // 0x36
@@ -4425,42 +4437,42 @@ void ALPS::receiveMessage(int message, void* data)
             };
 #ifdef SIMULATE_PASSTHRU
             /*
-             static int buttons = 0;
-             int button;
-             switch (pInfo->adbKeyCode)
-             {
-             // make right Alt,Menu,Ctrl into three button passthru
-             case 0x36:
-             button = 0x1;
-             goto dispatch_it;
-             case 0x3f:
-             button = 0x4;
-             goto dispatch_it;
-             case 0x3e:
-             button = 0x2;
-             // fall through...
-             dispatch_it:
-             if (pInfo->goingDown)
-             buttons |= button;
-             else
-             buttons &= ~button;
-             UInt8 packet[6];
-             packet[0] = 0x84 | trackbuttons;
-             packet[1] = 0x08 | buttons;
-             packet[2] = 0;
-             packet[3] = 0xC4 | trackbuttons;
-             packet[4] = 0;
-             packet[5] = 0;
-             dispatchEventsWithPacket(packet, 6);
-             pInfo->eatKey = true;
-             }
+            static int buttons = 0;
+            int button;
+            switch (pInfo->adbKeyCode)
+            {
+                // make right Alt,Menu,Ctrl into three button passthru
+                case 0x36:
+                    button = 0x1;
+                    goto dispatch_it;
+                case 0x3f:
+                    button = 0x4;
+                    goto dispatch_it;
+                case 0x3e:
+                    button = 0x2;
+                    // fall through...
+                dispatch_it:
+                    if (pInfo->goingDown)
+                        buttons |= button;
+                    else
+                        buttons &= ~button;
+                    UInt8 packet[6];
+                    packet[0] = 0x84 | trackbuttons;
+                    packet[1] = 0x08 | buttons;
+                    packet[2] = 0;
+                    packet[3] = 0xC4 | trackbuttons;
+                    packet[4] = 0;
+                    packet[5] = 0;
+                    dispatchEventsWithPacket(packet, 6);
+                    pInfo->eatKey = true;
+            }
              */
 #endif
             switch (pInfo->adbKeyCode)
             {
-                    // don't store key time for modifier keys going down
-                    // track modifiers for scrollzoom feature...
-                    // (note: it turns out we didn't need to do this, but leaving this code in for now in case it is useful)
+                // don't store key time for modifier keys going down
+                // track modifiers for scrollzoom feature...
+                // (note: it turns out we didn't need to do this, but leaving this code in for now in case it is useful)
                 case 0x38:  // left shift
                 case 0x3c:  // right shift
                 case 0x3b:  // left control
@@ -4485,4 +4497,6 @@ void ALPS::receiveMessage(int message, void* data)
             break;
         }
     }
+
+    return kIOReturnSuccess;
 }

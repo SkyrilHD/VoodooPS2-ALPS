@@ -823,6 +823,8 @@ protected:
     virtual void   setDevicePowerState(UInt32 whatToDo);
 
     virtual void   receiveMessage(int message, void* data);
+    
+    IOReturn message(UInt32 type, IOService* provider, void* argument) override;
 
     virtual void touchpadToggled() {};
     virtual void touchpadShutdown() {};
