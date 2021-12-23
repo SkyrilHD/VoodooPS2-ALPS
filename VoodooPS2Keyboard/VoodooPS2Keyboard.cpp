@@ -50,6 +50,7 @@
 #define kFunctionKeysStandard               "Function Keys Standard"
 #define kFunctionKeysSpecial                "Function Keys Special"
 #define kRemapPrntScr                       "RemapPrntScr"
+#define kCapsLockFix                        "CapsLockFix"
 #define kNumLockSupport                     "NumLockSupport"
 #define kNumLockOnAtBoot                    "NumLockOnAtBoot"
 #define kSwapCapsLockLeftControl            "Swap capslock and left control"
@@ -167,6 +168,7 @@ bool ApplePS2Keyboard::init(OSDictionary * dict)
     _lastdata = 0;
     
     _remapPrntScr = false;
+    _CapsLockFix = false;
     _numLockSupport = false;
     _numLockOnAtBoot = false;
     _swapcommandoption = false;
@@ -755,6 +757,12 @@ void ApplePS2Keyboard::setParamPropertiesGated(OSDictionary * dict)
     {
         _remapPrntScr = xml->getValue();
         setProperty(kRemapPrntScr, _remapPrntScr);
+    }
+    
+    if ((xml = OSDynamicCast(OSBoolean, dict->getObject(kCapsLockFix))))
+    {
+        _CapsLockFix = xml->getValue();
+        setProperty(kCapsLockFix, _CapsLockFix);
     }
     
     if ((xml = OSDynamicCast(OSBoolean, dict->getObject(kNumLockSupport))))
@@ -1810,7 +1818,7 @@ bool ApplePS2Keyboard::dispatchKeyboardEventWithPacket(const UInt8* packet)
             clock_get_uptime(&now_abs);
             dispatchKeyboardEventX(adbKeyCode, false, now_abs);
         }
-        if (goingDown && version_major < 18) {
+        if (goingDown && (version_major < 18 || _CapsLockFix)) {
             static bool firsttime = true;
             if (!firsttime)
             {

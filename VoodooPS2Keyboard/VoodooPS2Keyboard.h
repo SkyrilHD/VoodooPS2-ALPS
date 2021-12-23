@@ -99,6 +99,7 @@ private:
     UInt32                      _f12ejectdelay;
     enum { kTimerSleep, kTimerEject } _timerFunc;
     bool                        _remapPrntScr;
+    bool                        _CapsLockFix;
     bool                        _numLockSupport;
     bool                        _numLockOnAtBoot;
     
