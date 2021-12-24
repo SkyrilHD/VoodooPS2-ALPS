@@ -326,7 +326,6 @@ bool ALPS::init(OSDictionary *dict) {
     _device = NULL;
     _interruptHandlerInstalled = false;
     _powerControlHandlerInstalled = false;
-    _messageHandlerInstalled = false;
     _packetByteCount = 0;
     _cmdGate = 0;
     
@@ -468,17 +467,11 @@ bool ALPS::start( IOService * provider )
                                        OSMemberFunctionCast(PS2PowerControlAction, this, &ALPS::setDevicePowerState) );
     _powerControlHandlerInstalled = true;
     
-    /*
-     // MARK: Remove?
-
     //
-    // Install message hook for keyboard to trackpad communication
+    // Request message registration for keyboard to trackpad communication
     //
     
-    _device->installMessageAction( this,
-                                  OSMemberFunctionCast(PS2MessageAction, this, &ALPS::receiveMessage));
-    _messageHandlerInstalled = true;
-     */
+    //setProperty(kDeliverNotifications, true);
     
     return true;
 }
@@ -533,18 +526,7 @@ void ALPS::stop(IOService *provider) {
         _device->uninstallPowerControlAction();
         _powerControlHandlerInstalled = false;
     }
-    /*
-     MARK: Remove?
     
-    //
-    // Uninstall message handler.
-    //
-    if (_messageHandlerInstalled)
-    {
-        _device->uninstallMessageAction();
-        _messageHandlerInstalled = false;
-    }
-     */
     resetMouse();
     
     //

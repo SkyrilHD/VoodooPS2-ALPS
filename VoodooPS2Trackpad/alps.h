@@ -539,6 +539,8 @@ public:
     IOReturn setParamProperties(OSDictionary * dict) override;
     IOReturn setProperties(OSObject *props) override;
     
+    IOReturn message(UInt32 type, IOService* provider, void* argument) override;
+    
     // Acidanthera VoodooPS2
     bool handleOpen(IOService *forClient, IOOptionBits options, void *arg) override;
     void handleClose(IOService *forClient, IOOptionBits options) override;
@@ -689,7 +691,6 @@ protected:
     ApplePS2MouseDevice * _device;
     bool                _interruptHandlerInstalled;
     bool                _powerControlHandlerInstalled;
-    bool                _messageHandlerInstalled;
     RingBuffer<UInt8, kPacketLength*32> _ringBuffer;
     UInt32              _packetByteCount;
     UInt16              _touchPadVersion;
@@ -821,10 +822,6 @@ protected:
     const char* modeName(int touchmode);
 
     virtual void   setDevicePowerState(UInt32 whatToDo);
-
-    virtual void   receiveMessage(int message, void* data);
-    
-    IOReturn message(UInt32 type, IOService* provider, void* argument) override;
 
     virtual void touchpadToggled() {};
     virtual void touchpadShutdown() {};
