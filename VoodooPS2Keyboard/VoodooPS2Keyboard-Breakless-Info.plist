@@ -7,7 +7,7 @@
 	<key>CFBundleExecutable</key>
 	<string>VoodooPS2Keyboard</string>
 	<key>CFBundleIdentifier</key>
-	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<string>as.acidanthera.voodoo.driver.PS2Keyboard</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
@@ -25,7 +25,7 @@
 		<key>ApplePS2Keyboard</key>
 		<dict>
 			<key>CFBundleIdentifier</key>
-			<string>com.skyrilhd.PS2Keyboard</string>
+			<string>as.acidanthera.voodoo.driver.PS2Keyboard</string>
 			<key>IOClass</key>
 			<string>ApplePS2Keyboard</string>
 			<key>IOProviderClass</key>
@@ -43,7 +43,7 @@
 					<key>Swap capslock and left control</key>
 					<false/>
 					<key>Swap command and option</key>
-					<true/>
+					<false/>
 					<key>Use ISO layout keyboard</key>
 					<false/>
 					<key>alt_handler_id</key>
@@ -134,14 +134,6 @@
 					<array>
 						<string>;Items must be strings in the form of scanfrom=adbto (in hex)</string>
 					</array>
-					<key>ActionSwipeUp</key>
-					<string>3b d, 37 d, 7e d, 7e u, 37 u, 3b u</string>
-					<key>ActionSwipeDown</key>
-					<string>3b d, 37 d, 7d d, 7d u, 37 u, 3b u</string>
-					<key>ActionSwipeLeft</key>
-					<string>3b d, 37 d, 7b d, 7b u, 37 u, 3b u</string>
-					<key>ActionSwipeRight</key>
-					<string>3b d, 37 d, 7c d, 7c u, 37 u, 3b u</string>
 					<key>LogScanCodes</key>
 					<integer>0</integer>
 				</dict>
@@ -162,7 +154,7 @@
 		<string>8.0.0</string>
 		<key>com.apple.kpi.unsupported</key>
 		<string>8.0.0</string>
-		<key>com.skyrilhd.PS2Controller</key>
+		<key>as.acidanthera.voodoo.driver.PS2Controller</key>
 		<string>${MODULE_VERSION}</string>
 	</dict>
 	<key>OSBundleRequired</key>

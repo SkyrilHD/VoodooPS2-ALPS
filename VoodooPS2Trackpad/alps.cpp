@@ -31,6 +31,9 @@
 #include "VoodooInputMultitouch/VoodooInputTransducer.h"
 #include "VoodooInputMultitouch/VoodooInputMessages.h"
 
+#undef NULL
+#define NULL 0
+
 enum {
     kTapEnabled = 0x01
 };
@@ -221,6 +224,30 @@ ALPS *ALPS::probe(IOService *provider, SInt32 *score) {
     
     _device = (ApplePS2MouseDevice *) provider;
     
+    // find config specific to Platform Profile
+    OSDictionary* list = OSDynamicCast(OSDictionary, getProperty(kPlatformProfile));
+    OSDictionary* config = _device->getController()->makeConfigurationNode(list, "ALPS GlidePoint");
+    if (config)
+    {
+        // if DisableDevice is Yes, then do not load at all...
+        OSBoolean* disable = OSDynamicCast(OSBoolean, config->getObject(kDisableDevice));
+        if (disable && disable->isTrue())
+        {
+            config->release();
+            _device = 0;
+            return 0;
+        }
+#ifdef DEBUG
+        // save configuration for later/diagnostics...
+        setProperty(kMergedConfiguration, config);
+#endif
+        //
+        // Load settings specific to Platform Profile
+        //
+        setParamPropertiesGated(config);
+        OSSafeReleaseNULL(config);
+    }
+    
     _device->lock();
     resetMouse();
     
@@ -295,29 +322,10 @@ bool ALPS::init(OSDictionary *dict) {
     
     memset(&inputEvent, 0, sizeof(VoodooInputEvent));
     
-    // find config specific to Platform Profile
-    OSDictionary* list = OSDynamicCast(OSDictionary, dict->getObject(kPlatformProfile));
-    OSDictionary* config = ApplePS2Controller::makeConfigurationNode(list);
-    if (config)
-    {
-        // if DisableDevice is Yes, then do not load at all...
-        OSBoolean* disable = OSDynamicCast(OSBoolean, config->getObject(kDisableDevice));
-        if (disable && disable->isTrue())
-        {
-            config->release();
-            return false;
-        }
-#ifdef DEBUG
-        // save configuration for later/diagnostics...
-        setProperty(kMergedConfiguration, config);
-#endif
-    }
-    
     // initialize state...
     _device = NULL;
     _interruptHandlerInstalled = false;
     _powerControlHandlerInstalled = false;
-    _messageHandlerInstalled = false;
     _packetByteCount = 0;
     _cmdGate = 0;
     
@@ -358,13 +366,6 @@ bool ALPS::init(OSDictionary *dict) {
     IOLog("VoodooPS2TouchPad Base Driver loaded...\n");
     
     setProperty("Revision", 24, 32);
-    
-    //
-    // Load settings specific to Platform Profile
-    //
-    
-    setParamPropertiesGated(config);
-    OSSafeReleaseNULL(config);
     
     memset(&inputEvent, 0, sizeof(VoodooInputEvent));
     
@@ -467,12 +468,10 @@ bool ALPS::start( IOService * provider )
     _powerControlHandlerInstalled = true;
     
     //
-    // Install message hook for keyboard to trackpad communication
+    // Request message registration for keyboard to trackpad communication
     //
     
-    _device->installMessageAction( this,
-                                  OSMemberFunctionCast(PS2MessageAction, this, &ALPS::receiveMessage));
-    _messageHandlerInstalled = true;
+    //setProperty(kDeliverNotifications, true);
     
     return true;
 }
@@ -528,15 +527,6 @@ void ALPS::stop(IOService *provider) {
         _powerControlHandlerInstalled = false;
     }
     
-    //
-    // Uninstall message handler.
-    //
-    if (_messageHandlerInstalled)
-    {
-        _device->uninstallMessageAction();
-        _messageHandlerInstalled = false;
-    }
-    
     resetMouse();
     
     //
@@ -554,7 +544,7 @@ bool ALPS::resetMouse() {
     TPS2Request<3> request;
     
     // Reset mouse
-    request.commands[0].command = kPS2C_SendMouseCommandAndCompareAck;
+    request.commands[0].command = kPS2C_SendCommandAndCompareAck;
     request.commands[0].inOrOut = kDP_Reset;
     request.commands[1].command = kPS2C_ReadDataPort;
     request.commands[1].inOrOut = 0;
@@ -1986,7 +1976,7 @@ bool ALPS::alps_command_mode_send_nibble(int nibble) {
         IOLog("%s::alps_command_mode_send_nibble ERROR: nibble value is greater than 0xf, command may fail\n", getName());
     }
     
-    request.commands[cmdCount].command = kPS2C_SendMouseCommandAndCompareAck;
+    request.commands[cmdCount].command = kPS2C_SendCommandAndCompareAck;
     command = priv.nibble_commands[nibble].command;
     request.commands[cmdCount++].inOrOut = command & 0xff;
     
@@ -1998,7 +1988,7 @@ bool ALPS::alps_command_mode_send_nibble(int nibble) {
     }
     
     if (send > 0) {
-        request.commands[cmdCount].command = kPS2C_SendMouseCommandAndCompareAck;
+        request.commands[cmdCount].command = kPS2C_SendCommandAndCompareAck;
         request.commands[cmdCount++].inOrOut = priv.nibble_commands[nibble].data;
     }
     
@@ -2021,7 +2011,7 @@ bool ALPS::alps_command_mode_set_addr(int addr) {
     int i, nibble;
     
     //    DEBUG_LOG("command mode set addr with addr command: 0x%02x\n", priv.addr_command);
-    request.commands[0].command = kPS2C_SendMouseCommandAndCompareAck;
+    request.commands[0].command = kPS2C_SendCommandAndCompareAck;
     request.commands[0].inOrOut = priv.addr_command;
     request.commandsCount = 1;
     _device->submitRequestAndBlock(&request);
@@ -2049,7 +2039,7 @@ int ALPS::alps_command_mode_read_reg(int addr) {
         return -1;
     }
     
-    request.commands[0].command = kPS2C_SendMouseCommandAndCompareAck;
+    request.commands[0].command = kPS2C_SendCommandAndCompareAck;
     request.commands[0].inOrOut = kDP_GetMouseInformation; //sync..
     request.commands[1].command = kPS2C_ReadDataPort;
     request.commands[1].inOrOut = 0;
@@ -2109,23 +2099,23 @@ bool ALPS::alps_rpt_cmd(SInt32 init_command, SInt32 init_arg, SInt32 repeated_co
     cmd = byte0 = 0;
     
     if (init_command) {
-        request.commands[cmd].command = kPS2C_SendMouseCommandAndCompareAck;
+        request.commands[cmd].command = kPS2C_SendCommandAndCompareAck;
         request.commands[cmd++].inOrOut = kDP_SetMouseResolution;
-        request.commands[cmd].command = kPS2C_SendMouseCommandAndCompareAck;
+        request.commands[cmd].command = kPS2C_SendCommandAndCompareAck;
         request.commands[cmd++].inOrOut = init_arg;
     }
     
     
     // 3X run command
-    request.commands[cmd].command = kPS2C_SendMouseCommandAndCompareAck;
+    request.commands[cmd].command = kPS2C_SendCommandAndCompareAck;
     request.commands[cmd++].inOrOut = repeated_command;
-    request.commands[cmd].command = kPS2C_SendMouseCommandAndCompareAck;
+    request.commands[cmd].command = kPS2C_SendCommandAndCompareAck;
     request.commands[cmd++].inOrOut = repeated_command;
-    request.commands[cmd].command = kPS2C_SendMouseCommandAndCompareAck;
+    request.commands[cmd].command = kPS2C_SendCommandAndCompareAck;
     request.commands[cmd++].inOrOut = repeated_command;
     
     // Get info/result
-    request.commands[cmd].command = kPS2C_SendMouseCommandAndCompareAck;
+    request.commands[cmd].command = kPS2C_SendCommandAndCompareAck;
     request.commands[cmd++].inOrOut = kDP_GetMouseInformation;
     byte0 = cmd;
     request.commands[cmd].command = kPS2C_ReadDataPort;
@@ -2167,7 +2157,7 @@ bool ALPS::alps_exit_command_mode() {
     DEBUG_LOG("exit command mode\n");
     TPS2Request<1> request;
     
-    request.commands[0].command = kPS2C_SendMouseCommandAndCompareAck;
+    request.commands[0].command = kPS2C_SendCommandAndCompareAck;
     request.commands[0].inOrOut = kDP_SetMouseStreamMode;
     request.commandsCount = 1;
     assert(request.commandsCount <= countof(request.commands));
@@ -2185,13 +2175,13 @@ bool ALPS::alps_passthrough_mode_v2(bool enable) {
     int cmd = enable ? kDP_SetMouseScaling2To1 : kDP_SetMouseScaling1To1;
     TPS2Request<4> request;
     
-    request.commands[0].command = kPS2C_SendMouseCommandAndCompareAck;
+    request.commands[0].command = kPS2C_SendCommandAndCompareAck;
     request.commands[0].inOrOut = cmd;
-    request.commands[1].command = kPS2C_SendMouseCommandAndCompareAck;
+    request.commands[1].command = kPS2C_SendCommandAndCompareAck;
     request.commands[1].inOrOut = cmd;
-    request.commands[2].command = kPS2C_SendMouseCommandAndCompareAck;
+    request.commands[2].command = kPS2C_SendCommandAndCompareAck;
     request.commands[2].inOrOut = cmd;
-    request.commands[3].command = kPS2C_SendMouseCommandAndCompareAck;
+    request.commands[3].command = kPS2C_SendCommandAndCompareAck;
     request.commands[3].inOrOut = kDP_SetDefaultsAndDisable;
     request.commandsCount = 4;
     assert(request.commandsCount <= countof(request.commands));
@@ -2249,7 +2239,7 @@ int ALPS::alps_monitor_mode(bool enable)
     if (enable) {
         /* EC E9 F5 F5 E7 E6 E7 E9 to enter monitor mode */
         ps2_command_short(kDP_MouseResetWrap);
-        request.commands[cmd].command = kPS2C_SendMouseCommandAndCompareAck;
+        request.commands[cmd].command = kPS2C_SendCommandAndCompareAck;
         request.commands[cmd++].inOrOut = kDP_GetMouseInformation;
         request.commands[cmd].command = kPS2C_ReadDataPort;
         request.commands[cmd++].inOrOut = 0;
@@ -2268,7 +2258,7 @@ int ALPS::alps_monitor_mode(bool enable)
         ps2_command_short(kDP_SetMouseScaling2To1);
         
         /* Get Info */
-        request.commands[cmd].command = kPS2C_SendMouseCommandAndCompareAck;
+        request.commands[cmd].command = kPS2C_SendCommandAndCompareAck;
         request.commands[cmd++].inOrOut = kDP_GetMouseInformation;
         request.commands[cmd].command = kPS2C_ReadDataPort;
         request.commands[cmd++].inOrOut = 0;
@@ -2315,7 +2305,7 @@ bool ALPS::alps_tap_mode(bool enable) {
     TPS2Request<8> request;
     ALPSStatus_t result;
     
-    request.commands[0].command = kPS2C_SendMouseCommandAndCompareAck;
+    request.commands[0].command = kPS2C_SendCommandAndCompareAck;
     request.commands[0].inOrOut = kDP_GetMouseInformation;
     request.commands[1].command = kPS2C_ReadDataPort;
     request.commands[1].inOrOut = 0;
@@ -2323,13 +2313,13 @@ bool ALPS::alps_tap_mode(bool enable) {
     request.commands[2].inOrOut = 0;
     request.commands[3].command = kPS2C_ReadDataPort;
     request.commands[3].inOrOut = 0;
-    request.commands[4].command = kPS2C_SendMouseCommandAndCompareAck;
+    request.commands[4].command = kPS2C_SendCommandAndCompareAck;
     request.commands[4].inOrOut = kDP_SetDefaultsAndDisable;
-    request.commands[5].command = kPS2C_SendMouseCommandAndCompareAck;
+    request.commands[5].command = kPS2C_SendCommandAndCompareAck;
     request.commands[5].inOrOut = kDP_SetDefaultsAndDisable;
-    request.commands[6].command = kPS2C_SendMouseCommandAndCompareAck;
+    request.commands[6].command = kPS2C_SendCommandAndCompareAck;
     request.commands[6].inOrOut = cmd;
-    request.commands[7].command = kPS2C_SendMouseCommandAndCompareAck;
+    request.commands[7].command = kPS2C_SendCommandAndCompareAck;
     request.commands[7].inOrOut = tapArg;
     request.commandsCount = 8;
     _device->submitRequestAndBlock(&request);
@@ -2508,11 +2498,11 @@ IOReturn ALPS::alps_setup_trackstick_v3(int regBase) {
          * work at all and the trackstick just emits normal
          * PS/2 packets.
          */
-        request.commands[0].command = kPS2C_SendMouseCommandAndCompareAck;
+        request.commands[0].command = kPS2C_SendCommandAndCompareAck;
         request.commands[0].inOrOut = kDP_SetMouseScaling1To1;
-        request.commands[1].command = kPS2C_SendMouseCommandAndCompareAck;
+        request.commands[1].command = kPS2C_SendCommandAndCompareAck;
         request.commands[1].inOrOut = kDP_SetMouseScaling1To1;
-        request.commands[2].command = kPS2C_SendMouseCommandAndCompareAck;
+        request.commands[2].command = kPS2C_SendCommandAndCompareAck;
         request.commands[2].inOrOut = kDP_SetMouseScaling1To1;
         request.commandsCount = 3;
         assert(request.commandsCount <= countof(request.commands));
@@ -2793,7 +2783,7 @@ void ALPS::alps_get_otp_values_ss4_v2(unsigned char index, unsigned char otp[])
             ps2_command_short(kDP_SetMouseStreamMode);
             ps2_command_short(kDP_SetMouseStreamMode);
             
-            request.commands[cmd].command = kPS2C_SendMouseCommandAndCompareAck;
+            request.commands[cmd].command = kPS2C_SendCommandAndCompareAck;
             request.commands[cmd++].inOrOut = kDP_GetMouseInformation;
             request.commands[cmd].command = kPS2C_ReadDataPort;
             request.commands[cmd++].inOrOut = 0;
@@ -2816,7 +2806,7 @@ void ALPS::alps_get_otp_values_ss4_v2(unsigned char index, unsigned char otp[])
             ps2_command_short(kDP_MouseSetPoll);
             ps2_command_short(kDP_MouseSetPoll);
             
-            request.commands[cmd].command = kPS2C_SendMouseCommandAndCompareAck;
+            request.commands[cmd].command = kPS2C_SendCommandAndCompareAck;
             request.commands[cmd++].inOrOut = kDP_GetMouseInformation;
             request.commands[cmd].command = kPS2C_ReadDataPort;
             request.commands[cmd++].inOrOut = 0;
@@ -2988,7 +2978,7 @@ int ALPS::alps_dolphin_get_device_area(struct alps_data *priv)
     ps2_command(0x0a, kDP_SetMouseSampleRate);
     ps2_command(0x0a, kDP_SetMouseSampleRate);
     
-    request.commands[cmd].command = kPS2C_SendMouseCommandAndCompareAck;
+    request.commands[cmd].command = kPS2C_SendCommandAndCompareAck;
     request.commands[cmd++].inOrOut = kDP_GetMouseInformation;
     request.commands[cmd].command = kPS2C_ReadDataPort;
     request.commands[cmd++].inOrOut = 0;
@@ -3415,9 +3405,9 @@ void ALPS::ps2_command(unsigned char value, UInt8 command)
     TPS2Request<2> request;
     int cmdCount = 0;
     
-    request.commands[cmdCount].command = kPS2C_SendMouseCommandAndCompareAck;
+    request.commands[cmdCount].command = kPS2C_SendCommandAndCompareAck;
     request.commands[cmdCount++].inOrOut = command;
-    request.commands[cmdCount].command = kPS2C_SendMouseCommandAndCompareAck;
+    request.commands[cmdCount].command = kPS2C_SendCommandAndCompareAck;
     request.commands[cmdCount++].inOrOut = value;
     request.commandsCount = cmdCount;
     assert(request.commandsCount <= countof(request.commands));
@@ -3431,7 +3421,7 @@ void ALPS::ps2_command_short(UInt8 command)
     TPS2Request<1> request;
     int cmdCount = 0;
     
-    request.commands[cmdCount].command = kPS2C_SendMouseCommandAndCompareAck;
+    request.commands[cmdCount].command = kPS2C_SendCommandAndCompareAck;
     request.commands[cmdCount++].inOrOut = command;
     request.commandsCount = cmdCount;
     assert(request.commandsCount <= countof(request.commands));
@@ -4369,30 +4359,27 @@ void ALPS::setDevicePowerState( UInt32 whatToDo )
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-void ALPS::receiveMessage(int message, void* data)
-{
-    //
+IOReturn ALPS::message(UInt32 type, IOService* provider, void* argument) {
     // Here is where we receive messages from the keyboard driver
     //
     // This allows for the keyboard driver to enable/disable the trackpad
     // when a certain keycode is pressed.
     //
     // It also allows the trackpad driver to learn the last time a key
-    //  has been pressed, so it can implement various "ignore trackpad
-    //  input while typing" options.
-    //
-    switch (message)
+    // has been pressed, so it can implement various "ignore trackpad
+    // input while typing" options.
+    switch (type)
     {
         case kPS2M_getDisableTouchpad:
         {
-            bool* pResult = (bool*)data;
+            bool* pResult = (bool*)argument;
             *pResult = !ignoreall;
             break;
         }
-            
+
         case kPS2M_setDisableTouchpad:
         {
-            bool enable = *((bool*)data);
+            bool enable = *((bool*)argument);
             // ignoreall is true when trackpad has been disabled
             if (enable == ignoreall)
             {
@@ -4402,12 +4389,27 @@ void ALPS::receiveMessage(int message, void* data)
             }
             break;
         }
-            
+
+        case kPS2M_resetTouchpad:
+        {
+            int *reqCode = (int *)argument;
+            DEBUG_LOG("ALPS::kPS2M_resetTouchpad reqCode: %d\n", *reqCode);
+            if (*reqCode == 1) {
+                setTouchPadEnable(false);
+                IOSleep(wakedelay);
+
+                ignoreall = false;
+                
+                setTouchPadEnable(true);
+            }
+            break;
+        }
+
         case kPS2M_notifyKeyPressed:
         {
             // just remember last time key pressed... this can be used in
             // interrupt handler to detect unintended input while typing
-            PS2KeyInfo* pInfo = (PS2KeyInfo*)data;
+            PS2KeyInfo* pInfo = (PS2KeyInfo*)argument;
             static const int masks[] =
             {
                 0x10,       // 0x36
@@ -4423,42 +4425,42 @@ void ALPS::receiveMessage(int message, void* data)
             };
 #ifdef SIMULATE_PASSTHRU
             /*
-             static int buttons = 0;
-             int button;
-             switch (pInfo->adbKeyCode)
-             {
-             // make right Alt,Menu,Ctrl into three button passthru
-             case 0x36:
-             button = 0x1;
-             goto dispatch_it;
-             case 0x3f:
-             button = 0x4;
-             goto dispatch_it;
-             case 0x3e:
-             button = 0x2;
-             // fall through...
-             dispatch_it:
-             if (pInfo->goingDown)
-             buttons |= button;
-             else
-             buttons &= ~button;
-             UInt8 packet[6];
-             packet[0] = 0x84 | trackbuttons;
-             packet[1] = 0x08 | buttons;
-             packet[2] = 0;
-             packet[3] = 0xC4 | trackbuttons;
-             packet[4] = 0;
-             packet[5] = 0;
-             dispatchEventsWithPacket(packet, 6);
-             pInfo->eatKey = true;
-             }
+            static int buttons = 0;
+            int button;
+            switch (pInfo->adbKeyCode)
+            {
+                // make right Alt,Menu,Ctrl into three button passthru
+                case 0x36:
+                    button = 0x1;
+                    goto dispatch_it;
+                case 0x3f:
+                    button = 0x4;
+                    goto dispatch_it;
+                case 0x3e:
+                    button = 0x2;
+                    // fall through...
+                dispatch_it:
+                    if (pInfo->goingDown)
+                        buttons |= button;
+                    else
+                        buttons &= ~button;
+                    UInt8 packet[6];
+                    packet[0] = 0x84 | trackbuttons;
+                    packet[1] = 0x08 | buttons;
+                    packet[2] = 0;
+                    packet[3] = 0xC4 | trackbuttons;
+                    packet[4] = 0;
+                    packet[5] = 0;
+                    dispatchEventsWithPacket(packet, 6);
+                    pInfo->eatKey = true;
+            }
              */
 #endif
             switch (pInfo->adbKeyCode)
             {
-                    // don't store key time for modifier keys going down
-                    // track modifiers for scrollzoom feature...
-                    // (note: it turns out we didn't need to do this, but leaving this code in for now in case it is useful)
+                // don't store key time for modifier keys going down
+                // track modifiers for scrollzoom feature...
+                // (note: it turns out we didn't need to do this, but leaving this code in for now in case it is useful)
                 case 0x38:  // left shift
                 case 0x3c:  // right shift
                 case 0x3b:  // left control
@@ -4483,4 +4485,6 @@ void ALPS::receiveMessage(int message, void* data)
             break;
         }
     }
+
+    return kIOReturnSuccess;
 }

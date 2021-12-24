@@ -2,14 +2,14 @@
  * Copyright (c) 2005 Apple Computer, Inc. All rights reserved.
  *
  * @APPLE_LICENSE_HEADER_START@
- * 
+ *
  * This file contains Original Code and/or Modifications of Original Code
  * as defined in and that are subject to the Apple Public Source License
  * Version 2.0 (the 'License'). You may not use this file except in
  * compliance with the License. Please obtain a copy of the License at
  * http://www.opensource.apple.com/apsl/ and read it before using this
  * file.
- * 
+ *
  * The Original Code and all software distributed under the License are
  * distributed on an 'AS IS' basis, WITHOUT WARRANTY OF ANY KIND, EITHER
  * EXPRESS OR IMPLIED, AND APPLE HEREBY DISCLAIMS ALL SUCH WARRANTIES,
@@ -17,7 +17,7 @@
  * FITNESS FOR A PARTICULAR PURPOSE, QUIET ENJOYMENT OR NON-INFRINGEMENT.
  * Please see the License for the specific language governing rights and
  * limitations under the License.
- * 
+ *
  * @APPLE_LICENSE_HEADER_END@
  */
 /*! @file       AppleACPIPS2Nub.cpp
@@ -33,6 +33,7 @@
 #if 0
 #define DEBUG_LOG(args...)
 #else
+#undef DEBUG_LOG
 #define DEBUG_LOG(args...)
 #endif
 
@@ -64,7 +65,7 @@ bool AppleACPIPS2Nub::start(IOService *provider)
     mergeInterruptProperties(provider, LEGACY_KEYBOARD_IRQ);
 
     /* Initialize and register our power management properties */
-	PMinit();
+    PMinit();
     registerPowerDriver(this, myTwoStates, 2);
     provider->joinPMtree(this);
 
@@ -105,9 +106,24 @@ bool AppleACPIPS2Nub::start(IOService *provider)
     return true;
 }
 
+void AppleACPIPS2Nub::stop(IOService *provider)
+{
+    PMstop();
+    return super::stop(provider);
+}
+
 IOService *AppleACPIPS2Nub::findMouseDevice()
 {
     OSObject *prop = getProperty("MouseNameMatch");
+    /* Slight delay to allow PS2 mouse entry in IOACPIPlane to populate */
+    UInt32 findMouseDelay = 100;   // default 100ms delay before checking iroeg for mouse matches
+    if (OSNumber* number = OSDynamicCast(OSNumber, getProperty("FindMouseDelay")))
+        findMouseDelay = number->unsigned32BitValue();
+    UInt32 vps2FindMouseDelay;
+    if (PE_parse_boot_argn("vps2_findmousedelay", &vps2FindMouseDelay, sizeof vps2FindMouseDelay))
+        findMouseDelay = vps2FindMouseDelay;
+    if (findMouseDelay)
+        IOSleep(findMouseDelay);
     /* Search from the root of the ACPI plane for the mouse PNP nub */
     IORegistryIterator *i = IORegistryIterator::iterateOver(gIOACPIPlane, kIORegistryIterateRecursively);
     IORegistryEntry *entry;
