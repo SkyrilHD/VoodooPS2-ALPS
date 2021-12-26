@@ -2603,6 +2603,11 @@ bool ALPS::alps_get_v3_v7_resolution(int reg_pitch)
      x_pitch, y_pitch, x_electrode, y_electrode,
      x_phys / 10, y_phys / 10, priv.x_res, priv.y_res);*/
     
+    setProperty("X Max", priv.x_max, 32);
+    setProperty("Y Max", priv.y_max, 32);
+    setProperty("X Res", priv.x_res, 32);
+    setProperty("Y Res", priv.y_res, 32);
+    
     return true;
 }
 
@@ -2850,6 +2855,11 @@ void ALPS::alps_update_device_area_ss4_v2(unsigned char otp[][4], struct alps_da
     
     //logical_max_x = x_phys;
     //logical_max_y = y_phys;
+   
+   setProperty("X Max", priv->x_max, 32);
+   setProperty("Y Max", priv->y_max, 32);
+   setProperty("X Res", priv->x_res, 32);
+   setProperty("Y Res", priv->y_res, 32);
     
     physical_max_x = priv->x_max * manual_x_phy;
     physical_max_y = priv->y_max * manual_y_phy;
