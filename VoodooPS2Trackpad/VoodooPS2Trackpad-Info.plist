@@ -59,8 +59,6 @@
 					</dict>
 					<key>DisableDevice</key>
 					<false/>
-					<key>DoubleSmoothness</key>
-					<true/>
 					<key>DragLockTempMask</key>
 					<integer>1048592</integer>
 					<key>FingerZ</key>
