@@ -2843,18 +2843,6 @@ void ALPS::alps_update_device_area_ss4_v2(unsigned char otp[][4], struct alps_da
     
     priv->x_res = priv->x_max * 10 / x_phys; /* units / mm */
     priv->y_res = priv->y_max * 10 / y_phys; /* units / mm */
-    
-    //logical_max_x = x_phys;
-    //logical_max_y = y_phys;
-    
-    //physical_max_x = priv->x_max * 4;
-    //physical_max_y = priv->y_max * 3.5;
-    
-    //physical_max_x = priv->x_max * 10;
-    //physical_max_y = priv->y_max * 10;
-    
-    //logical_max_x = x_phys;
-    //logical_max_y = y_phys;
    
    setProperty("X Max", priv->x_max, 32);
    setProperty("Y Max", priv->y_max, 32);
