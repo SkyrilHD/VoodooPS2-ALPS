@@ -4173,7 +4173,6 @@ void ALPS::setParamPropertiesGated(OSDictionary * config)
         {"WakeDelay",                       &wakedelay},
         {"Resolution",                      &_resolution},
         {"ScrollResolution",                &_scrollresolution},
-        {"ButtonCount",                     &_buttonCount},
         {"UnitsPerMMX",                     &xupmm},
         {"UnitsPerMMY",                     &yupmm},
         {"MinLogicalXOverride",             &minXOverride},
