@@ -1,5 +1,8 @@
 VoodooPS2 Changelog
 ============================
+#### v1.0.5
+- sync code from acidanthera
+
 #### v1.0.4
 - fixed random finger jumps with 2 fingers on V7
 - made V7 independent from alps_parse_hw_state

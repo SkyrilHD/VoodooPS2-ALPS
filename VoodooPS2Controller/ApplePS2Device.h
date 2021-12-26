@@ -27,6 +27,7 @@
 #include <kern/queue.h>
 #include <IOKit/IOService.h>
 #include <IOKit/IOLib.h>
+#include <IOKit/IOInterruptEventSource.h>
 #include <architecture/i386/pio.h>
 
 #ifdef DEBUG_MSG
@@ -84,6 +85,7 @@
 #define kCP_ReadControllerRAMBase      0x21 //
 #define kCP_SetCommandByte             0x60 // (keyboard+mouse)
 #define kCP_WriteControllerRAMBase     0x61 //
+#define kCP_TransmitToMuxedMouse       0x90 // (muxed mouse)
 #define kCP_TestPassword               0xA4 //
 #define kCP_GetPassword                0xA5 //
 #define kCP_VerifyPassword             0xA6 //
@@ -270,40 +272,33 @@ public:
 //    o  Description: Writes the byte in the In Field to the data port (60h).
 //    o  In Field:    Holds byte that should be written.
 //
-// o  kPS2C_WriteCommandPort:
-//    o  Description: Writes the byte in the In Field to the command port (64h).
-//    o  In Field:    Holds byte that should be written.
-//
 
 enum PS2CommandEnum
 {
-    kPS2C_ReadDataPort,
-    kPS2C_ReadDataPortAndCompare,
-    kPS2C_WriteDataPort,
-    kPS2C_WriteCommandPort,
-    kPS2C_SendMouseCommandAndCompareAck,
-    kPS2C_ReadMouseDataPort,
-    kPS2C_ReadMouseDataPortAndCompare,
-    kPS2C_FlushDataPort,
-    kPS2C_SleepMS,
-    kPS2C_ModifyCommandByte,
+  kPS2C_ReadDataPort,
+  kPS2C_ReadDataPortAndCompare,
+  kPS2C_WriteDataPort,
+  kPS2C_SendCommandAndCompareAck,
+  kPS2C_FlushDataPort,
+  kPS2C_SleepMS,
+  kPS2C_ModifyCommandByte,
 };
 typedef enum PS2CommandEnum PS2CommandEnum;
 
 struct PS2Command
 {
-    PS2CommandEnum command;
-    union
-    {
-        UInt8  inOrOut;
-        UInt32 inOrOut32;
-        struct
-        {
-            UInt8 setBits;
-            UInt8 clearBits;
-            UInt8 oldBits;
-        };
-    };
+  PS2CommandEnum command;
+  union
+  {
+      UInt8  inOrOut;
+      UInt32 inOrOut32;
+      struct
+      {
+          UInt8 setBits;
+          UInt8 clearBits;
+          UInt8 oldBits;
+      };
+  };
 };
 typedef struct PS2Command PS2Command;
 
@@ -410,11 +405,12 @@ protected:
     PS2Request();
     static void* operator new(size_t); // "hide" it
     static inline void* operator new(size_t, int max)
-    { return ::operator new(sizeof(PS2Request) + sizeof(PS2Command)*max); }
+        { return ::operator new(sizeof(PS2Request) + sizeof(PS2Command)*max); }
     static inline void operator delete(void*p)
-    { ::operator delete(p); }
-    
+        { ::operator delete(p); }
+
 public:
+    size_t              port;
     UInt8               commandsCount;
     void *              completionTarget;
     PS2CompletionAction completionAction;
@@ -423,7 +419,6 @@ public:
     PS2Command          commands[0];
 };
 
-//template<int max = kMaxCommands> struct TPS2Request : public PS2Request
 // special completionTarget for TPS2Request allocated on stack
 #define kStackCompletionTarget ((void*)1)
 
@@ -518,32 +513,39 @@ typedef void (*PS2PowerControlAction)(void * target, UInt32 whatToDo);
 // the keyboard driver.
 //
 
+// Published property for devices to express interest in receiving messages
+#define kDeliverNotifications   "RM,deliverNotifications"
+
+// Published property for device nub port location
+#define kPortKey    "Port Num"
+
 typedef void (*PS2MessageAction)(void* target, int message, void* data);
 
 enum
 {
     // from keyboard to mouse/touchpad
-    kPS2M_setDisableTouchpad,   // set disable/enable touchpad (data is bool*)
-    kPS2M_getDisableTouchpad,   // get disable/enable touchpad (data is bool*)
-    kPS2M_notifyKeyPressed,     // notify of time key pressed (data is PS2KeyInfo*)
+    kPS2M_setDisableTouchpad = iokit_vendor_specific_msg(100),   // set disable/enable touchpad (data is bool*)
+    kPS2M_getDisableTouchpad = iokit_vendor_specific_msg(101),   // get disable/enable touchpad (data is bool*)
+    kPS2M_notifyKeyPressed = iokit_vendor_specific_msg(102),     // notify of time key pressed (data is PS2KeyInfo*)
+
+    kPS2M_notifyKeyTime = iokit_vendor_specific_msg(110),        // notify of timestamp a non-modifier key was pressed (data is uint64_t*)
+
+    kPS2M_resetTouchpad = iokit_vendor_specific_msg(151),        // Force touchpad reset (data is int*)
     
-    // from mouse/touchpad to keyboard
-    kPS2M_swipeDown,
-    kPS2M_swipeUp,
-    kPS2M_swipeLeft,
-    kPS2M_swipeRight,
-    kPS2M_swipe4Down,
-    kPS2M_swipe4Up,
-    kPS2M_swipe4Left,
-    kPS2M_swipe4Right,
+    // from trackpad on I2C/SMBus
+    kPS2M_SMBusStart = iokit_vendor_specific_msg(152),          // Reset, disable PS2 comms to not interfere with SMBus comms
     
-    kPS2M_zoomIn,
-    kPS2M_zoomOut
+    // from sensor (such as yoga mode indicator) to keyboard
+    kPS2K_setKeyboardStatus = iokit_vendor_specific_msg(200),   // set disable/enable keyboard (data is bool*)
+    kPS2K_getKeyboardStatus = iokit_vendor_specific_msg(201),   // get disable/enable keyboard (data is bool*)
+
+    // from OEM ACPI (WMI) events to keyboard
+    kPS2K_notifyKeystroke = iokit_vendor_specific_msg(202),     // notify of key press (data is PS2KeyInfo*), in the opposite direction of kPS2M_notifyKeyPressed
 };
 
 typedef struct PS2KeyInfo
 {
-    int64_t time;
+    uint64_t time;
     UInt16  adbKeyCode;
     bool    goingDown;
     bool    eatKey;
@@ -556,20 +558,9 @@ typedef struct PS2KeyInfo
 
 enum
 {
-    kPS2C_DisableDevice,
-    kPS2C_EnableDevice
+  kPS2C_DisableDevice,
+  kPS2C_EnableDevice
 };
-
-// PS/2 device types.
-
-typedef enum
-{
-    kDT_Keyboard,
-    kDT_Mouse,
-#if WATCHDOG_TIMER
-    kDT_Watchdog,
-#endif
-} PS2DeviceType;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 // ApplePS2Device Class Declaration
@@ -581,44 +572,58 @@ class EXPORT ApplePS2Device : public IOService
 {
     typedef IOService super;
     OSDeclareDefaultStructors(ApplePS2Device);
-    
+
 protected:
     ApplePS2Controller* _controller;
-    PS2DeviceType       _deviceType;
-    
+    size_t              _port;
+
 public:
+    bool init(size_t port);
     bool attach(IOService * provider) override;
     void detach(IOService * provider) override;
-    
+
     // Interrupt Handling Routines
-    
+
     virtual void installInterruptAction(OSObject *, PS2InterruptAction, PS2PacketAction);
     virtual void uninstallInterruptAction();
-    
+
     // Request Submission Routines
-    
+
     virtual PS2Request*  allocateRequest(int max = kMaxCommands);
     virtual void         freeRequest(PS2Request * request);
     virtual bool         submitRequest(PS2Request * request);
     virtual void         submitRequestAndBlock(PS2Request * request);
     virtual UInt8        setCommandByte(UInt8 setBits, UInt8 clearBits);
-    
+
     // Power Control Handling Routines
-    
+
     virtual void installPowerControlAction(OSObject *, PS2PowerControlAction);
     virtual void uninstallPowerControlAction();
     
+    virtual PS2InterruptResult interruptAction(UInt8);
+    virtual void packetActionInterrupt();
+    void packetAction(IOInterruptEventSource *, int);
+    virtual void powerAction(UInt32);
+
     // Messaging
-    
-    virtual void installMessageAction(OSObject*, PS2MessageAction);
-    virtual void uninstallMessageAction();
-    virtual void dispatchMouseMessage(int message, void *data);
-    virtual void dispatchKeyboardMessage(int message, void *data);
-    
+    virtual void dispatchMessage(int message, void *data);
+
     // Exclusive access (command byte contention)
-    
+
     virtual void lock();
     virtual void unlock();
+
+    // Controller access
+    virtual ApplePS2Controller* getController();
+private:
+    PS2InterruptAction      _interrupt_action {nullptr};
+    PS2PacketAction         _packet_action {nullptr};
+    PS2PowerControlAction   _power_action {nullptr};
+    
+    IOWorkLoop * _workloop {nullptr};
+    IOInterruptEventSource * _interruptSource {nullptr};
+    
+    OSObject* _client {nullptr};
 };
 
 #if 0   // Note: Now using architecture/i386/pio.h (see above)

@@ -26,18 +26,20 @@
 #define DEBUG_LITE
 #endif
 
+#include  <IOKit/IOService.h>
+
 #include <IOKit/IOLib.h>
 #include <IOKit/hidsystem/IOHIDParameter.h>
 #include <IOKit/pwr_mgt/IOPM.h>
 #include <IOKit/pwr_mgt/RootDomain.h>
 #include <IOKit/IOTimerEventSource.h>
+
 #include "ApplePS2ToADBMap.h"
 #include "VoodooPS2Controller.h"
 #include "VoodooPS2Keyboard.h"
 #include "ApplePS2ToADBMap.h"
 #include "AppleACPIPS2Nub.h"
 #include <IOKit/hidsystem/ev_keymap.h>
-#include <libkern/version.h>
 
 
 // Constants for Info.plist settings
@@ -47,6 +49,9 @@
 #define kHIDF12EjectDelay                   "HIDF12EjectDelay"
 #define kFunctionKeysStandard               "Function Keys Standard"
 #define kFunctionKeysSpecial                "Function Keys Special"
+#define kRemapPrntScr                       "RemapPrntScr"
+#define kNumLockSupport                     "NumLockSupport"
+#define kNumLockOnAtBoot                    "NumLockOnAtBoot"
 #define kSwapCapsLockLeftControl            "Swap capslock and left control"
 #define kSwapCommandOption                  "Swap command and option"
 #define kMakeApplicationKeyRightWindows     "Make Application key into right windows"
@@ -54,10 +59,7 @@
 #define kMakeRightModsHangulHanja           "Make right modifier keys into Hangul and Hanja"
 #define kUseISOLayoutKeyboard               "Use ISO layout keyboard"
 #define kLogScanCodes                       "LogScanCodes"
-#define kActionSwipeUp                      "ActionSwipeUp"
-#define kActionSwipeDown                    "ActionSwipeDown"
-#define kActionSwipeLeft                    "ActionSwipeLeft"
-#define kActionSwipeRight                   "ActionSwipeRight"
+
 #define kBrightnessHack                     "BrightnessHack"
 #define kMacroInversion                     "Macro Inversion"
 #define kMacroTranslation                   "Macro Translation"
@@ -83,8 +85,8 @@
 //
 
 // get some keyboard id information from IOHIDFamily/IOHIDKeyboard.h and Gestalt.h
-//#define APPLEPS2KEYBOARD_DEVICE_TYPE	205 // Generic ISO keyboard
-#define APPLEPS2KEYBOARD_DEVICE_TYPE	3   // Unknown ANSI keyboard
+//#define APPLEPS2KEYBOARD_DEVICE_TYPE    205 // Generic ISO keyboard
+#define APPLEPS2KEYBOARD_DEVICE_TYPE    3   // Unknown ANSI keyboard
 
 OSDefineMetaClassAndStructors(ApplePS2Keyboard, IOHIKeyboard);
 
@@ -92,12 +94,12 @@ UInt32 ApplePS2Keyboard::deviceType()
 {
     OSNumber    *xml_handlerID;
     UInt32      ret_id;
-    
+
     if ( (xml_handlerID = OSDynamicCast( OSNumber, getProperty("alt_handler_id"))) )
         ret_id = xml_handlerID->unsigned32BitValue();
     else
         ret_id = APPLEPS2KEYBOARD_DEVICE_TYPE;
-    
+
     return ret_id;
 }
 
@@ -145,37 +147,6 @@ static bool parseRemap(const char *psz, UInt16 &scanFrom, UInt16& scanTo)
     return true;
 }
 
-static bool parseAction(const char* psz, UInt16 dest[], int size)
-{
-    int i = 0;
-    while (*psz && i < size)
-    {
-        unsigned n;
-        psz = parseHex(psz, ' ', 0, n);
-        if (!psz || *psz != ' ')
-            goto error;
-        ++psz;
-        if (*psz != 'd' && *psz != 'u')
-            goto error;
-        dest[i++] = n | (*psz == 'u' ? 0x1000 : 0);
-        ++psz;
-        if (!*psz)
-            break;
-        if (*psz != ',')
-            goto error;
-        while (*++psz == ' ');
-    }
-    if (i >= size)
-        goto error;
-    
-    dest[i] = 0;
-    return true;
-    
-error:
-    dest[0] = 0;
-    return false;
-}
-
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 bool ApplePS2Keyboard::init(OSDictionary * dict)
@@ -188,24 +159,6 @@ bool ApplePS2Keyboard::init(OSDictionary * dict)
     if (!super::init(dict))
         return false;
     
-    // find config specific to Platform Profile
-    OSDictionary* list = OSDynamicCast(OSDictionary, dict->getObject(kPlatformProfile));
-    OSDictionary* config = ApplePS2Controller::makeConfigurationNode(list);
-    if (config)
-    {
-        // if DisableDevice is Yes, then do not load at all...
-        OSBoolean* disable = OSDynamicCast(OSBoolean, config->getObject(kDisableDevice));
-        if (disable && disable->isTrue())
-        {
-            config->release();
-            return false;
-        }
-#ifdef DEBUG
-        // save configuration for later/diagnostics...
-        setProperty(kMergedConfiguration, config);
-#endif
-    }
-    
     // initialize state
     _device                    = 0;
     _extendCount               = 0;
@@ -213,19 +166,21 @@ bool ApplePS2Keyboard::init(OSDictionary * dict)
     _ledState                  = 0;
     _lastdata = 0;
     
+    _remapPrntScr = false;
+    _numLockSupport = false;
+    _numLockOnAtBoot = false;
     _swapcommandoption = false;
     _sleepEjectTimer = 0;
     _cmdGate = 0;
-        
+    
     _fkeymode = 0;
     _fkeymodesupported = false;
     _keysStandard = 0;
     _keysSpecial = 0;
     _f12ejectdelay = 250;   // default is 250 ms
-    
-    // initialize ACPI support for keyboard backlight/screen brightness
+
+    // initialize ACPI support for keyboard backlight
     _provider = 0;
-    _brightnessLevels = 0;
     _backlightLevels = 0;
     
     _logscancodes = 0;
@@ -239,7 +194,9 @@ bool ApplePS2Keyboard::init(OSDictionary * dict)
     _macroMax = 0;
     _macroMaxTime = 25000000ULL;
     _macroTimer = 0;
-    
+
+    _ignoreCapsLedChange = false;
+
     // start out with all keys up
     bzero(_keyBitVector, sizeof(_keyBitVector));
     
@@ -255,21 +212,46 @@ bool ApplePS2Keyboard::init(OSDictionary * dict)
     }
     bcopy(_PS2flagsStock, _PS2flags, sizeof(_PS2flags));
     
-    // Setup default swipe actions
-    parseAction("3b d, 37 d, 7e d, 7e u, 37 u, 3b u", _actionSwipeUp, countof(_actionSwipeUp));
-    parseAction("3b d, 37 d, 7d d, 7d u, 37 u, 3b u", _actionSwipeDown, countof(_actionSwipeDown));
-    parseAction("3b d, 37 d, 7b d, 7b u, 37 u, 3b u", _actionSwipeLeft, countof(_actionSwipeLeft));
-    parseAction("3b d, 37 d, 7c d, 7c u, 37 u, 3b u", _actionSwipeRight, countof(_actionSwipeRight));
-    
-    parseAction("3b d, 3a d, 7e d, 7e u, 3a u, 3b u", _actionSwipe4Up, countof(_actionSwipe4Up));
-    parseAction("3b d, 3a d, 7d d, 7d u, 3a u, 3b u", _actionSwipe4Down, countof(_actionSwipe4Down));
-    parseAction("3b d, 3a d, 7b d, 7b u, 3a u, 3b u", _actionSwipe4Left, countof(_actionSwipe4Left));
-    parseAction("3b d, 3a d, 7c d, 7c u, 3a u, 3b u", _actionSwipe4Right, countof(_actionSwipe4Right));
-    
-    // TODO: zoom-in/out
-    parseAction("37 d, 18 d, 18 u, 37 u", _actionZoomIn, countof(_actionZoomIn));
-    parseAction("37 d, 1b d, 1b u, 37 u", _actionZoomOut, countof(_actionZoomOut));
-    
+    return true;
+}
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+ApplePS2Keyboard* ApplePS2Keyboard::probe(IOService * provider, SInt32 * score)
+{
+    DEBUG_LOG("ApplePS2Keyboard::probe entered...\n");
+
+    //
+    // The driver has been instructed to verify the presence of the actual
+    // hardware we represent. We are guaranteed by the controller that the
+    // keyboard clock is enabled and the keyboard itself is disabled (thus
+    // it won't send any asynchronous scan codes that may mess up the
+    // responses expected by the commands we send it).  This is invoked
+    // after the init.
+    //
+
+    if (!super::probe(provider, score))
+        return 0;
+
+    // find config specific to Platform Profile
+    OSDictionary* list = OSDynamicCast(OSDictionary, getProperty(kPlatformProfile));
+    ApplePS2Device* device = (ApplePS2Device*)provider;
+    OSDictionary* config = device->getController()->makeConfigurationNode(list, "Keyboard");
+    if (config)
+    {
+        // if DisableDevice is Yes, then do not load at all...
+        OSBoolean* disable = OSDynamicCast(OSBoolean, config->getObject(kDisableDevice));
+        if (disable && disable->isTrue())
+        {
+            config->release();
+            return 0;
+        }
+#ifdef DEBUG
+        // save configuration for later/diagnostics...
+        setProperty(kMergedConfiguration, config);
+#endif
+    }
+
     //
     // Load settings specfic to the Platform Profile...
     //
@@ -296,8 +278,8 @@ bool ApplePS2Keyboard::init(OSDictionary * dict)
         }
         else
         {
-            OSSafeReleaseNULL(_keysStandard);
-            OSSafeReleaseNULL(_keysSpecial);
+            _keysStandard = NULL;
+            _keysSpecial = NULL;
         }
         
         // load custom macro data
@@ -323,63 +305,14 @@ bool ApplePS2Keyboard::init(OSDictionary * dict)
     // populate rest of values via setParamProperties
     setParamPropertiesGated(config);
     OSSafeReleaseNULL(config);
-    
-    return true;
-}
 
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-void ApplePS2Keyboard::free()
-{
-    OSSafeReleaseNULL(_keysStandard);
-    OSSafeReleaseNULL(_keysSpecial);
-    
-    if (_macroInversion)
-    {
-        delete[] _macroInversion;
-        _macroInversion = 0;
-    }
-    if (_macroTranslation)
-    {
-        delete[] _macroTranslation;
-        _macroTranslation = 0;
-    }
-    if (_macroBuffer)
-    {
-        delete[] _macroBuffer;
-        _macroBuffer = 0;
-    }
-    
-    super::free();
-}
-
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-ApplePS2Keyboard* ApplePS2Keyboard::probe(IOService * provider, SInt32 * score)
-{
-    DEBUG_LOG("ApplePS2Keyboard::probe entered...\n");
-    
-    //
-    // The driver has been instructed to verify the presence of the actual
-    // hardware we represent. We are guaranteed by the controller that the
-    // keyboard clock is enabled and the keyboard itself is disabled (thus
-    // it won't send any asynchronous scan codes that may mess up the
-    // responses expected by the commands we send it).  This is invoked
-    // after the init.
-    //
-    
-    if (!super::probe(provider, score))
-        return 0;
-    
     // Note: always return success for keyboard, so no need to do this!
     //  But we do it in the DEBUG build just for information's sake.
 #ifdef DEBUG
-    ApplePS2KeyboardDevice * device  = (ApplePS2KeyboardDevice *)provider;
-    
     //
     // Check to see if the keyboard responds to a basic diagnostic echo.
     //
-    
+
     // (diagnostic echo command)
     TPS2Request<2> request;
     request.commands[0].command = kPS2C_WriteDataPort;
@@ -408,19 +341,22 @@ ApplePS2Keyboard* ApplePS2Keyboard::probe(IOService * provider, SInt32 * score)
 bool ApplePS2Keyboard::start(IOService * provider)
 {
     DEBUG_LOG("ApplePS2Keyboard::start entered...\n");
-    
+
+    setProperty(kDeliverNotifications, kOSBooleanTrue);
+
+    setProperty(kDeliverNotifications, kOSBooleanTrue);
     //
     // The driver has been instructed to start.   This is called after a
     // successful attach.
     //
-    
+
     if (!super::start(provider))
         return false;
-    
+
     //
     // Maintain a pointer to and retain the provider object.
     //
-    
+
     _device = (ApplePS2KeyboardDevice *)provider;
     _device->retain();
     
@@ -448,65 +384,12 @@ bool ApplePS2Keyboard::start(IOService * provider)
     // get IOACPIPlatformDevice for Device (PS2K)
     //REVIEW: should really look at the parent chain for IOACPIPlatformDevice instead.
     _provider = (IOACPIPlatformDevice*)IORegistryEntry::fromPath("IOService:/AppleACPIPlatformExpert/PS2K");
-    
-    //
-    // get brightness levels for ACPI based brightness keys
-    //
-    
-    OSObject* result = 0;
-    if (_provider) do
-    {
-        // check for brightness methods
-        if (kIOReturnSuccess != _provider->validateObject("KBCL") || kIOReturnSuccess != _provider->validateObject("KBCM") || kIOReturnSuccess != _provider->validateObject("KBQC"))
-        {
-            break;
-        }
-        // methods are there, so now try to collect brightness levels
-        if (kIOReturnSuccess != _provider->evaluateObject("KBCL", &result))
-        {
-            DEBUG_LOG("ps2br: KBCL returned error\n");
-            break;
-        }
-        OSArray* array = OSDynamicCast(OSArray, result);
-        if (!array)
-        {
-            DEBUG_LOG("ps2br: KBCL returned non-array package\n");
-            break;
-        }
-        int count = array->getCount();
-        if (count < 4)
-        {
-            DEBUG_LOG("ps2br: KBCL returned invalid package\n");
-            break;
-        }
-        _brightnessCount = count;
-        _brightnessLevels = new int[_brightnessCount];
-        if (!_brightnessLevels)
-        {
-            DEBUG_LOG("ps2br: _brightnessLevels new int[] failed\n");
-            break;
-        }
-        for (int i = 0; i < _brightnessCount; i++)
-        {
-            OSNumber* num = OSDynamicCast(OSNumber, array->getObject(i));
-            int brightness = num ? num->unsigned32BitValue() : 0;
-            _brightnessLevels[i] = brightness;
-        }
-#ifdef DEBUG_VERBOSE
-        DEBUG_LOG("ps2br: Brightness levels: { ");
-        for (int i = 0; i < _brightnessCount; i++)
-            DEBUG_LOG("%d, ", _brightnessLevels[i]);
-        DEBUG_LOG("}\n");
-#endif
-        break;
-    } while (false);
-    
-    OSSafeReleaseNULL(result);
-    
+
     //
     // get keyboard backlight levels for ACPI based backlight keys
     //
     
+    OSObject* result = 0;
     if (_provider) do
     {
         // check for brightness methods
@@ -567,8 +450,15 @@ bool ApplePS2Keyboard::start(IOService * provider)
     //
     // Reset and enable the keyboard.
     //
-    
+
     initKeyboard();
+    
+    //
+    // Set NumLock State to On (if specified).
+    //
+
+    if (_numLockOnAtBoot)
+        setNumLock(true);
     
     pWorkLoop->addEventSource(_sleepEjectTimer);
     pWorkLoop->addEventSource(_cmdGate);
@@ -581,35 +471,28 @@ bool ApplePS2Keyboard::start(IOService * provider)
     //
     // Install our driver's interrupt handler, for asynchronous data delivery.
     //
-    
+
     _device->installInterruptAction(this,
-                                    OSMemberFunctionCast(PS2InterruptAction, this, &ApplePS2Keyboard::interruptOccurred),
-                                    OSMemberFunctionCast(PS2PacketAction,this,&ApplePS2Keyboard::packetReady));
+        OSMemberFunctionCast(PS2InterruptAction, this, &ApplePS2Keyboard::interruptOccurred),
+        OSMemberFunctionCast(PS2PacketAction,this,&ApplePS2Keyboard::packetReady));
     _interruptHandlerInstalled = true;
-    
+
     // now safe to allow other threads
     _device->unlock();
     
     //
     // Install our power control handler.
     //
-    
+
     _device->installPowerControlAction( this,
-                                       OSMemberFunctionCast(PS2PowerControlAction,this, &ApplePS2Keyboard::setDevicePowerState ));
+            OSMemberFunctionCast(PS2PowerControlAction,this, &ApplePS2Keyboard::setDevicePowerState ));
     _powerControlHandlerInstalled = true;
-    
-    //
-    // Install our message handler.
-    //
-    _device->installMessageAction( this,
-                                  OSMemberFunctionCast(PS2MessageAction, this, &ApplePS2Keyboard::receiveMessage));
-    _messageHandlerInstalled = true;
     
     //
     // Tell ACPIPS2Nub that we are interested in ACPI notifications
     //
-    setProperty(kDeliverNotifications, true);
-    
+    //setProperty(kDeliverNotifications, true);
+
     DEBUG_LOG("ApplePS2Keyboard::start leaving.\n");
     
     return true;
@@ -767,7 +650,10 @@ OSData** ApplePS2Keyboard::loadMacroData(OSDictionary* dict, const char* name)
                         {
                             const UInt8* p = static_cast<const UInt8*>(pData->getBytesNoCopy());
                             if (p[0] == 0xFF && p[1] == 0xFF)
+                            {
                                 result[index++] = pData;
+                                pData->retain();
+                            }
                         }
                     }
                 }
@@ -784,8 +670,8 @@ void ApplePS2Keyboard::setParamPropertiesGated(OSDictionary * dict)
     if (NULL == dict)
         return;
     
-    //REVIEW: this code needs cleanup (should be table driven like mouse/trackpad)
-    
+//REVIEW: this code needs cleanup (should be table driven like mouse/trackpad)
+
     // get time before sleep button takes effect
     if (OSNumber* num = OSDynamicCast(OSNumber, dict->getObject(kSleepPressTime)))
     {
@@ -856,7 +742,7 @@ void ApplePS2Keyboard::setParamPropertiesGated(OSDictionary * dict)
         }
         setProperty(kSwapCommandOption, xml->isTrue() ? kOSBooleanTrue : kOSBooleanFalse);
     }
-    
+
     // special hack for HP Envy brightness
     xml = OSDynamicCast(OSBoolean, dict->getObject(kBrightnessHack));
     if (xml && xml->isTrue())
@@ -864,7 +750,25 @@ void ApplePS2Keyboard::setParamPropertiesGated(OSDictionary * dict)
         //REVIEW: should really read the key assignments via Info.plist instead of hardcoding to F2/F3
         _brightnessHack = true;
     }
+
+    if ((xml = OSDynamicCast(OSBoolean, dict->getObject(kRemapPrntScr))))
+    {
+        _remapPrntScr = xml->getValue();
+        setProperty(kRemapPrntScr, _remapPrntScr);
+    }
     
+    if ((xml = OSDynamicCast(OSBoolean, dict->getObject(kNumLockSupport))))
+    {
+        _numLockSupport = xml->getValue();
+        setProperty(kNumLockSupport, _numLockSupport);
+    }
+    
+    if ((xml = OSDynamicCast(OSBoolean, dict->getObject(kNumLockOnAtBoot))))
+    {
+        _numLockOnAtBoot = xml->getValue();
+        setProperty(kNumLockOnAtBoot, _numLockOnAtBoot);
+    }
+
     // these two options are mutually exclusive
     // kMakeApplicationKeyAppleFN is ignored if kMakeApplicationKeyRightWindows is set
     bool temp = false;
@@ -929,35 +833,6 @@ void ApplePS2Keyboard::setParamPropertiesGated(OSDictionary * dict)
         _logscancodes = num->unsigned32BitValue();
         setProperty(kLogScanCodes, num);
     }
-    
-    // now load swipe Action configuration data
-    OSString* str = OSDynamicCast(OSString, dict->getObject(kActionSwipeUp));
-    if (str)
-    {
-        parseAction(str->getCStringNoCopy(), _actionSwipeUp, countof(_actionSwipeUp));
-        setProperty(kActionSwipeUp, str);
-    }
-    
-    str = OSDynamicCast(OSString, dict->getObject(kActionSwipeDown));
-    if (str)
-    {
-        parseAction(str->getCStringNoCopy(), _actionSwipeDown, countof(_actionSwipeDown));
-        setProperty(kActionSwipeDown, str);
-    }
-    
-    str = OSDynamicCast(OSString, dict->getObject(kActionSwipeLeft));
-    if (str)
-    {
-        parseAction(str->getCStringNoCopy(), _actionSwipeLeft, countof(_actionSwipeLeft));
-        setProperty(kActionSwipeLeft, str);
-    }
-    
-    str = OSDynamicCast(OSString, dict->getObject(kActionSwipeRight));
-    if (str)
-    {
-        parseAction(str->getCStringNoCopy(), _actionSwipeRight, countof(_actionSwipeRight));
-        setProperty(kActionSwipeRight, str);
-    }
 }
 
 IOReturn ApplePS2Keyboard::setParamProperties(OSDictionary *dict)
@@ -995,15 +870,15 @@ void ApplePS2Keyboard::stop(IOService * provider)
     // connections to other service objects now (ie. no registered actions,
     // no pointers and retains to objects, etc), if any.
     //
-    
+
     assert(_device == provider);
     
     //
     // Disable the keyboard itself, so that it may stop reporting key events.
     //
-    
+
     setKeyboardEnable(false);
-    
+
     // free up the command gate
     IOWorkLoop* pWorkLoop = getWorkLoop();
     if (pWorkLoop)
@@ -1031,53 +906,60 @@ void ApplePS2Keyboard::stop(IOService * provider)
     //
     // Uninstall the interrupt handler.
     //
-    
+
     if ( _interruptHandlerInstalled )  _device->uninstallInterruptAction();
     _interruptHandlerInstalled = false;
-    
+
     //
     // Uninstall the power control handler.
     //
-    
+
     if ( _powerControlHandlerInstalled ) _device->uninstallPowerControlAction();
     _powerControlHandlerInstalled = false;
-    
-    //
-    // Uninstall the message handler.
-    //
-    
-    if ( _messageHandlerInstalled ) _device->uninstallMessageAction();
-    _messageHandlerInstalled = false;
-    
+
     //
     // Release the pointer to the provider object.
     //
-    
+
     OSSafeReleaseNULL(_device);
-    
+
     //
     // Release ACPI provider for PS2K ACPI device
     //
     OSSafeReleaseNULL(_provider);
-    
+
     //
-    // Release data related to screen brightness
-    //
-    if (_brightnessLevels)
-    {
-        delete[] _brightnessLevels;
-        _brightnessLevels = 0;
-    }
-    
-    //
-    // Release data related to screen brightness
+    // Release data related to keyboard backlight
     //
     if (_backlightLevels)
     {
         delete[] _backlightLevels;
         _backlightLevels = 0;
     }
-    
+
+    OSSafeReleaseNULL(_keysStandard);
+    OSSafeReleaseNULL(_keysSpecial);
+
+    if (_macroInversion)
+    {
+        for (OSData** p = _macroInversion; *p; p++)
+            (*p)->release();
+        delete[] _macroInversion;
+        _macroInversion = 0;
+    }
+    if (_macroTranslation)
+    {
+        for (OSData** p = _macroTranslation; *p; p++)
+            (*p)->release();
+        delete[] _macroTranslation;
+        _macroTranslation = 0;
+    }
+    if (_macroBuffer)
+    {
+        delete[] _macroBuffer;
+        _macroBuffer = 0;
+    }
+
     super::stop(provider);
 }
 
@@ -1091,43 +973,80 @@ IOReturn ApplePS2Keyboard::message(UInt32 type, IOService* provider, void* argum
     else
         IOLog("ApplePS2Keyboard::message: type=%x, provider=%p", type, provider);
 #endif
-    
-    if (type == kIOACPIMessageDeviceNotification && NULL != argument)
+    switch (type)
     {
-        UInt32 arg = *static_cast<UInt32*>(argument);
-        if ((arg & 0xFFFF0000) == 0)
+        case kIOACPIMessageDeviceNotification:
+            if (NULL != argument) {
+                UInt32 arg = *static_cast<UInt32*>(argument);
+                if ((arg & 0xFFFF0000) == 0)
+                {
+                    UInt8 packet[kPacketLength];
+                    packet[0] = arg >> 8;
+                    packet[1] = arg;
+                    if (1 == packet[0] || 2 == packet[0])
+                    {
+                        // mark packet with timestamp
+                        clock_get_uptime((uint64_t*)(&packet[kPacketTimeOffset]));
+                        if (!_macroInversion || !invertMacros(packet))
+                        {
+                            // normal packet
+                            dispatchKeyboardEventWithPacket(packet);
+                        }
+                    }
+                    if (3 == packet[0] || 4 == packet[0])
+                    {
+                        // code 3 and 4 indicate send both make and break
+                        packet[0] -= 2;
+                        clock_get_uptime((uint64_t*)(&packet[kPacketTimeOffset]));
+                        if (!_macroInversion || !invertMacros(packet))
+                        {
+                            // normal packet (make)
+                            dispatchKeyboardEventWithPacket(packet);
+                        }
+                        clock_get_uptime((uint64_t*)(&packet[kPacketTimeOffset]));
+                        packet[1] |= 0x80; // break code
+                        if (!_macroInversion || !invertMacros(packet))
+                        {
+                            // normal packet (break)
+                            dispatchKeyboardEventWithPacket(packet);
+                        }
+                    }
+                }
+            }
+            break;
+
+        case kPS2K_getKeyboardStatus:
         {
-            UInt8 packet[kPacketLength];
-            packet[0] = arg >> 8;
-            packet[1] = arg;
-            if (1 == packet[0] || 2 == packet[0])
-            {
-                // mark packet with timestamp
-                clock_get_uptime((uint64_t*)(&packet[kPacketTimeOffset]));
-                if (!_macroInversion || !invertMacros(packet))
+            if (argument) {
+                bool* pResult = (bool*)argument;
+                *pResult = !_disableInput;
+            }
+            break;
+        }
+
+        case kPS2K_setKeyboardStatus:
+        {
+            if (argument) {
+                bool enable = *((bool*)argument);
+                if (enable == _disableInput)
                 {
-                    // normal packet
-                    dispatchKeyboardEventWithPacket(packet);
+                    _disableInput = !enable;
                 }
             }
-            if (3 == packet[0] || 4 == packet[0])
-            {
-                // code 3 and 4 indicate send both make and break
-                packet[0] -= 2;
-                clock_get_uptime((uint64_t*)(&packet[kPacketTimeOffset]));
-                if (!_macroInversion || !invertMacros(packet))
-                {
-                    // normal packet (make)
-                    dispatchKeyboardEventWithPacket(packet);
-                }
-                clock_get_uptime((uint64_t*)(&packet[kPacketTimeOffset]));
-                packet[1] |= 0x80; // break code
-                if (!_macroInversion || !invertMacros(packet))
-                {
-                    // normal packet (break)
-                    dispatchKeyboardEventWithPacket(packet);
+            break;
+        }
+
+        case kPS2K_notifyKeystroke:
+        {
+            if (argument) {
+                PS2KeyInfo *keystroke = (PS2KeyInfo*)argument;
+                if (!keystroke->eatKey) {
+                    // the key is consumed
+                    keystroke->eatKey = true;
+                    dispatchKeyboardEventX(keystroke->adbKeyCode, keystroke->goingDown, keystroke->time);
                 }
             }
+            break;
         }
     }
     return kIOReturnSuccess;
@@ -1291,7 +1210,7 @@ bool ApplePS2Keyboard::invertMacros(const UInt8* packet)
     
     if (!_macroTimer || !_macroBuffer)
         return false;
-    
+
     if (_macroCurrent > 0)
     {
         // cancel macro conversion if packet arrives too late
@@ -1309,7 +1228,7 @@ bool ApplePS2Keyboard::invertMacros(const UInt8* packet)
         IOLog("diffmin=%lld, diffmax=%lld\n", diffmin, diffmax);
 #endif
     }
-    
+ 
     // add current packet to macro buffer for comparison
     memcpy(_macroBuffer+_macroCurrent*kPacketLength, packet, kPacketLength);
     int buffered = _macroCurrent+1;
@@ -1362,14 +1281,14 @@ bool ApplePS2Keyboard::invertMacros(const UInt8* packet)
 void ApplePS2Keyboard::onMacroTimer()
 {
     DEBUG_LOG("ApplePS2Keyboard::onMacroTimer\n");
-    
+
     // timers have a very high priority, packets may have been placed in the
     // input queue already.
-    
+
     // by calling packetReady, these packets are processed before dealing with
     // the timer (the packets may have arrived before the timer)
     packetReady();
-    
+
     // after all packets have been processed, ok to check for time expiration
     if (_macroCurrent > 0)
     {
@@ -1397,63 +1316,6 @@ void ApplePS2Keyboard::dispatchInvertBuffer()
 }
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-//
-// Note: attempted brightness through ACPI methods, but it didn't work.
-//
-// I think because Probook 4530s does some funny in things in its
-// ACPI brightness methods.
-//
-// Just keeping it here in case someone wants to try with theirs.
-
-void ApplePS2Keyboard::modifyScreenBrightness(int adbKeyCode, bool goingDown)
-{
-    assert(_provider);
-    assert(_brightnessLevels);
-    
-    // get current brightness level
-    UInt32 result;
-    if (kIOReturnSuccess != _provider->evaluateInteger("KBQC", &result))
-    {
-        DEBUG_LOG("ps2br: KBQC returned error\n");
-        return;
-    }
-    int current = result;
-#ifdef DEBUG_VERBOSE
-    if (goingDown)
-        DEBUG_LOG("ps2br: Current brightness: %d\n", current);
-#endif
-    // calculate new brightness level, find current in table >= entry in table
-    // note first two entries in table are ac-power/battery
-    int index = 2;
-    while (index < _brightnessCount)
-    {
-        if (_brightnessLevels[index] >= current)
-            break;
-        ++index;
-    }
-    // move to next or previous
-    index += (adbKeyCode == 0x90 ? +1 : -1);
-    if (index >= _brightnessCount)
-        index = _brightnessCount - 1;
-    if (index < 2)
-        index = 2;
-#ifdef DEBUG_VERBOSE
-    if (goingDown)
-        DEBUG_LOG("ps2br: setting brightness %d\n", _brightnessLevels[index]);
-#endif
-    OSNumber* num = OSNumber::withNumber(_brightnessLevels[index], 32);
-    if (!num)
-    {
-        DEBUG_LOG("ps2br: OSNumber::withNumber failed\n");
-        return;
-    }
-    if (goingDown && kIOReturnSuccess != _provider->evaluateObject("KBCM", NULL, (OSObject**)&num, 1))
-    {
-        DEBUG_LOG("ps2br: KBCM returned error\n");
-    }
-    num->release();
-}
 
 //
 // Note: trying for ACPI backlight control for ASUS notebooks
@@ -1525,7 +1387,7 @@ void ApplePS2Keyboard::onSleepEjectTimer()
                 rootDomain->receivePowerNotification(kIOPMSleepNow);
             break;
         }
-            
+
         case kTimerEject:
         {
             uint64_t now_abs;
@@ -1542,10 +1404,10 @@ bool ApplePS2Keyboard::dispatchKeyboardEventWithPacket(const UInt8* packet)
     // should a new key be detected, the key event is dispatched.
     //
     // Returns true if a key event was indeed dispatched.
-    
+
     UInt8 extended = packet[0] - 1;
     UInt8 scanCode = packet[1];
-    
+
 #ifdef DEBUG_VERBOSE
     DEBUG_LOG("%s: PS/2 scancode %s 0x%x\n", getName(),  extended ? "extended" : "", scanCode);
 #endif
@@ -1556,7 +1418,7 @@ bool ApplePS2Keyboard::dispatchKeyboardEventWithPacket(const UInt8* packet)
     uint64_t now_abs = *(uint64_t*)(&packet[kPacketTimeOffset]);
     uint64_t now_ns;
     absolutetime_to_nanoseconds(now_abs, &now_ns);
-    
+
     //
     // Convert the scan code into a key code index.
     //
@@ -1611,7 +1473,7 @@ bool ApplePS2Keyboard::dispatchKeyboardEventWithPacket(const UInt8* packet)
         UInt16 mask = 1 << (bit-1);
         goingDown ? _PS2modifierState |= mask : _PS2modifierState &= ~mask;
     }
-    
+
     // codes e0f0 through e0ff can be used to call back into ACPI methods on this device
     if (keyCode >= 0x01f0 && keyCode <= 0x01ff && _provider != NULL)
     {
@@ -1626,10 +1488,20 @@ bool ApplePS2Keyboard::dispatchKeyboardEventWithPacket(const UInt8* packet)
             num->release();
         }
     }
-    
+
     // handle special cases
     switch (keyCode)
     {
+        case 0x45:  // NumLock
+            if (_numLockSupport && (scanCode == 0xc5)) // NumLock -> Up
+            {
+                setNumLock(!numLock());
+                return true;
+            }
+            else if (_numLockSupport && (scanCode == 0x45)) // NumLock -> Down
+                return false;
+            break;
+            
         case 0x4e:  // Numpad+
         case 0x4a:  // Numpad-
             if (_backlightLevels && checkModifierState(kMaskLeftControl|kMaskLeftAlt))
@@ -1674,7 +1546,7 @@ bool ApplePS2Keyboard::dispatchKeyboardEventWithPacket(const UInt8* packet)
                 }
             }
             break;
-            
+                
         case 0x015f:    // sleep
             keyCode = 0;
             if (goingDown)
@@ -1690,24 +1562,122 @@ bool ApplePS2Keyboard::dispatchKeyboardEventWithPacket(const UInt8* packet)
                 cancelTimer(_sleepEjectTimer);
             }
             break;
-            
-            //REVIEW: this is getting a bit ugly
+
+        //REVIEW: this is getting a bit ugly
+        case 0x0054:    // SysRq (PrntScr when combined with Alt modifier -left or right-)
+            if (!_remapPrntScr)
+                break;
         case 0x0128:    // alternate that cannot fnkeys toggle (discrete trackpad toggle)
+        {
+
+            // PrntScr is handled specially by some keyboard devices.
+            // See: 5.19 on https://www.win.tue.nl/~aeb/linux/kbd/scancodes-5.html#mtek
+#ifdef DEBUG
+            UInt16 debug_originalModifiers = _PS2modifierState;
+#endif
+            // Force Alt (Left) key to be down when receiving this keycode, dont rely on KB firmware
+            _PS2modifierState &= ~kMaskRightAlt;
+            _PS2modifierState |= kMaskLeftAlt;
+            keyCode = 0x0137; // Rewrite keycode
+            
+#ifdef DEBUG
+            IOLog("VoodooPS2Keyboard: special PrntScr: modifiersBefore=%#.4X  modifiersAfter=%#.4X\n", debug_originalModifiers, _PS2modifierState);
+#endif
+            
+            // Fall to the original PrntScr handling case
+        }
         case 0x0137:    // prt sc/sys rq
         {
+            if (!_remapPrntScr)
+                break;
+
+            /* Supported Voodoo PrntScr Key combinations:
+               PrntScr            Enable/Disable touchpad
+               Windows+PrntScr    Enable/Disable touchpad+keyboard
+               Ctrl+Alt+PrntScr   Reset and enable touchpad
+               Shift+PrntScr      Send SysRq scancode to the kernel
+             
+             Notes:
+                - Alt+Windows combo seems to be masked out by some keyboard devices and dont produce any ScanCode.
+                  Dont rely on it.
+            */
+            
             unsigned origKeyCode = keyCode;
-            keyCode = 0;
+            keyCode = 0; // Handle all these keycode variants internally
+            
+#ifdef DEBUG
+            bool debug_control = checkModifierStateAny(kMaskLeftControl|kMaskRightControl);
+            bool debug_alt = checkModifierStateAny(kMaskLeftAlt|kMaskRightAlt);
+            bool debug_shift = checkModifierStateAny(kMaskLeftShift|kMaskRightShift);
+            bool debug_windows = checkModifierStateAny(kMaskLeftWindows|kMaskRightWindows);
+            
+            IOLog("VoodooPS2Keyboard: PrtScr:: goingDown=%s  control=%s  alt=%s  shift=%s  windows=%s  modifiers=%d\n",
+                  goingDown ? "Yes" : "No",
+                  debug_control ? "Yes" : "No",
+                  debug_alt ? "Yes" : "No",
+                  debug_shift ? "Yes" : "No",
+                  debug_windows ? "Yes" : "No",
+                  _PS2modifierState);
+#endif
+            
             if (!goingDown)
                 break;
-            if (!checkModifierState(kMaskLeftControl))
+            
+            if (checkModifierStateAny(kMaskLeftControl|kMaskRightControl))
             {
-                // get current enabled status, and toggle it
-                bool enabled;
-                _device->dispatchMouseMessage(kPS2M_getDisableTouchpad, &enabled);
-                enabled = !enabled;
-                _device->dispatchMouseMessage(kPS2M_setDisableTouchpad, &enabled);
+                // Shift is ignored from this point onwards
+                if (checkModifierStateAny(kMaskLeftAlt|kMaskRightAlt))
+                {
+                    // Ctrl+Alt+PrntScr
+                    IOLog("VoodooPS2Keyboard: Sending RESET signal to touchpad."); // Dont wrap into a DEBUG compilation condition since this should be a workaroung to be used on faulty states only
+                    int val = 1;
+                    _device->dispatchMessage(kPS2M_resetTouchpad, &val); // Reset touchpad
+                }
+            }
+            else
+            {
+                if (checkModifierState(kMaskLeftShift) || checkModifierState(kMaskRightShift))
+                {
+                    // Shift+PrntScr, no other modifiers present
+#ifdef DEBUG
+                    IOLog("VoodooPS2Keyboard: Sending SysRq virtual scancode 0x58");
+#endif
+                    dispatchKeyboardEventX(0x58, true, now_abs); // Send SysRq to the kernel
+                    dispatchKeyboardEventX(0x58, false, now_abs);
+                }
+                else
+                {
+                    if (checkModifierStateAny(kMaskRightShift|kMaskLeftShift|kMaskRightAlt|kMaskLeftAlt))
+                        break; // Eat combinations where Ctrl is Up and Alt or Shift are Down (!Ctrl+[Alt|Shift])
+                    
+                    bool enabled;
+                    if (checkModifierStateAny(kMaskLeftWindows|kMaskRightWindows))
+                    {
+                        // Windows+PrntScr
+                        // Disable keyboard input along with the touchpad using Windows(Option)+prtsc, useful for 2-in-1 applications.
+#ifdef DEBUG
+                        IOLog("VoodooPS2Keyboard: Toggling keyboard+Touchpad enabled state.");
+#endif
+                        enabled = _disableInput;
+                        _disableInput = !_disableInput;
+                        _device->dispatchMessage(kPS2M_setDisableTouchpad, &enabled); // Sync Keyboard and Touchpad enabled states
+                    }
+                    else
+                    {
+                        // No other modifiers pressed down
+#ifdef DEBUG
+                        IOLog("VoodooPS2Keyboard: Toggling Touchpad enabled state.");
+#endif
+                        // Touchpad enable/disable: get current enabled status, and toggle it
+                        _device->dispatchMessage(kPS2M_getDisableTouchpad, &enabled);
+                        enabled = !enabled;
+                        _device->dispatchMessage(kPS2M_setDisableTouchpad, &enabled);
+                    }
+                }
+                
                 break;
             }
+            
             if (origKeyCode != 0x0137)
                 break; // do not fall through for 0x0128
             // fall through
@@ -1737,14 +1707,22 @@ bool ApplePS2Keyboard::dispatchKeyboardEventWithPacket(const UInt8* packet)
                 }
             }
             break;
+#ifdef DEBUG
+        default:
+            IOLog("VoodooPS2Keyboard: Unhandled keycode: %#.4X\n", keyCode);
+#endif
     }
+    
+    // If keyboard input is disabled drop the key code..
+    if (_disableInput && goingDown)
+        keyCode=0;
     
 #ifdef DEBUG
     // allow hold Alt+numpad keys to type in arbitrary ADB key code
     static int genADB = -1;
     if (goingDown && checkModifierState(kMaskLeftAlt) &&
         ((keyCodeRaw >= 0x47 && keyCodeRaw <= 0x52 && keyCodeRaw != 0x4e && keyCodeRaw != 0x4a) ||
-         (keyCodeRaw >= 0x02 && keyCodeRaw <= 0x0B)))
+        (keyCodeRaw >= 0x02 && keyCodeRaw <= 0x0B)))
     {
         // map numpad scan codes to digits
         static int map1[0x52-0x47+1] = { 7, 8, 9, -1, 4, 5, 6, -1, 1, 2, 3, 0 };
@@ -1768,14 +1746,6 @@ bool ApplePS2Keyboard::dispatchKeyboardEventWithPacket(const UInt8* packet)
     // special cases
     switch (adbKeyCode)
     {
-        case 0x90:
-        case 0x91:
-            if (_brightnessLevels)
-            {
-                modifyScreenBrightness(adbKeyCode, goingDown);
-                adbKeyCode = DEADKEY;
-            }
-            break;
         case 0x92: // eject
             if (0 == _PS2modifierState)
             {
@@ -1795,7 +1765,7 @@ bool ApplePS2Keyboard::dispatchKeyboardEventWithPacket(const UInt8* packet)
             }
             break;
     }
-    
+
 #ifdef DEBUG_VERBOSE
     if (adbKeyCode == DEADKEY && 0 != keyCode)
         DEBUG_LOG("%s: Unknown ADB key for PS2 scancode: 0x%x\n", getName(), scanCode);
@@ -1823,17 +1793,25 @@ bool ApplePS2Keyboard::dispatchKeyboardEventWithPacket(const UInt8* packet)
     info.adbKeyCode = adbKeyCode;
     info.goingDown = goingDown;
     info.eatKey = eatKey;
-    _device->dispatchMouseMessage(kPS2M_notifyKeyPressed, &info);
-    
+
+    _device->dispatchMessage(kPS2M_notifyKeyPressed, &info);
+
+    //REVIEW: work around for caps lock bug on Sierra 10.12...
     if (adbKeyCode == 0x39 && version_major >= 16)
     {
-        if (goingDown)
+        // Mojave 10.14 only needs a part of the workaround:
+        // https://github.com/RehabMan/OS-X-Voodoo-PS2-Controller/issues/142#issuecomment-529813842
+        if (goingDown || version_major >= 18)
         {
-            static bool firsttime = true;
+            DEBUG_LOG("%s: Caps Lock goingDown: 0x%x\n", getName(), goingDown);
+            _ignoreCapsLedChange = true;
             clock_get_uptime(&now_abs);
             dispatchKeyboardEventX(adbKeyCode, true, now_abs);
             clock_get_uptime(&now_abs);
             dispatchKeyboardEventX(adbKeyCode, false, now_abs);
+        }
+        if (goingDown && version_major < 18) {
+            static bool firsttime = true;
             if (!firsttime)
             {
                 clock_get_uptime(&now_abs);
@@ -1845,7 +1823,7 @@ bool ApplePS2Keyboard::dispatchKeyboardEventWithPacket(const UInt8* packet)
         }
         return true;
     }
-    
+
     if (keyCode && !info.eatKey)
     {
         // dispatch to HID system
@@ -1865,80 +1843,8 @@ bool ApplePS2Keyboard::dispatchKeyboardEventWithPacket(const UInt8* packet)
         genADB = -1;
     }
 #endif
-    
+
     return true;
-}
-
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-void ApplePS2Keyboard::sendKeySequence(UInt16* pKeys)
-{
-    for (; *pKeys; ++pKeys)
-    {
-        uint64_t now_abs;
-        clock_get_uptime(&now_abs);
-        dispatchKeyboardEventX(*pKeys & 0xFF, *pKeys & 0x1000 ? false : true, now_abs);
-    }
-}
-
-void ApplePS2Keyboard::receiveMessage(int message, void* data)
-{
-    //
-    // Here is where we receive messages from the mouse/trackpad driver
-    //
-    
-    switch (message)
-    {
-        case kPS2M_swipeDown:
-            DEBUG_LOG("ApplePS2Keyboard: Synaptic Trackpad call Swipe Down\n");
-            sendKeySequence(_actionSwipeDown);
-            break;
-            
-        case kPS2M_swipeLeft:
-            DEBUG_LOG("ApplePS2Keyboard: Synaptic Trackpad call Swipe Left\n");
-            sendKeySequence(_actionSwipeLeft);
-            break;
-            
-        case kPS2M_swipeRight:
-            DEBUG_LOG("ApplePS2Keyboard: Synaptic Trackpad call Swipe Right\n");
-            sendKeySequence(_actionSwipeRight);
-            break;
-            
-        case kPS2M_swipeUp:
-            DEBUG_LOG("ApplePS2Keyboard: Synaptic Trackpad call Swipe Up\n");
-            sendKeySequence(_actionSwipeUp);
-            break;
-            
-        case kPS2M_swipe4Down:
-            DEBUG_LOG("ApplePS2Keyboard: Synaptic Trackpad call Swipe 4 Down\n");
-            sendKeySequence(_actionSwipe4Down);
-            break;
-            
-        case kPS2M_swipe4Left:
-            DEBUG_LOG("ApplePS2Keyboard: Synaptic Trackpad call Swipe 4 Left\n");
-            sendKeySequence(_actionSwipe4Left);
-            break;
-            
-        case kPS2M_swipe4Right:
-            DEBUG_LOG("ApplePS2Keyboard: Synaptic Trackpad call Swipe 4 Right\n");
-            sendKeySequence(_actionSwipe4Right);
-            break;
-            
-        case kPS2M_swipe4Up:
-            DEBUG_LOG("ApplePS2Keyboard: Synaptic Trackpad call Swipe 4 Up\n");
-            sendKeySequence(_actionSwipe4Up);
-            break;
-            
-        case kPS2M_zoomIn:
-            DEBUG_LOG("ApplePS2Keyboard: Synaptic Trackpad call Zoom In\n");
-            sendKeySequence(_actionZoomIn);
-            break;
-
-        case kPS2M_zoomOut:
-            DEBUG_LOG("ApplePS2Keyboard: Synaptic Trackpad call Zoom Out\n");
-            sendKeySequence(_actionZoomOut);
-            break;
-    }
 }
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -1950,7 +1856,14 @@ void ApplePS2Keyboard::setAlphaLockFeedback(bool locked)
     //
     // It is safe to issue this request from the interrupt/completion context.
     //
-    
+
+
+    DEBUG_LOG("%s: setAlphaLockFeedback locked:0x%x ignore: 0x%x\n", getName(), locked, _ignoreCapsLedChange);
+    if (_ignoreCapsLedChange)
+    {
+        _ignoreCapsLedChange = false;
+        return;
+    }
     _ledState = locked ? (_ledState | kLED_CapsLock):(_ledState & ~kLED_CapsLock);
     setLEDs(_ledState);
 }
@@ -1964,7 +1877,7 @@ void ApplePS2Keyboard::setNumLockFeedback(bool locked)
     //
     // It is safe to issue this request from the interrupt/completion context.
     //
-    
+
     _ledState = locked ? (_ledState | kLED_NumLock):(_ledState & ~kLED_NumLock);
     setLEDs(_ledState);
 }
@@ -1978,9 +1891,9 @@ void ApplePS2Keyboard::setLEDs(UInt8 ledState)
     //
     // It is safe to issue this request from the interrupt/completion context.
     //
-    
+
     PS2Request* request = _device->allocateRequest(4);
-    
+
     // (set LEDs command)
     request->commands[0].command = kPS2C_WriteDataPort;
     request->commands[0].inOrOut = kDP_SetKeyboardLEDs;
@@ -2006,7 +1919,7 @@ void ApplePS2Keyboard::setKeyboardEnable(bool enable)
     //
     // It is safe to issue this request from the interrupt/completion context.
     //
-    
+
     // (keyboard enable/disable command)
     TPS2Request<2> request;
     request.commands[0].command = kPS2C_WriteDataPort;
@@ -2029,13 +1942,14 @@ const unsigned char * ApplePS2Keyboard::defaultKeymapOfLength(UInt32 * length)
     //
     static const unsigned char appleUSAKeyMap[] = {
         0x00,0x00, // use byte unit.
-        
+       
         
         // modifier definition
         0x0b,   //Number of modifier keys.
         // ( modifier   , num of keys, ADB keycodes... )
         // ( 0x00       , 0x01       , 0x39            )
         //0x00,0x01,0x39, //NX_MODIFIERKEY_ALPHALOCK, uses one byte, ADB keycode is 0x39
+        //13,0x01,0x39,//NX_MODIFIERKEY_ALPHALOCK_STATELESS
         NX_MODIFIERKEY_SHIFT,       0x01,0x38,
         NX_MODIFIERKEY_CONTROL,     0x01,0x3b,
         NX_MODIFIERKEY_ALTERNATE,   0x01,0x3a,
@@ -2240,8 +2154,8 @@ const unsigned char * ApplePS2Keyboard::defaultKeymapOfLength(UInt32 * length)
         0x02,0xff,0x04,0x00,0x5b, // Command + '['
         0x03,0xff,0x04,0xff,0x01,0x00,0x5b, // Command + Shift + '['
         0x03,0xff,0x04,0xff,0x01,0x00,0x5d, // Command + shift + ']'
-        
-        
+
+       
         // special key definition
         0x0e, // number of special keys
         // ( NX_KEYTYPE,        Virtual ADB code )
@@ -2261,10 +2175,10 @@ const unsigned char * ApplePS2Keyboard::defaultKeymapOfLength(UInt32 * length)
         NX_KEYTYPE_NEXT,        0x42,       // if this event repeated, act as NX_KEYTYPE_FAST
         NX_KEYTYPE_PREVIOUS,    0x4d,        // if this event repeated, act as NX_KEYTYPE_REWIND
         NX_KEYTYPE_BRIGHTNESS_UP, 0x90,
-        NX_KEYTYPE_BRIGHTNESS_DOWN,	0x91,
+        NX_KEYTYPE_BRIGHTNESS_DOWN,    0x91,
         NX_KEYTYPE_EJECT,       0x92,
     };
-    
+ 
     *length = sizeof(appleUSAKeyMap);
     return appleUSAKeyMap;
 }
@@ -2281,7 +2195,7 @@ void ApplePS2Keyboard::setDevicePowerState( UInt32 whatToDo )
             //
             setKeyboardEnable( false );
             break;
-            
+
         case kPS2C_EnableDevice:
             //
             // Enable keyboard and restore state.
@@ -2298,7 +2212,7 @@ void ApplePS2Keyboard::initKeyboard()
     //
     // Reset the keyboard to its default state.
     //
-    
+
     TPS2Request<2> request;
     request.commands[0].command = kPS2C_WriteDataPort;
     request.commands[0].inOrOut = kDP_SetDefaults;
@@ -2328,7 +2242,7 @@ void ApplePS2Keyboard::initKeyboard()
     //
     // Initialize the keyboard LED state.
     //
-    
+
     setLEDs(_ledState);
     
     //
@@ -2337,7 +2251,7 @@ void ApplePS2Keyboard::initKeyboard()
     
     _extendCount = 0;
     _ringBuffer.reset();
-    
+
     //
     // Finally, we enable the keyboard itself, so that it may start reporting
     // key events.

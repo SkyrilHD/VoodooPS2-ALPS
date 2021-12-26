@@ -23,6 +23,7 @@
 #ifndef _APPLEPS2CONTROLLER_H
 #define _APPLEPS2CONTROLLER_H
 
+#include <libkern/version.h>
 #include <IOKit/IOInterruptEventSource.h>
 #include <IOKit/IOService.h>
 #include <IOKit/IOWorkLoop.h>
@@ -145,6 +146,16 @@ class ApplePS2MouseDevice;
 
 #define kWatchdogTimerInterval  100
 
+// Enable Mux commands
+// Constants are from Linux
+// https://github.com/torvalds/linux/blob/c2d7ed9d680fd14aa5486518bd0d0fa5963c6403/drivers/input/serio/i8042.c#L685-L693
+
+#define kDP_MuxCmd              0xF0
+#define kDP_EnableMuxCmd1       0x56
+#define kDP_GetMuxVersion       0xA4
+#define kDP_DisableMuxCmd1      0xF6
+#define kDP_DisableMuxCmd2      0xA5
+
 #if DEBUGGER_SUPPORT
 // Definitions for our internal keyboard queue (holds keys processed by the
 // interrupt-time mini-monitor-key-sequence detection code).
@@ -154,8 +165,8 @@ class ApplePS2MouseDevice;
 typedef struct KeyboardQueueElement KeyboardQueueElement;
 struct KeyboardQueueElement
 {
-    queue_chain_t chain;
-    UInt8         data;
+  queue_chain_t chain;
+  UInt8         data;
 };
 #endif //DEBUGGER_SUPPORT
 
@@ -168,176 +179,197 @@ struct KeyboardQueueElement
 #define kMergedConfiguration    "Merged Configuration"
 #endif
 
+// ps2rst flags
+#define RESET_CONTROLLER_ON_BOOT    1
+#define RESET_CONTROLLER_ON_WAKEUP  2
+
+class IOACPIPlatformDevice;
+
+enum {
+    kPS2PowerStateSleep  = 0,
+    kPS2PowerStateDoze   = 1,
+    kPS2PowerStateNormal = 2,
+    kPS2PowerStateCount
+};
+
+// i8042 Mux indexes
+#define PS2_MUX_PORTS   4
+
+#define PS2_STA_MUX_MASK  0x03
+#define PS2_STA_MUX_SHIFT 0x06
+
+// Normally, the i8042 controller has 2 ports. With the mux active,
+// there are 5 ports. 1 Keyboard port and 4 mux ports. All the muxed ports
+// share the same IRQ. When the controller is in a multiplexed mode, 3
+// additional ports are added.
+
+enum {
+    kPS2KbdIdx = 0,
+    kPS2AuxIdx = 1,
+    kPS2AuxMaxIdx = 2,
+    kPS2MuxMaxIdx = PS2_MUX_PORTS + 1
+};
+
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 // ApplePS2Controller Class Declaration
 //
 
 class EXPORT ApplePS2Controller : public IOService
 {
-    typedef IOService super;
-    OSDeclareDefaultStructors(ApplePS2Controller);
-    
-public:                                // interrupt-time variables and functions
-    IOInterruptEventSource * _interruptSourceKeyboard;
-    IOInterruptEventSource * _interruptSourceMouse;
-    IOInterruptEventSource * _interruptSourceQueue;
-    
-#if DEBUGGER_SUPPORT
-    bool                     _debuggingEnabled;
-    
-    void lockController(int * state);
-    void unlockController(int state);
-    
-    bool doEscape(UInt8 key);
-    bool dequeueKeyboardData(UInt8 * key);
-    void enqueueKeyboardData(UInt8 key);
-#endif //DEBUGGER_SUPPORT
-    
-private:
-    IOWorkLoop *             _workLoop;
-    queue_head_t             _requestQueue;
-    IOLock*                  _requestQueueLock;
-    IOLock*                  _cmdbyteLock;
-    
-    OSObject *               _interruptTargetKeyboard;
-    OSObject *               _interruptTargetMouse;
-    PS2InterruptAction       _interruptActionKeyboard;
-    PS2InterruptAction       _interruptActionMouse;
-    PS2PacketAction          _packetActionKeyboard;
-    PS2PacketAction          _packetActionMouse;
-    bool                     _interruptInstalledKeyboard;
-    bool                     _interruptInstalledMouse;
-    
-    OSObject *               _powerControlTargetKeyboard;
-    OSObject *               _powerControlTargetMouse;
-    PS2PowerControlAction    _powerControlActionKeyboard;
-    PS2PowerControlAction    _powerControlActionMouse;
-    bool                     _powerControlInstalledKeyboard;
-    bool                     _powerControlInstalledMouse;
-    
-    int                      _ignoreInterrupts;
-    int                      _ignoreOutOfOrder;
-    
-    OSObject*                _messageTargetKeyboard;
-    OSObject*                _messageTargetMouse;
-    PS2MessageAction         _messageActionKeyboard;
-    PS2MessageAction         _messageActionMouse;
-    bool                     _messageInstalledKeyboard;
-    bool                     _messageInstalledMouse;
-    
-    ApplePS2MouseDevice *    _mouseDevice;          // mouse nub
-    ApplePS2KeyboardDevice * _keyboardDevice;       // keyboard nub
-    
-#if DEBUGGER_SUPPORT
-    IOSimpleLock *           _controllerLock;       // mach simple spin lock
-    
-    KeyboardQueueElement *   _keyboardQueueAlloc;   // queues' allocation space
-    queue_head_t             _keyboardQueue;        // queue of available keys
-    queue_head_t             _keyboardQueueUnused;  // queue of unused entries
-    
-    bool                     _extendedState;
-    UInt16                   _modifierState;
-#endif //DEBUGGER_SUPPORT
-    
-    thread_call_t            _powerChangeThreadCall;
-    UInt32                   _currentPowerState;
-    bool                     _hardwareOffline;
-    bool   				   _suppressTimeout;
-#ifdef NEWIRQ
-    bool   				   _newIRQLayout;
-#endif
-    int                      _wakedelay;
-    bool                     _mouseWakeFirst;
-    IOCommandGate*           _cmdGate;
-#if WATCHDOG_TIMER
-    IOTimerEventSource*      _watchdogTimer;
-#endif
-    
-    virtual PS2InterruptResult _dispatchDriverInterrupt(PS2DeviceType deviceType, UInt8 data);
-    virtual void dispatchDriverInterrupt(PS2DeviceType deviceType, UInt8 data);
-#if HANDLE_INTERRUPT_DATA_LATER
-    virtual void  interruptOccurred(IOInterruptEventSource *, int);
-#else
-    void packetReadyMouse(IOInterruptEventSource*, int);
-    void packetReadyKeyboard(IOInterruptEventSource*, int);
-#endif
-    void handleInterrupt(PS2DeviceType deviceType);
-#if WATCHDOG_TIMER
-    void onWatchdogTimer();
-#endif
-    virtual void  processRequest(PS2Request * request);
-    virtual void  processRequestQueue(IOInterruptEventSource *, int);
-    
-    virtual UInt8 readDataPort(PS2DeviceType deviceType);
-    virtual void  writeCommandPort(UInt8 byte);
-    virtual void  writeDataPort(UInt8 byte);
-    void resetController(void);
-    
-    static void interruptHandlerMouse(OSObject*, void* refCon, IOService*, int);
-    static void interruptHandlerKeyboard(OSObject*, void* refCon, IOService*, int);
-    
-#if OUT_OF_ORDER_DATA_CORRECTION_FEATURE
-    virtual UInt8 readDataPort(PS2DeviceType deviceType, UInt8 expectedByte);
-#endif
-    
-    static void setPowerStateCallout(thread_call_param_t param0,
-                                     thread_call_param_t param1);
-    
-    static IOReturn setPowerStateAction(OSObject * target,
-                                        void * arg0, void * arg1,
-                                        void * arg2, void * arg3);
-    
-    virtual void setPowerStateGated(UInt32 newPowerState);
-    
-    virtual void dispatchDriverPowerControl(UInt32 whatToDo, PS2DeviceType deviceType);
-#if DEBUGGER_SUPPORT
-    void free(void) override;
-#endif
-    IOReturn setPropertiesGated(OSObject* props);
-    void submitRequestAndBlockGated(PS2Request* request);
+  typedef IOService super;
+  OSDeclareDefaultStructors(ApplePS2Controller);
     
 public:
-    bool init(OSDictionary * properties) override;
-    bool start(IOService * provider) override;
-    void stop(IOService * provider) override;
+  // interrupt-time variables and functions
+#if HANDLE_INTERRUPT_DATA_LATER
+  IOInterruptEventSource * _interruptSourceMouse {nullptr};
+  IOInterruptEventSource * _interruptSourceKeyboard {nullptr};
+#endif
+  IOInterruptEventSource * _interruptSourceQueue {nullptr};
+
+#if DEBUGGER_SUPPORT
+  bool _debuggingEnabled {false};
+
+  void lockController(int * state);
+  void unlockController(int state);
+
+  bool doEscape(UInt8 key);
+  bool dequeueKeyboardData(UInt8 * key);
+  void enqueueKeyboardData(UInt8 key);
+#endif //DEBUGGER_SUPPORT
+
+private:
+  IOWorkLoop *             _workLoop {nullptr};
+  queue_head_t             _requestQueue {nullptr};
+  IOLock*                  _requestQueueLock {nullptr};
+  IOLock*                  _cmdbyteLock {nullptr};
+
+  bool                     _interruptInstalledKeyboard {false};
+  int                      _interruptInstalledMouse {0};
+
+  int                      _ignoreInterrupts {0};
+  int                      _ignoreOutOfOrder {0};
     
-    IOWorkLoop * getWorkLoop() const override;
+  ApplePS2Device *         _devices [kPS2MuxMaxIdx] {nullptr};
+
+  IONotifier*              _publishNotify {nullptr};
+  IONotifier*              _terminateNotify {nullptr};
     
-    virtual void installInterruptAction(PS2DeviceType      deviceType,
-                                        OSObject *         target,
-                                        PS2InterruptAction interruptAction,
-                                        PS2PacketAction packetAction);
-    virtual void uninstallInterruptAction(PS2DeviceType deviceType);
+  OSSet*                   _notificationServices {nullptr};
     
-    virtual PS2Request*  allocateRequest(int max = kMaxCommands);
-    virtual void         freeRequest(PS2Request * request);
-    virtual bool         submitRequest(PS2Request * request);
-    virtual void         submitRequestAndBlock(PS2Request * request);
-    virtual UInt8        setCommandByte(UInt8 setBits, UInt8 clearBits);
-    void setCommandByteGated(PS2Request* request);
+#if DEBUGGER_SUPPORT
+  IOSimpleLock *           _controllerLock {nullptr};       // mach simple spin lock
+
+  KeyboardQueueElement *   _keyboardQueueAlloc {nullptr};   // queues' allocation space
+  queue_head_t             _keyboardQueue {nullptr};        // queue of available keys
+  queue_head_t             _keyboardQueueUnused {nullptr};  // queue of unused entries
+
+  bool                     _extendedState {false};
+  UInt16                   _modifierState {0};
+#endif //DEBUGGER_SUPPORT
+
+  thread_call_t            _powerChangeThreadCall {0};
+  UInt32                   _currentPowerState {kPS2PowerStateNormal};
+  bool                     _hardwareOffline {false};
+  bool                      _suppressTimeout {false};
+  int                      _wakedelay {10};
+  bool                     _mouseWakeFirst {false};
+  bool                     _muxPresent {false};
+  size_t                   _nubsCount {0};
+  IOCommandGate*           _cmdGate {nullptr};
+#if WATCHDOG_TIMER
+  IOTimerEventSource*      _watchdogTimer {nullptr};
+#endif
+  OSDictionary*            _rmcfCache {nullptr};
+  const OSSymbol*          _deliverNotification {nullptr};
+
+  int                      _resetControllerFlag {RESET_CONTROLLER_ON_BOOT | RESET_CONTROLLER_ON_WAKEUP};
+
+  virtual PS2InterruptResult _dispatchDriverInterrupt(size_t port, UInt8 data);
+  virtual void dispatchDriverInterrupt(size_t port, UInt8 data);
+#if HANDLE_INTERRUPT_DATA_LATER
+  virtual void  interruptOccurred(IOInterruptEventSource *, int);
+#endif
+  void handleInterrupt(bool watchdog = false);
+#if WATCHDOG_TIMER
+  void onWatchdogTimer();
+#endif
+  virtual void  processRequest(PS2Request * request);
+  virtual void  processRequestQueue(IOInterruptEventSource *, int);
+
+#if OUT_OF_ORDER_DATA_CORRECTION_FEATURE
+  virtual UInt8 readDataPort(size_t port, UInt8 expectedByte);
+#endif
+
+  virtual UInt8 readDataPort(size_t port);
+  virtual void  writeCommandPort(UInt8 byte);
+  virtual void  writeDataPort(UInt8 byte);
+  void resetController(bool);
+  bool setMuxMode(bool);
+  void flushDataPort(void);
+  void resetDevices(void);
     
-    IOReturn setPowerState(unsigned long powerStateOrdinal,
-                                   IOService *   policyMaker) override;
+  static void interruptHandlerMouse(OSObject*, void* refCon, IOService*, int);
+  static void interruptHandlerKeyboard(OSObject*, void* refCon, IOService*, int);
+   
+  void notificationHandlerPublishGated(IOService * newService, IONotifier * notifier);
+  bool notificationHandlerPublish(void * refCon, IOService * newService, IONotifier * notifier);
     
-    virtual void installPowerControlAction(PS2DeviceType         deviceType,
-                                           OSObject *            target,
-                                           PS2PowerControlAction action);
+  void notificationHandlerTerminateGated(IOService * newService, IONotifier * notifier);
+  bool notificationHandlerTerminate(void * refCon, IOService * newService, IONotifier * notifier);
+
+  void dispatchMessageGated(int* message, void* data);
     
-    virtual void uninstallPowerControlAction(PS2DeviceType deviceType);
+  static void setPowerStateCallout(thread_call_param_t param0,
+                                   thread_call_param_t param1);
+
+  static IOReturn setPowerStateAction(OSObject * target,
+                                      void * arg0, void * arg1,
+                                      void * arg2, void * arg3);
+
+  virtual void setPowerStateGated(UInt32 newPowerState);
+
+  virtual void dispatchDriverPowerControl(UInt32 whatToDo, size_t port);
+  void free(void) override;
+  IOReturn setPropertiesGated(OSObject* props);
+  void submitRequestAndBlockGated(PS2Request* request);
+  
+  size_t getPortFromStatus(UInt8 status);
+
+public:
+  bool init(OSDictionary * properties) override;
+  ApplePS2Controller* probe(IOService* provider, SInt32* score) override;
+  bool start(IOService * provider) override;
+  void stop(IOService * provider) override;
+
+  IOWorkLoop * getWorkLoop() const override;
+
+  void enableMuxPorts();
+  virtual void installInterruptAction(size_t port);
+  virtual void uninstallInterruptAction(size_t port);
+
+  virtual PS2Request*  allocateRequest(int max = kMaxCommands);
+  virtual void         freeRequest(PS2Request * request);
+  virtual bool         submitRequest(PS2Request * request);
+  virtual void         submitRequestAndBlock(PS2Request * request);
+  virtual UInt8        setCommandByte(UInt8 setBits, UInt8 clearBits);
+  void setCommandByteGated(PS2Request* request);
+
+  IOReturn setPowerState(unsigned long powerStateOrdinal,
+                                 IOService *   policyMaker) override;
     
-    virtual void installMessageAction(PS2DeviceType         deviceType,
-                                      OSObject *            target,
-                                      PS2MessageAction action);
+  virtual void dispatchMessage(int message, void* data);
     
-    virtual void uninstallMessageAction(PS2DeviceType deviceType);
-    virtual void dispatchMessage(PS2DeviceType deviceType, int message, void* data);
+  IOReturn setProperties(OSObject* props) override;
+  virtual void lock();
+  virtual void unlock();
     
-    IOReturn setProperties(OSObject* props) override;
-    virtual void lock();
-    virtual void unlock();
-    
-    static OSDictionary* getConfigurationNode(OSDictionary* list, OSString* model = 0);
-    static OSDictionary* makeConfigurationNode(OSDictionary* list, OSString* model = 0);
+  static OSDictionary* getConfigurationNode(IORegistryEntry* entry, OSDictionary* list);
+  virtual OSDictionary* makeConfigurationNode(OSDictionary* list, const char* section);
+
+  OSDictionary* getConfigurationOverride(IOACPIPlatformDevice* acpi, const char* method);
+  OSObject* translateArray(OSArray* array);
+  OSObject* translateEntry(OSObject* obj);
 };
 
 #endif /* _APPLEPS2CONTROLLER_H */

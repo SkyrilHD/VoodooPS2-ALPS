@@ -2,14 +2,14 @@
  * Copyright (c) 2005 Apple Computer, Inc. All rights reserved.
  *
  * @APPLE_LICENSE_HEADER_START@
- * 
+ *
  * This file contains Original Code and/or Modifications of Original Code
  * as defined in and that are subject to the Apple Public Source License
  * Version 2.0 (the 'License'). You may not use this file except in
  * compliance with the License. Please obtain a copy of the License at
  * http://www.opensource.apple.com/apsl/ and read it before using this
  * file.
- * 
+ *
  * The Original Code and all software distributed under the License are
  * distributed on an 'AS IS' basis, WITHOUT WARRANTY OF ANY KIND, EITHER
  * EXPRESS OR IMPLIED, AND APPLE HEREBY DISCLAIMS ALL SUCH WARRANTIES,
@@ -17,7 +17,7 @@
  * FITNESS FOR A PARTICULAR PURPOSE, QUIET ENJOYMENT OR NON-INFRINGEMENT.
  * Please see the License for the specific language governing rights and
  * limitations under the License.
- * 
+ *
  * @APPLE_LICENSE_HEADER_END@
  */
 /*! @file       AppleACPIPS2Nub.h
@@ -35,9 +35,9 @@
 #include <IOKit/IOPlatformExpert.h>
 #include <IOKit/acpi/IOACPITypes.h>
 
-#define EXPORT __attribute__((visibility("default")))
+#include "ApplePS2Device.h"
 
-#define kDeliverNotifications   "RM,deliverNotifications"
+#define EXPORT __attribute__((visibility("default")))
 
 class IOPlatformExpert;
 
@@ -86,6 +86,7 @@ private:
 
 public:
     bool start(IOService *provider) override;
+    void stop(IOService *provider) override;
 
     /*! @method     findMouseDevice
         @abstract   Locates the mouse nub in the IORegistry
@@ -114,8 +115,8 @@ public:
         This has to be done for every *Interrupt* method
      */
     IOReturn registerInterrupt(int source, OSObject *target,
-				       IOInterruptAction handler,
-				       void *refCon = 0) override;
+                       IOInterruptAction handler,
+                       void *refCon = 0) override;
     IOReturn unregisterInterrupt(int source) override;
     IOReturn getInterruptType(int source, int *interruptType) override;
     IOReturn enableInterrupt(int source) override;
