@@ -3062,6 +3062,8 @@ bool ALPS::alps_hw_init_ss4_v2()
 }
 
 void ALPS::set_protocol() {
+    setProperty("ALPS Version", priv.proto_version, 32);
+    
     priv.byte0 = 0x8f;
     priv.mask0 = 0x8f;
     priv.flags = ALPS_DUALPOINT;
