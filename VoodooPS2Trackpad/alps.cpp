@@ -3448,6 +3448,14 @@ void ALPS::alps_buttons(struct alps_fields &f)
         else if (prev_left && !left)
             dispatchRelativePointerEvent(0, 0, 0x00, timestamp);
     }
+    /*
+    // FOR DEBUGGING PURPOSES
+    // Allow Clickpads to report left click as well
+    if (left && !prev_left)
+        dispatchRelativePointerEvent(0, 0, 0x01, timestamp);
+    else if (prev_left && !left)
+        dispatchRelativePointerEvent(0, 0, 0x00, timestamp);
+    */
     // Physical right button (non-passthrough)
     if (right && !prev_right)
         dispatchRelativePointerEvent(0, 0, 0x02, timestamp);
