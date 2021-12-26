@@ -1,7 +1,18 @@
 VoodooPS2 Changelog
 ============================
 #### v1.0.5
-- sync code from acidanthera
+- synced code from acidanthera
+    - updated project settings
+    - keyboard and trackpad can be disabled via Cmd + PrtScr key combo
+    - trackpad can be resetted by pressing Ctrl + Alt + PrtScr (useful for those who have broken trackpad after sleep)
+    - PrntScr remap is disabled by default -> re-enable with SSDT-PrtSc-Remap.dsl
+    - added NumLock support
+- renamed VoodooPS2Controller and VoodooPS2Keyboard BundleIdentifier as acidanthera
+- cleaned up project file
+- set minimum version to 10.11 (El Capitan)
+- resolution of touchpad gets saved as property
+- touchpad version gets saved as property
+
 
 #### v1.0.4
 - fixed random finger jumps with 2 fingers on V7
