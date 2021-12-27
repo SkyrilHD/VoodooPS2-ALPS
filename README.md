@@ -10,7 +10,7 @@ The aim of this driver is to improve the usability of ALPS touchpads in macOS an
 
 - Supports ALPS hardware version V7
     - not supported/tested: V1, V2, V3, V5, V6, V8
-- Supports macOS 10.11 to 11.0
+- Supports macOS 10.11 to 12.0
 - Look up & data detectors
 - Secondary click (with two fingers, in bottom left corner, in bottom right corner)
 - Tap to click
