@@ -7,7 +7,7 @@ VoodooPS2 Changelog
     - trackpad can be resetted by pressing Ctrl + Alt + PrtScr (useful for those who have broken trackpad after sleep)
     - PrntScr remap is disabled by default -> re-enable with SSDT-PrtSc-Remap.dsl
     - added NumLock support
-- renamed VoodooPS2Controller and VoodooPS2Keyboard BundleIdentifier as acidanthera
+- renamed VoodooPS2Controller and VoodooPS2Keyboard BundleIdentifier to acidanthera
 - cleaned up project file
 - set minimum version to 10.11 (El Capitan)
 - resolution of touchpad gets saved as property
