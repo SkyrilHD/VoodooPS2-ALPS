@@ -2817,7 +2817,7 @@ error:
     return false;
 }
 
-void ALPS::alps_get_otp_values_ss4_v2(unsigned char index)
+void ALPS::alps_get_otp_values_ss4_v2(unsigned char index, unsigned char otp[])
 {
     int cmd = 0;
     TPS2Request<4> request;
@@ -2839,12 +2839,11 @@ void ALPS::alps_get_otp_values_ss4_v2(unsigned char index)
             assert(request.commandsCount <= countof(request.commands));
             _device->submitRequestAndBlock(&request);
             
-            /*
             // SkyrilHD: Is this correct?
             otp[0] = request.commands[1].inOrOut;
             otp[1] = request.commands[2].inOrOut;
             otp[2] = request.commands[3].inOrOut;
-            */
+            
             break;
             
         case 1:
@@ -2862,12 +2861,12 @@ void ALPS::alps_get_otp_values_ss4_v2(unsigned char index)
             request.commandsCount = cmd;
             assert(request.commandsCount <= countof(request.commands));
             _device->submitRequestAndBlock(&request);
-            /*
+            
             // SkyrilHD: Is this correct?
             otp[0] = request.commands[1].inOrOut;
             otp[1] = request.commands[2].inOrOut;
             otp[2] = request.commands[3].inOrOut;
-            */
+            
             break;
     }
 }
@@ -2959,7 +2958,6 @@ void ALPS::alps_update_dual_info_ss4_v2(unsigned char otp[][4], struct alps_data
 
 void ALPS::alps_set_defaults_ss4_v2(struct alps_data *priv)
 {
-    /*
     unsigned char otp[2][4];
     
     memset(otp, 0, sizeof(otp));
@@ -2972,9 +2970,6 @@ void ALPS::alps_set_defaults_ss4_v2(struct alps_data *priv)
     alps_update_btn_info_ss4_v2(otp, priv);
     
     alps_update_dual_info_ss4_v2(otp, priv);
-    */
-    alps_get_otp_values_ss4_v2(0);
-    alps_get_otp_values_ss4_v2(1);
 }
 
 int ALPS::alps_dolphin_get_device_area(struct alps_data *priv)
