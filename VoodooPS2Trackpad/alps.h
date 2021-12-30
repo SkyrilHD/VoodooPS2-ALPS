@@ -658,7 +658,7 @@ protected:
     
     bool alps_hw_init_v4();
     
-    void alps_get_otp_values_ss4_v2(unsigned char index, unsigned char otp[]);
+    void alps_get_otp_values_ss4_v2(unsigned char index);
     
     void alps_update_device_area_ss4_v2(unsigned char otp[][4], struct alps_data *priv);
     
