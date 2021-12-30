@@ -3237,31 +3237,9 @@ void ALPS::set_protocol() {
             priv.mask0 = 0x18;
             priv.flags = 0;
             
-            // SkyrilHD: This should be removed and the touchpad should pass its information to the driver.
-            //           Do not hard-code the functionality of the touchpad.
-            //TODO: V8: add detection of tarckstick using the "alps_set_defaults_ss4_v2(&priv)" funtcion
-            if (priv.fw_ver[1] == 0x1) {
-                // buttons and trackpad
-                priv.x_max = 8160;
-                priv.y_max = 4080;
-                priv.flags |= ALPS_DUALPOINT |
-                ALPS_DUALPOINT_WITH_PRESSURE;
-                setProperty("Clickpad", kOSBooleanFalse);
-                IOLog("ALPS: TrackStick detected... (WARNING: V8 TrackStick disabled)\n");
-                
-            } else {
-                // buttonless
-                priv.x_max = 8176;
-                priv.y_max = 4088;
-                // This flag is a hit-or-miss as some touchpads can have a buttonpad.
-                //priv.flags |= ALPS_BUTTONPAD;
-                setProperty("Clickpad", kOSBooleanTrue);
-                IOLog("ALPS: ButtonPad Detected...\n");
-            }
+            alps_set_defaults_ss4_v2(&priv);
             
             set_resolution();
-            
-            alps_set_defaults_ss4_v2(&priv);
             break;
     }
 }
