@@ -3272,6 +3272,7 @@ void ALPS::set_protocol() {
                 priv.y_max = 4080;
                 priv.flags |= ALPS_DUALPOINT |
                 ALPS_DUALPOINT_WITH_PRESSURE;
+                setProperty("Clickpad", kOSBooleanFalse);
                 IOLog("ALPS: TrackStick detected... (WARNING: V8 TrackStick disabled)\n");
                 
             } else {
@@ -3279,6 +3280,7 @@ void ALPS::set_protocol() {
                 priv.x_max = 8176;
                 priv.y_max = 4088;
                 priv.flags |= ALPS_BUTTONPAD;
+                setProperty("Clickpad", kOSBooleanTrue);
                 IOLog("ALPS: ButtonPad Detected...\n");
             }
             
