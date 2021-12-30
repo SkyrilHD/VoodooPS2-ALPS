@@ -759,8 +759,6 @@ protected:
     int _buttonCount;
     int minXOverride, minYOverride, maxXOverride, maxYOverride;
     int bogusdxthresh, bogusdythresh;
-    int manual_x_log, manual_y_log;
-    int manual_x_phy, manual_y_phy;
     
     int rightclick_corner;
 

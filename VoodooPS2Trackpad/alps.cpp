@@ -2921,11 +2921,11 @@ void ALPS::alps_update_device_area_ss4_v2(unsigned char otp[][4], struct alps_da
    setProperty("X Res", priv->x_res, 32);
    setProperty("Y Res", priv->y_res, 32);
     
-    physical_max_x = priv->x_max * manual_x_phy;
-    physical_max_y = priv->y_max * manual_y_phy;
+    physical_max_x = priv->x_max;// * manual_x_phy;
+    physical_max_y = priv->y_max;// * manual_y_phy;
     
-    logical_max_x = priv->x_max * manual_x_log;
-    logical_max_y = priv->y_max * manual_y_log;
+    logical_max_x = priv->x_max;// * manual_x_log;
+    logical_max_y = priv->y_max;// * manual_y_log;
     
     setProperty(VOODOO_INPUT_LOGICAL_MAX_X_KEY, logical_max_x - logical_min_x, 32);
     setProperty(VOODOO_INPUT_LOGICAL_MAX_Y_KEY, logical_max_y - logical_min_y, 32);
@@ -4264,10 +4264,6 @@ void ALPS::setParamPropertiesGated(OSDictionary * config)
         {"ForceTouchCustomDownThreshold",   &_forceTouchCustomDownThreshold}, // used in mode 4
         {"ForceTouchCustomUpThreshold",     &_forceTouchCustomUpThreshold}, // used in mode 4
         {"ForceTouchCustomPower",           &_forceTouchCustomPower}, // used in mode 4
-        {"LogicalXMultiplier",              &manual_x_log},
-        {"LogicalYMultiplier",              &manual_y_log},
-        {"PhysicalXMultiplier",             &manual_x_phy},
-        {"PhysicalYMultiplier",             &manual_y_phy},
     };
     /*
     const struct {const char *name; int *var;} boolvars[]={

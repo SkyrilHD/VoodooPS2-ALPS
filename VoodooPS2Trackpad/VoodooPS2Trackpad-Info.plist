@@ -73,14 +73,6 @@
 					<integer>0</integer>
 					<key>ForceTouchPressureThreshold</key>
 					<integer>100</integer>
-					<key>LogicalXMultiplier</key>
-					<integer>1</integer>
-					<key>LogicalYMultiplier</key>
-					<integer>1</integer>
-					<key>PhysicalXMultiplier</key>
-					<integer>1</integer>
-					<key>PhysicalYMultiplier</key>
-					<integer>1</integer>
 					<key>QuietTimeAfterTyping</key>
 					<integer>500000000</integer>
 					<key>Resolution</key>
