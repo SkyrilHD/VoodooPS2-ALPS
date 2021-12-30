@@ -2962,8 +2962,8 @@ void ALPS::alps_set_defaults_ss4_v2(struct alps_data *priv)
     
     memset(otp, 0, sizeof(otp));
     
-    alps_get_otp_values_ss4_v2(0, &otp[1][0]);
-    alps_get_otp_values_ss4_v2(1, &otp[0][0]);
+    alps_get_otp_values_ss4_v2(1, &otp[1][0]);
+    alps_get_otp_values_ss4_v2(0, &otp[0][0]);
     
     alps_update_device_area_ss4_v2(otp, priv);
     
