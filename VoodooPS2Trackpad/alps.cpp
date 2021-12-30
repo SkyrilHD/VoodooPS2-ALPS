@@ -3282,6 +3282,8 @@ void ALPS::set_protocol() {
                 IOLog("ALPS: ButtonPad Detected...\n");
             }
             
+            set_resolution();
+            
             alps_set_defaults_ss4_v2(&priv);
             break;
     }
