@@ -1837,10 +1837,6 @@ void ALPS::alps_process_packet_ss4_v2(UInt8 *packet) {
         f.mt[0].y = f.mt[0].y * xupmm / yupmm;
     }
     
-    /* Dr Hurt: Scale all touchpads' axes to 6000 to be able to the same divisors for all models */
-    f.mt[0].x *= (6000 / ((priv.x_max + priv.y_max)/2));
-    f.mt[1].y *= (6000 / ((priv.x_max + priv.y_max)/2));
-    
     // get fingercounts from packets
     int fingers = 0;
     
