@@ -1649,7 +1649,7 @@ bool ALPS::alps_decode_ss4_v2(struct alps_fields *f, UInt8 *p){
                 f->mt[0].y = SS4_STD_MF_Y_V2(p, 0);
                 f->mt[1].y = SS4_STD_MF_Y_V2(p, 1);
             }
-            DEBUG_LOG("ALPS: Coordinates for SS4_PACKET_ID_TWO: %dx%d\n", f->mt[0].x, f->mt[0].y);
+            DEBUG_LOG("ALPS: Coordinates for SS4_PACKET_ID_TWO: [0]:%dx%d [1]:%dx%d\n", f->mt[0].x, f->mt[0].y, f->mt[1].x, f->mt[1].y);
             f->pressure = SS4_MF_Z_V2(p, 0) ? 0x30 : 0;
             
             if (SS4_IS_MF_CONTINUE(p)) {
