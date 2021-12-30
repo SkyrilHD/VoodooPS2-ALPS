@@ -1846,7 +1846,9 @@ void ALPS::alps_process_packet_ss4_v2(UInt8 *packet) {
     if (fingers >= 2) {
         fingerStates[1].x = f.mt[1].x;
         fingerStates[1].y = f.mt[1].y;
-        fingerStates[1].z = f.pressure;
+        // Maybe TODO: Add pressure support
+        // Disable pressure report, otherwise finger counting does not work.
+        fingerStates[1].z = 0;
         
         if (fingerStates[1].x > X_MAX_POSITIVE)
             fingerStates[1].x -= 1 << ABS_POS_BITS;
@@ -1862,7 +1864,9 @@ void ALPS::alps_process_packet_ss4_v2(UInt8 *packet) {
     // my port of synaptics_parse_hw_state from synaptics.c from Linux Kernel
     fingerStates[0].x = f.mt[0].x;
     fingerStates[0].y = f.mt[0].y;
-    fingerStates[0].z = f.pressure;
+    // Maybe TODO: Add pressure support
+    // Disable pressure report, otherwise finger counting does not work.
+    fingerStates[0].z = 0;
     
     DEBUG_LOG("ALPS: fingerStates[0] report: x: %d, y: %d, z: %d\n", fingerStates[0].x, fingerStates[0].y, fingerStates[0].z);
     
