@@ -1859,6 +1859,8 @@ void ALPS::alps_process_packet_ss4_v2(UInt8 *packet) {
             fingerStates[1].y -= 1 << ABS_POS_BITS;
         else if (fingerStates[1].y == Y_MAX_POSITIVE)
             fingerStates[1].y = YMAX;
+        
+        DEBUG_LOG("ALPS: fingerStates[1] report: x: %d, y: %d, z: %d\n", fingerStates[1].x, fingerStates[1].y, fingerStates[1].z);
     }
     // normal "packet"
     // my port of synaptics_parse_hw_state from synaptics.c from Linux Kernel
