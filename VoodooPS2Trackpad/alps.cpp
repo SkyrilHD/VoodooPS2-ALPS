@@ -1818,12 +1818,6 @@ void ALPS::alps_process_packet_ss4_v2(UInt8 *packet) {
         return;
     }
     
-    // MARK: Remove later
-    /* Report touchpad */
-    //buttons |= f.left ? 0x01 : 0;
-    //buttons |= f.right ? 0x02 : 0;
-    //buttons |= f.middle ? 0x04 : 0;
-    
     /* Reverse y co-ordinates to have 0 at bottom for gestures to work */
     f.mt[0].y = priv.y_max - f.mt[0].y;
     f.mt[1].y = priv.y_max - f.mt[1].y;
