@@ -1829,7 +1829,6 @@ void ALPS::alps_process_packet_ss4_v2(UInt8 *packet) {
     
     DEBUG_LOG("ALPS: There are currently %d fingers in alps_process_packet_ss4_v2\n", f.fingers);
     
-    // TODO: maybe move this to alps_parse_hw_state
     // scale x & y to the axis which has the most resolution
     if (xupmm < yupmm) {
         f.mt[0].x = f.mt[0].x * yupmm / xupmm;
