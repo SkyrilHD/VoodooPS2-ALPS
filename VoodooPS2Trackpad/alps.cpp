@@ -3279,7 +3279,8 @@ void ALPS::set_protocol() {
                 // buttonless
                 priv.x_max = 8176;
                 priv.y_max = 4088;
-                priv.flags |= ALPS_BUTTONPAD;
+                // This flag is a hit-or-miss as some touchpads can have a buttonpad.
+                //priv.flags |= ALPS_BUTTONPAD;
                 setProperty("Clickpad", kOSBooleanTrue);
                 IOLog("ALPS: ButtonPad Detected...\n");
             }
