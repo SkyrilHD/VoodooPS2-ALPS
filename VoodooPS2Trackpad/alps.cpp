@@ -1944,7 +1944,7 @@ PS2InterruptResult ALPS::interruptOccurred(UInt8 data) {
     if (priv.proto_version != ALPS_PROTO_V8 &&
         (packet[0] & 0xc8) == 0x08) {
         if (_packetByteCount == 3) {
-            DEBUG_LOG("ALPS: V8: Dealing with bare PS/2 packet");
+            DEBUG_LOG("ALPS: Dealing with bare PS/2 packet\n");
             //dispatchRelativePointerEventWithPacket(packet, kPacketLengthSmall); //Dr Hurt: allow this?
             priv.PSMOUSE_BAD_DATA = true;
             _ringBuffer.advanceHead(priv.pktsize);
