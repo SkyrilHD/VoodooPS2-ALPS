@@ -12,6 +12,15 @@ VoodooPS2 Changelog
 - set minimum version to 10.11 (El Capitan)
 - resolution of touchpad gets saved as property
 - touchpad version gets saved as property
+- added support for V8 touchpads (huge thanks to forte500 for testing)
+    - made V8 independent from alps_parse_hw_state
+    - removed scaling for V8 touchpads
+    - disabled pressure report for V8 touchpads
+    - added more logging for V8
+- removed resolution multiplier which was used on V8 for debugging reasons
+- added 'Clickpad' property
+- disabled 'Clickpad' report as it is hard-coded
+- disabled otp (temporarily)
 
 
 #### v1.0.4
