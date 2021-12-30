@@ -3265,6 +3265,8 @@ void ALPS::set_protocol() {
             priv.mask0 = 0x18;
             priv.flags = 0;
             
+            // SkyrilHD: This should be removed and the touchpad should pass its information to the driver.
+            //           Do not hard-code the functionality of the touchpad.
             //TODO: V8: add detection of tarckstick using the "alps_set_defaults_ss4_v2(&priv)" funtcion
             if (priv.fw_ver[1] == 0x1) {
                 // buttons and trackpad
