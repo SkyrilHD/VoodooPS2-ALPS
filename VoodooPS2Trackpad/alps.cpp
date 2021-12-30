@@ -1693,6 +1693,7 @@ bool ALPS::alps_decode_ss4_v2(struct alps_fields *f, UInt8 *p){
                 f->mt[2].y = SS4_STD_MF_Y_V2(p, 0);
                 f->mt[3].y = SS4_STD_MF_Y_V2(p, 1);
             }
+            DEBUG_LOG("ALPS: Coordinates for SS4_PACKET_ID_MULTI: [2]:%dx%d [3]:%dx%d\n", f->mt[2].x, f->mt[2].y, f->mt[3].x, f->mt[3].y);
             
             f->first_mp = 0;
             f->is_mp = 1;
