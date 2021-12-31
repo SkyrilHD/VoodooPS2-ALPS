@@ -2875,7 +2875,9 @@ void ALPS::alps_update_device_area_ss4_v2(unsigned char otp[][4], struct alps_da
     int num_x_electrode;
     int num_y_electrode;
     int x_pitch, y_pitch, x_phys, y_phys;
+    
     DEBUG_LOG("ALPS: Accessing 'Update Device Area'\n");
+    
     if (IS_SS4PLUS_DEV(priv->dev_id)) {
         DEBUG_LOG("ALPS: Device is SS4_PLUS\n");
         num_x_electrode = SS4PLUS_NUMSENSOR_XOFFSET + (otp[0][2] & 0x0F);
