@@ -19,8 +19,12 @@ VoodooPS2 Changelog
     - added more logging for V8
 - removed resolution multiplier which was used on V8 for debugging reasons
 - added 'Clickpad' property
-- disabled 'Clickpad' report as it is hard-coded
-- disabled otp (temporarily)
+- removed hard-coded capabilities of V8 touchpads
+- Fixed an issue where otp values were stored in the wrong otp
+- specified cmd manually on V8
+- removed workaround for making trackpad larger on V8
+- added 'Trackpoint' property for V8 touchpads
+- added 'X/Y Max' and 'X/Y Res' property for V8 touchpads
 
 
 #### v1.0.4
