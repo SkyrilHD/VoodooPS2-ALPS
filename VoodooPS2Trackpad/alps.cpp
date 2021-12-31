@@ -2906,6 +2906,11 @@ void ALPS::alps_update_device_area_ss4_v2(unsigned char otp[][4], struct alps_da
     
     priv->x_res = priv->x_max * 10 / x_phys; /* units / mm */
     priv->y_res = priv->y_max * 10 / y_phys; /* units / mm */
+    
+    setProperty("X Max", priv->x_max, 32);
+    setProperty("Y Max", priv->y_max, 32);
+    setProperty("X Res", priv->x_res, 32);
+    setProperty("Y Res", priv->y_res, 32);
 }
 
 void ALPS::alps_update_btn_info_ss4_v2(unsigned char otp[][4], struct alps_data *priv)
@@ -2919,6 +2924,14 @@ void ALPS::alps_update_btn_info_ss4_v2(unsigned char otp[][4], struct alps_data 
     
     if (is_btnless)
         priv->flags |= ALPS_BUTTONPAD;
+    
+    if (is_btnless)
+    {
+        setProperty("Clickpad", kOSBooleanTrue);
+    } else
+    {
+        setProperty("Clickpad", kOSBooleanFalse);
+    }
 }
 
 void ALPS::alps_update_dual_info_ss4_v2(unsigned char otp[][4], struct alps_data *priv)
@@ -2945,6 +2958,14 @@ void ALPS::alps_update_dual_info_ss4_v2(unsigned char otp[][4], struct alps_data
     if (is_dual)
         priv->flags |= ALPS_DUALPOINT |
         ALPS_DUALPOINT_WITH_PRESSURE;
+    
+    if (is_dual)
+    {
+        setProperty("Trackpoint", kOSBooleanTrue);
+    } else
+    {
+        setProperty("Trackpoint", kOSBooleanFalse);
+    }
 }
 
 void ALPS::alps_set_defaults_ss4_v2(struct alps_data *priv)
