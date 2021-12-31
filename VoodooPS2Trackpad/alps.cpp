@@ -2878,30 +2878,22 @@ void ALPS::alps_update_device_area_ss4_v2(unsigned char otp[][4], struct alps_da
     DEBUG_LOG("ALPS: Accessing 'Update Device Area'\n");
     if (IS_SS4PLUS_DEV(priv->dev_id)) {
         DEBUG_LOG("ALPS: Device is SS4_PLUS\n");
-        num_x_electrode =
-        SS4PLUS_NUMSENSOR_XOFFSET + (otp[0][2] & 0x0F);
-        num_y_electrode =
-        SS4PLUS_NUMSENSOR_YOFFSET + ((otp[0][2] >> 4) & 0x0F);
+        num_x_electrode = SS4PLUS_NUMSENSOR_XOFFSET + (otp[0][2] & 0x0F);
+        num_y_electrode = SS4PLUS_NUMSENSOR_YOFFSET + ((otp[0][2] >> 4) & 0x0F);
         
-        priv->x_max =
-        (num_x_electrode - 1) * SS4PLUS_COUNT_PER_ELECTRODE;
-        priv->y_max =
-        (num_y_electrode - 1) * SS4PLUS_COUNT_PER_ELECTRODE;
+        priv->x_max = (num_x_electrode - 1) * SS4PLUS_COUNT_PER_ELECTRODE;
+        priv->y_max = (num_y_electrode - 1) * SS4PLUS_COUNT_PER_ELECTRODE;
         
         x_pitch = (otp[0][1] & 0x0F) + SS4PLUS_MIN_PITCH_MM;
         y_pitch = ((otp[0][1] >> 4) & 0x0F) + SS4PLUS_MIN_PITCH_MM;
         
     } else {
         DEBUG_LOG("ALPS: Device is SS4\n");
-        num_x_electrode =
-        SS4_NUMSENSOR_XOFFSET + (otp[1][0] & 0x0F);
-        num_y_electrode =
-        SS4_NUMSENSOR_YOFFSET + ((otp[1][0] >> 4) & 0x0F);
+        num_x_electrode = SS4_NUMSENSOR_XOFFSET + (otp[1][0] & 0x0F);
+        num_y_electrode = SS4_NUMSENSOR_YOFFSET + ((otp[1][0] >> 4) & 0x0F);
         
-        priv->x_max =
-        (num_x_electrode - 1) * SS4_COUNT_PER_ELECTRODE;
-        priv->y_max =
-        (num_y_electrode - 1) * SS4_COUNT_PER_ELECTRODE;
+        priv->x_max = (num_x_electrode - 1) * SS4_COUNT_PER_ELECTRODE;
+        priv->y_max = (num_y_electrode - 1) * SS4_COUNT_PER_ELECTRODE;
         
         x_pitch = ((otp[1][2] >> 2) & 0x07) + SS4_MIN_PITCH_MM;
         y_pitch = ((otp[1][2] >> 5) & 0x07) + SS4_MIN_PITCH_MM;
