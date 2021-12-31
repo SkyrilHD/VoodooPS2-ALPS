@@ -2819,7 +2819,6 @@ error:
 
 void ALPS::alps_get_otp_values_ss4_v2(unsigned char index, unsigned char otp[])
 {
-    int cmd = 0;
     TPS2Request<4> request;
     
     switch (index) {
@@ -2827,15 +2826,15 @@ void ALPS::alps_get_otp_values_ss4_v2(unsigned char index, unsigned char otp[])
             ps2_command_short(kDP_SetMouseStreamMode);
             ps2_command_short(kDP_SetMouseStreamMode);
             
-            request.commands[cmd].command = kPS2C_SendCommandAndCompareAck;
-            request.commands[cmd++].inOrOut = kDP_GetMouseInformation;
-            request.commands[cmd].command = kPS2C_ReadDataPort;
-            request.commands[cmd++].inOrOut = 0;
-            request.commands[cmd].command = kPS2C_ReadDataPort;
-            request.commands[cmd++].inOrOut = 0;
-            request.commands[cmd].command = kPS2C_ReadDataPort;
-            request.commands[cmd++].inOrOut = 0;
-            request.commandsCount = cmd;
+            request.commands[0].command = kPS2C_SendCommandAndCompareAck;
+            request.commands[0].inOrOut = kDP_GetMouseInformation;
+            request.commands[1].command = kPS2C_ReadDataPort;
+            request.commands[1].inOrOut = 0;
+            request.commands[2].command = kPS2C_ReadDataPort;
+            request.commands[2].inOrOut = 0;
+            request.commands[3].command = kPS2C_ReadDataPort;
+            request.commands[3].inOrOut = 0;
+            request.commandsCount = 4;
             assert(request.commandsCount <= countof(request.commands));
             _device->submitRequestAndBlock(&request);
             
@@ -2850,15 +2849,15 @@ void ALPS::alps_get_otp_values_ss4_v2(unsigned char index, unsigned char otp[])
             ps2_command_short(kDP_MouseSetPoll);
             ps2_command_short(kDP_MouseSetPoll);
             
-            request.commands[cmd].command = kPS2C_SendCommandAndCompareAck;
-            request.commands[cmd++].inOrOut = kDP_GetMouseInformation;
-            request.commands[cmd].command = kPS2C_ReadDataPort;
-            request.commands[cmd++].inOrOut = 0;
-            request.commands[cmd].command = kPS2C_ReadDataPort;
-            request.commands[cmd++].inOrOut = 0;
-            request.commands[cmd].command = kPS2C_ReadDataPort;
-            request.commands[cmd++].inOrOut = 0;
-            request.commandsCount = cmd;
+            request.commands[0].command = kPS2C_SendCommandAndCompareAck;
+            request.commands[0].inOrOut = kDP_GetMouseInformation;
+            request.commands[1].command = kPS2C_ReadDataPort;
+            request.commands[1].inOrOut = 0;
+            request.commands[2].command = kPS2C_ReadDataPort;
+            request.commands[2].inOrOut = 0;
+            request.commands[3].command = kPS2C_ReadDataPort;
+            request.commands[3].inOrOut = 0;
+            request.commandsCount = 4;
             assert(request.commandsCount <= countof(request.commands));
             _device->submitRequestAndBlock(&request);
             
