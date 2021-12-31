@@ -3444,8 +3444,8 @@ void ALPS::ps2_command_short(UInt8 command)
 
 void ALPS::set_resolution() {
     if (priv.proto_version & ALPS_PROTO_V8) {
-        priv.x_max *= 0.6; // this number was determined experimentally
-        priv.y_max *= 0.7; // this number was determined experimentally
+        //priv.x_max *= 0.6; // this number was determined experimentally
+        //priv.y_max *= 0.65; // this number was determined experimentally
     }
     
     physical_max_x = priv.x_max * 4; // this number was determined experimentally
