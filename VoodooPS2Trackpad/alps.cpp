@@ -2817,9 +2817,8 @@ error:
     return false;
 }
 
-void ALPS::alps_get_otp_values_ss4_v2(unsigned char index)
+void ALPS::alps_get_otp_values_ss4_v2(unsigned char index, unsigned char otp[])
 {
-    int cmd = 0;
     TPS2Request<4> request;
     
     switch (index) {
@@ -2827,47 +2826,46 @@ void ALPS::alps_get_otp_values_ss4_v2(unsigned char index)
             ps2_command_short(kDP_SetMouseStreamMode);
             ps2_command_short(kDP_SetMouseStreamMode);
             
-            request.commands[cmd].command = kPS2C_SendCommandAndCompareAck;
-            request.commands[cmd++].inOrOut = kDP_GetMouseInformation;
-            request.commands[cmd].command = kPS2C_ReadDataPort;
-            request.commands[cmd++].inOrOut = 0;
-            request.commands[cmd].command = kPS2C_ReadDataPort;
-            request.commands[cmd++].inOrOut = 0;
-            request.commands[cmd].command = kPS2C_ReadDataPort;
-            request.commands[cmd++].inOrOut = 0;
-            request.commandsCount = cmd;
+            request.commands[0].command = kPS2C_SendCommandAndCompareAck;
+            request.commands[0].inOrOut = kDP_GetMouseInformation;
+            request.commands[1].command = kPS2C_ReadDataPort;
+            request.commands[1].inOrOut = 0;
+            request.commands[2].command = kPS2C_ReadDataPort;
+            request.commands[2].inOrOut = 0;
+            request.commands[3].command = kPS2C_ReadDataPort;
+            request.commands[3].inOrOut = 0;
+            request.commandsCount = 4;
             assert(request.commandsCount <= countof(request.commands));
             _device->submitRequestAndBlock(&request);
             
-            /*
             // SkyrilHD: Is this correct?
             otp[0] = request.commands[1].inOrOut;
             otp[1] = request.commands[2].inOrOut;
             otp[2] = request.commands[3].inOrOut;
-            */
+            
             break;
             
         case 1:
             ps2_command_short(kDP_MouseSetPoll);
             ps2_command_short(kDP_MouseSetPoll);
             
-            request.commands[cmd].command = kPS2C_SendCommandAndCompareAck;
-            request.commands[cmd++].inOrOut = kDP_GetMouseInformation;
-            request.commands[cmd].command = kPS2C_ReadDataPort;
-            request.commands[cmd++].inOrOut = 0;
-            request.commands[cmd].command = kPS2C_ReadDataPort;
-            request.commands[cmd++].inOrOut = 0;
-            request.commands[cmd].command = kPS2C_ReadDataPort;
-            request.commands[cmd++].inOrOut = 0;
-            request.commandsCount = cmd;
+            request.commands[0].command = kPS2C_SendCommandAndCompareAck;
+            request.commands[0].inOrOut = kDP_GetMouseInformation;
+            request.commands[1].command = kPS2C_ReadDataPort;
+            request.commands[1].inOrOut = 0;
+            request.commands[2].command = kPS2C_ReadDataPort;
+            request.commands[2].inOrOut = 0;
+            request.commands[3].command = kPS2C_ReadDataPort;
+            request.commands[3].inOrOut = 0;
+            request.commandsCount = 4;
             assert(request.commandsCount <= countof(request.commands));
             _device->submitRequestAndBlock(&request);
-            /*
+            
             // SkyrilHD: Is this correct?
             otp[0] = request.commands[1].inOrOut;
             otp[1] = request.commands[2].inOrOut;
             otp[2] = request.commands[3].inOrOut;
-            */
+            
             break;
     }
 }
@@ -2877,33 +2875,27 @@ void ALPS::alps_update_device_area_ss4_v2(unsigned char otp[][4], struct alps_da
     int num_x_electrode;
     int num_y_electrode;
     int x_pitch, y_pitch, x_phys, y_phys;
+    
     DEBUG_LOG("ALPS: Accessing 'Update Device Area'\n");
+    
     if (IS_SS4PLUS_DEV(priv->dev_id)) {
         DEBUG_LOG("ALPS: Device is SS4_PLUS\n");
-        num_x_electrode =
-        SS4PLUS_NUMSENSOR_XOFFSET + (otp[0][2] & 0x0F);
-        num_y_electrode =
-        SS4PLUS_NUMSENSOR_YOFFSET + ((otp[0][2] >> 4) & 0x0F);
+        num_x_electrode = SS4PLUS_NUMSENSOR_XOFFSET + (otp[0][2] & 0x0F);
+        num_y_electrode = SS4PLUS_NUMSENSOR_YOFFSET + ((otp[0][2] >> 4) & 0x0F);
         
-        priv->x_max =
-        (num_x_electrode - 1) * SS4PLUS_COUNT_PER_ELECTRODE;
-        priv->y_max =
-        (num_y_electrode - 1) * SS4PLUS_COUNT_PER_ELECTRODE;
+        priv->x_max = (num_x_electrode - 1) * SS4PLUS_COUNT_PER_ELECTRODE;
+        priv->y_max = (num_y_electrode - 1) * SS4PLUS_COUNT_PER_ELECTRODE;
         
         x_pitch = (otp[0][1] & 0x0F) + SS4PLUS_MIN_PITCH_MM;
         y_pitch = ((otp[0][1] >> 4) & 0x0F) + SS4PLUS_MIN_PITCH_MM;
         
     } else {
         DEBUG_LOG("ALPS: Device is SS4\n");
-        num_x_electrode =
-        SS4_NUMSENSOR_XOFFSET + (otp[1][0] & 0x0F);
-        num_y_electrode =
-        SS4_NUMSENSOR_YOFFSET + ((otp[1][0] >> 4) & 0x0F);
+        num_x_electrode = SS4_NUMSENSOR_XOFFSET + (otp[1][0] & 0x0F);
+        num_y_electrode = SS4_NUMSENSOR_YOFFSET + ((otp[1][0] >> 4) & 0x0F);
         
-        priv->x_max =
-        (num_x_electrode - 1) * SS4_COUNT_PER_ELECTRODE;
-        priv->y_max =
-        (num_y_electrode - 1) * SS4_COUNT_PER_ELECTRODE;
+        priv->x_max = (num_x_electrode - 1) * SS4_COUNT_PER_ELECTRODE;
+        priv->y_max = (num_y_electrode - 1) * SS4_COUNT_PER_ELECTRODE;
         
         x_pitch = ((otp[1][2] >> 2) & 0x07) + SS4_MIN_PITCH_MM;
         y_pitch = ((otp[1][2] >> 5) & 0x07) + SS4_MIN_PITCH_MM;
@@ -2916,6 +2908,11 @@ void ALPS::alps_update_device_area_ss4_v2(unsigned char otp[][4], struct alps_da
     
     priv->x_res = priv->x_max * 10 / x_phys; /* units / mm */
     priv->y_res = priv->y_max * 10 / y_phys; /* units / mm */
+    
+    setProperty("X Max", priv->x_max, 32);
+    setProperty("Y Max", priv->y_max, 32);
+    setProperty("X Res", priv->x_res, 32);
+    setProperty("Y Res", priv->y_res, 32);
 }
 
 void ALPS::alps_update_btn_info_ss4_v2(unsigned char otp[][4], struct alps_data *priv)
@@ -2929,6 +2926,14 @@ void ALPS::alps_update_btn_info_ss4_v2(unsigned char otp[][4], struct alps_data 
     
     if (is_btnless)
         priv->flags |= ALPS_BUTTONPAD;
+    
+    if (is_btnless)
+    {
+        setProperty("Clickpad", kOSBooleanTrue);
+    } else
+    {
+        setProperty("Clickpad", kOSBooleanFalse);
+    }
 }
 
 void ALPS::alps_update_dual_info_ss4_v2(unsigned char otp[][4], struct alps_data *priv)
@@ -2955,26 +2960,30 @@ void ALPS::alps_update_dual_info_ss4_v2(unsigned char otp[][4], struct alps_data
     if (is_dual)
         priv->flags |= ALPS_DUALPOINT |
         ALPS_DUALPOINT_WITH_PRESSURE;
+    
+    if (is_dual)
+    {
+        setProperty("Trackpoint", kOSBooleanTrue);
+    } else
+    {
+        setProperty("Trackpoint", kOSBooleanFalse);
+    }
 }
 
 void ALPS::alps_set_defaults_ss4_v2(struct alps_data *priv)
 {
-    /*
     unsigned char otp[2][4];
     
     memset(otp, 0, sizeof(otp));
     
-    alps_get_otp_values_ss4_v2(0, &otp[1][0]);
-    alps_get_otp_values_ss4_v2(1, &otp[0][0]);
+    alps_get_otp_values_ss4_v2(1, &otp[1][0]);
+    alps_get_otp_values_ss4_v2(0, &otp[0][0]);
     
     alps_update_device_area_ss4_v2(otp, priv);
     
     alps_update_btn_info_ss4_v2(otp, priv);
     
     alps_update_dual_info_ss4_v2(otp, priv);
-    */
-    alps_get_otp_values_ss4_v2(0);
-    alps_get_otp_values_ss4_v2(1);
 }
 
 int ALPS::alps_dolphin_get_device_area(struct alps_data *priv)
@@ -3242,31 +3251,9 @@ void ALPS::set_protocol() {
             priv.mask0 = 0x18;
             priv.flags = 0;
             
-            // SkyrilHD: This should be removed and the touchpad should pass its information to the driver.
-            //           Do not hard-code the functionality of the touchpad.
-            //TODO: V8: add detection of tarckstick using the "alps_set_defaults_ss4_v2(&priv)" funtcion
-            if (priv.fw_ver[1] == 0x1) {
-                // buttons and trackpad
-                priv.x_max = 8160;
-                priv.y_max = 4080;
-                priv.flags |= ALPS_DUALPOINT |
-                ALPS_DUALPOINT_WITH_PRESSURE;
-                setProperty("Clickpad", kOSBooleanFalse);
-                IOLog("ALPS: TrackStick detected... (WARNING: V8 TrackStick disabled)\n");
-                
-            } else {
-                // buttonless
-                priv.x_max = 8176;
-                priv.y_max = 4088;
-                // This flag is a hit-or-miss as some touchpads can have a buttonpad.
-                //priv.flags |= ALPS_BUTTONPAD;
-                setProperty("Clickpad", kOSBooleanTrue);
-                IOLog("ALPS: ButtonPad Detected...\n");
-            }
+            alps_set_defaults_ss4_v2(&priv);
             
             set_resolution();
-            
-            alps_set_defaults_ss4_v2(&priv);
             break;
     }
 }
@@ -3458,11 +3445,6 @@ void ALPS::ps2_command_short(UInt8 command)
 
 
 void ALPS::set_resolution() {
-    if (priv.proto_version & ALPS_PROTO_V8) {
-        priv.x_max *= 0.6; // this number was determined experimentally
-        priv.y_max *= 0.65; // this number was determined experimentally
-    }
-    
     physical_max_x = priv.x_max * 4; // this number was determined experimentally
     physical_max_y = priv.y_max * 4.5; // this number was determined experimentally
     
