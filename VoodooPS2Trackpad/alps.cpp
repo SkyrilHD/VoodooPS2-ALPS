@@ -2838,7 +2838,6 @@ void ALPS::alps_get_otp_values_ss4_v2(unsigned char index, unsigned char otp[])
             assert(request.commandsCount <= countof(request.commands));
             _device->submitRequestAndBlock(&request);
             
-            // SkyrilHD: Is this correct?
             otp[0] = request.commands[1].inOrOut;
             otp[1] = request.commands[2].inOrOut;
             otp[2] = request.commands[3].inOrOut;
@@ -2861,7 +2860,6 @@ void ALPS::alps_get_otp_values_ss4_v2(unsigned char index, unsigned char otp[])
             assert(request.commandsCount <= countof(request.commands));
             _device->submitRequestAndBlock(&request);
             
-            // SkyrilHD: Is this correct?
             otp[0] = request.commands[1].inOrOut;
             otp[1] = request.commands[2].inOrOut;
             otp[2] = request.commands[3].inOrOut;
