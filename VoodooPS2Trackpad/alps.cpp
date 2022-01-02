@@ -335,7 +335,8 @@ bool ALPS::start( IOService * provider )
     setProperty(kIOHIDPointerAccelerationTypeKey, kIOHIDTrackpadAccelerationType);
     setProperty(kIOHIDScrollAccelerationTypeKey, kIOHIDTrackpadScrollAccelerationKey);
     setProperty(kIOHIDScrollResolutionKey, _scrollresolution << 16, 32);
-    setProperty("HIDScrollResolutionX", (_scrollresolution >> 1) << 16, 32);
+    // added for Sierra precise scrolling (credit usr-sse2)
+    setProperty("HIDScrollResolutionX", _scrollresolution << 16, 32);
     setProperty("HIDScrollResolutionY", _scrollresolution << 16, 32);
     
     //
