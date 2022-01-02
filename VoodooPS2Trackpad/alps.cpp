@@ -181,6 +181,31 @@ IOFixed     ALPS::resolution()  { return _resolution << 16; };
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+bool ALPS::init(OSDictionary *dict) {
+    
+    //
+    // Initialize this object's minimal state. This is invoked right after this
+    // object is instantiated.
+    //
+    
+    if (!super::init(dict)) {
+        return false;
+    }
+    
+    // initialize state...
+    for (int i = 0; i < MAX_TOUCHES; i++)
+        fingerStates[i].virtualFingerIndex = -1;
+    
+    memset(freeFingerTypes, true, kMT2FingerTypeCount);
+    freeFingerTypes[kMT2FingerTypeUndefined] = false;
+    
+    IOLog("VoodooPS2TouchPad Base Driver loaded...\n");
+    
+    setProperty("Revision", 24, 32);
+    
+    return true;
+}
+
 ALPS *ALPS::probe(IOService *provider, SInt32 *score) {
     bool success;
     
@@ -246,49 +271,25 @@ void ALPS::restart() {
     
 }
 
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-bool ALPS::deviceSpecificInit() {
+bool ALPS::resetMouse() {
+    TPS2Request<3> request;
     
-    // Setup expected packet size
-    priv.pktsize = priv.proto_version == ALPS_PROTO_V4 ? 8 : 6;
+    // Reset mouse
+    request.commands[0].command = kPS2C_SendCommandAndCompareAck;
+    request.commands[0].inOrOut = kDP_Reset;
+    request.commands[1].command = kPS2C_ReadDataPort;
+    request.commands[1].inOrOut = 0;
+    request.commands[2].command = kPS2C_ReadDataPort;
+    request.commands[2].inOrOut = 0;
+    request.commandsCount = 3;
+    assert(request.commandsCount <= countof(request.commands));
+    _device->submitRequestAndBlock(&request);
     
-    if (!(this->*hw_init)()) {
-        goto init_fail;
-    }
-    
-    return true;
-    
-init_fail:
-    IOLog("ALPS: Hardware initialization failed. TouchPad probably won't work\n");
-    resetMouse();
-    return false;
-}
-
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-bool ALPS::init(OSDictionary *dict) {
-    
-    //
-    // Initialize this object's minimal state. This is invoked right after this
-    // object is instantiated.
-    //
-    
-    if (!super::init(dict)) {
+    // Verify the result
+    if (request.commands[1].inOrOut != kSC_Reset && request.commands[2].inOrOut != kSC_ID) {
+        IOLog("ALPS: Failed to reset mouse, return values did not match. [0x%02x, 0x%02x]\n", request.commands[1].inOrOut, request.commands[2].inOrOut);
         return false;
     }
-    
-    // initialize state...
-    for (int i = 0; i < MAX_TOUCHES; i++)
-        fingerStates[i].virtualFingerIndex = -1;
-    
-    memset(freeFingerTypes, true, kMT2FingerTypeCount);
-    freeFingerTypes[kMT2FingerTypeUndefined] = false;
-    
-    IOLog("VoodooPS2TouchPad Base Driver loaded...\n");
-    
-    setProperty("Revision", 24, 32);
-    
     return true;
 }
 
@@ -459,31 +460,129 @@ void ALPS::stop(IOService *provider) {
     super::stop(provider);
 }
 
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-bool ALPS::resetMouse() {
-    TPS2Request<3> request;
+PS2InterruptResult ALPS::interruptOccurred(UInt8 data) {
+    //
+    // This will be invoked automatically from our device when asynchronous
+    // events need to be delivered. Process the trackpad data. Do NOT issue
+    // any BLOCKING commands to our device in this context.
+    //
     
-    // Reset mouse
-    request.commands[0].command = kPS2C_SendCommandAndCompareAck;
-    request.commands[0].inOrOut = kDP_Reset;
-    request.commands[1].command = kPS2C_ReadDataPort;
-    request.commands[1].inOrOut = 0;
-    request.commands[2].command = kPS2C_ReadDataPort;
-    request.commands[2].inOrOut = 0;
-    request.commandsCount = 3;
-    assert(request.commandsCount <= countof(request.commands));
-    _device->submitRequestAndBlock(&request);
+    UInt8 *packet = _ringBuffer.head();
     
-    // Verify the result
-    if (request.commands[1].inOrOut != kSC_Reset && request.commands[2].inOrOut != kSC_ID) {
-        IOLog("ALPS: Failed to reset mouse, return values did not match. [0x%02x, 0x%02x]\n", request.commands[1].inOrOut, request.commands[2].inOrOut);
-        return false;
+    /* Save first packet */
+    if (0 == _packetByteCount) {
+        packet[0] = data;
     }
-    return true;
+    
+    /* Reset PSMOUSE_BAD_DATA flag */
+    priv.PSMOUSE_BAD_DATA = false;
+    
+    /*
+     * Check if we are dealing with a bare PS/2 packet, presumably from
+     * a device connected to the external PS/2 port. Because bare PS/2
+     * protocol does not have enough constant bits to self-synchronize
+     * properly we only do this if the device is fully synchronized.
+     * Can not distinguish V8's first byte from PS/2 packet's
+     */
+    if (priv.proto_version != ALPS_PROTO_V8 &&
+        (packet[0] & 0xc8) == 0x08) {
+        if (_packetByteCount == 3) {
+            DEBUG_LOG("ALPS: Dealing with bare PS/2 packet\n");
+            //dispatchRelativePointerEventWithPacket(packet, kPacketLengthSmall); //Dr Hurt: allow this?
+            priv.PSMOUSE_BAD_DATA = true;
+            _ringBuffer.advanceHead(priv.pktsize);
+            return kPS2IR_packetReady;
+        }
+        packet[_packetByteCount++] = data;
+        return kPS2IR_packetBuffering;
+    }
+    
+    /* Check for PS/2 packet stuffed in the middle of ALPS packet. */
+    if ((priv.flags & ALPS_PS2_INTERLEAVED) &&
+        _packetByteCount >= 4 && (packet[3] & 0x0f) == 0x0f) {
+        priv.PSMOUSE_BAD_DATA = true;
+        _ringBuffer.advanceHead(priv.pktsize);
+        return kPS2IR_packetReady;
+    }
+    
+    /* alps_is_valid_first_byte */
+    if ((packet[0] & priv.mask0) != priv.byte0) {
+        priv.PSMOUSE_BAD_DATA = true;
+        _ringBuffer.advanceHead(priv.pktsize);
+        return kPS2IR_packetReady;
+    }
+    
+    /* Bytes 2 - pktsize should have 0 in the highest bit */
+    if (priv.proto_version < ALPS_PROTO_V5 &&
+        _packetByteCount >= 2 && _packetByteCount <= priv.pktsize &&
+        (packet[_packetByteCount - 1] & 0x80)) {
+        priv.PSMOUSE_BAD_DATA = true;
+        _ringBuffer.advanceHead(priv.pktsize);
+        return kPS2IR_packetReady;
+    }
+    
+    /* alps_is_valid_package_v7 */
+    if (priv.proto_version == ALPS_PROTO_V7 &&
+        (((_packetByteCount == 3) && ((packet[2] & 0x40) != 0x40)) ||
+         ((_packetByteCount == 4) && ((packet[3] & 0x48) != 0x48)) ||
+         ((_packetByteCount == 6) && ((packet[5] & 0x40) != 0x0)))) {
+        priv.PSMOUSE_BAD_DATA = true;
+        _ringBuffer.advanceHead(priv.pktsize);
+        return kPS2IR_packetReady;
+    }
+    
+    /* alps_is_valid_package_ss4_v2 */
+    if (priv.proto_version == ALPS_PROTO_V8 &&
+        ((_packetByteCount == 4 && ((packet[3] & 0x08) != 0x08)) ||
+         (_packetByteCount == 6 && ((packet[5] & 0x10) != 0x0)))) {
+        priv.PSMOUSE_BAD_DATA = true;
+        _ringBuffer.advanceHead(priv.pktsize);
+        return kPS2IR_packetReady;
+    }
+    
+    packet[_packetByteCount++] = data;
+    if (_packetByteCount == priv.pktsize)
+    {
+        _ringBuffer.advanceHead(priv.pktsize);
+        return kPS2IR_packetReady;
+    }
+    return kPS2IR_packetBuffering;
+}
+
+void ALPS::packetReady() {
+    // empty the ring buffer, dispatching each packet...
+    while (_ringBuffer.count() >= priv.pktsize) {
+        UInt8 *packet = _ringBuffer.tail();
+        if (priv.PSMOUSE_BAD_DATA == false) {
+            if (!ignoreall)
+                (this->*process_packet)(packet);
+        } else {
+            IOLog("ALPS: an invalid or bare packet has been dropped...\n");
+            /* Might need to perform a full HW reset here if we keep receiving bad packets (consecutively) */
+        }
+        _packetByteCount = 0;
+        _ringBuffer.advanceTail(priv.pktsize);
+    }
 }
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+bool ALPS::deviceSpecificInit() {
+    
+    // Setup expected packet size
+    priv.pktsize = priv.proto_version == ALPS_PROTO_V4 ? 8 : 6;
+    
+    if (!(this->*hw_init)()) {
+        goto init_fail;
+    }
+    
+    return true;
+    
+init_fail:
+    IOLog("ALPS: Hardware initialization failed. TouchPad probably won't work\n");
+    resetMouse();
+    return false;
+}
 
 /* ============================================================================================== */
 /* ==============================||\\ alps.c Implementation //||================================= */
@@ -1861,95 +1960,6 @@ void ALPS::alps_process_packet_ss4_v2(UInt8 *packet) {
         sendTouchData();
     
     alps_buttons(f);
-}
-
-PS2InterruptResult ALPS::interruptOccurred(UInt8 data) {
-    //
-    // This will be invoked automatically from our device when asynchronous
-    // events need to be delivered. Process the trackpad data. Do NOT issue
-    // any BLOCKING commands to our device in this context.
-    //
-    
-    UInt8 *packet = _ringBuffer.head();
-    
-    /* Save first packet */
-    if (0 == _packetByteCount) {
-        packet[0] = data;
-    }
-    
-    /* Reset PSMOUSE_BAD_DATA flag */
-    priv.PSMOUSE_BAD_DATA = false;
-    
-    /*
-     * Check if we are dealing with a bare PS/2 packet, presumably from
-     * a device connected to the external PS/2 port. Because bare PS/2
-     * protocol does not have enough constant bits to self-synchronize
-     * properly we only do this if the device is fully synchronized.
-     * Can not distinguish V8's first byte from PS/2 packet's
-     */
-    if (priv.proto_version != ALPS_PROTO_V8 &&
-        (packet[0] & 0xc8) == 0x08) {
-        if (_packetByteCount == 3) {
-            DEBUG_LOG("ALPS: Dealing with bare PS/2 packet\n");
-            //dispatchRelativePointerEventWithPacket(packet, kPacketLengthSmall); //Dr Hurt: allow this?
-            priv.PSMOUSE_BAD_DATA = true;
-            _ringBuffer.advanceHead(priv.pktsize);
-            return kPS2IR_packetReady;
-        }
-        packet[_packetByteCount++] = data;
-        return kPS2IR_packetBuffering;
-    }
-    
-    /* Check for PS/2 packet stuffed in the middle of ALPS packet. */
-    if ((priv.flags & ALPS_PS2_INTERLEAVED) &&
-        _packetByteCount >= 4 && (packet[3] & 0x0f) == 0x0f) {
-        priv.PSMOUSE_BAD_DATA = true;
-        _ringBuffer.advanceHead(priv.pktsize);
-        return kPS2IR_packetReady;
-    }
-    
-    /* alps_is_valid_first_byte */
-    if ((packet[0] & priv.mask0) != priv.byte0) {
-        priv.PSMOUSE_BAD_DATA = true;
-        _ringBuffer.advanceHead(priv.pktsize);
-        return kPS2IR_packetReady;
-    }
-    
-    /* Bytes 2 - pktsize should have 0 in the highest bit */
-    if (priv.proto_version < ALPS_PROTO_V5 &&
-        _packetByteCount >= 2 && _packetByteCount <= priv.pktsize &&
-        (packet[_packetByteCount - 1] & 0x80)) {
-        priv.PSMOUSE_BAD_DATA = true;
-        _ringBuffer.advanceHead(priv.pktsize);
-        return kPS2IR_packetReady;
-    }
-    
-    /* alps_is_valid_package_v7 */
-    if (priv.proto_version == ALPS_PROTO_V7 &&
-        (((_packetByteCount == 3) && ((packet[2] & 0x40) != 0x40)) ||
-         ((_packetByteCount == 4) && ((packet[3] & 0x48) != 0x48)) ||
-         ((_packetByteCount == 6) && ((packet[5] & 0x40) != 0x0)))) {
-        priv.PSMOUSE_BAD_DATA = true;
-        _ringBuffer.advanceHead(priv.pktsize);
-        return kPS2IR_packetReady;
-    }
-    
-    /* alps_is_valid_package_ss4_v2 */
-    if (priv.proto_version == ALPS_PROTO_V8 &&
-        ((_packetByteCount == 4 && ((packet[3] & 0x08) != 0x08)) ||
-         (_packetByteCount == 6 && ((packet[5] & 0x10) != 0x0)))) {
-        priv.PSMOUSE_BAD_DATA = true;
-        _ringBuffer.advanceHead(priv.pktsize);
-        return kPS2IR_packetReady;
-    }
-    
-    packet[_packetByteCount++] = data;
-    if (_packetByteCount == priv.pktsize)
-    {
-        _ringBuffer.advanceHead(priv.pktsize);
-        return kPS2IR_packetReady;
-    }
-    return kPS2IR_packetBuffering;
 }
 
 bool ALPS::alps_command_mode_send_nibble(int nibble) {
@@ -3339,22 +3349,6 @@ void ALPS::setTouchPadEnable(bool enable) {
     } else {
         // to disable just reset the mouse
         resetMouse();
-    }
-}
-
-void ALPS::packetReady() {
-    // empty the ring buffer, dispatching each packet...
-    while (_ringBuffer.count() >= priv.pktsize) {
-        UInt8 *packet = _ringBuffer.tail();
-        if (priv.PSMOUSE_BAD_DATA == false) {
-            if (!ignoreall)
-                (this->*process_packet)(packet);
-        } else {
-            IOLog("ALPS: an invalid or bare packet has been dropped...\n");
-            /* Might need to perform a full HW reset here if we keep receiving bad packets (consecutively) */
-        }
-        _packetByteCount = 0;
-        _ringBuffer.advanceTail(priv.pktsize);
     }
 }
 
