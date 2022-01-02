@@ -25,6 +25,7 @@ VoodooPS2 Changelog
 - removed workaround for making trackpad larger on V8
 - added 'Trackpoint' property for V8 touchpads
 - added 'X/Y Max' and 'X/Y Res' property for V8 touchpads
+- updated HIDScrollResolutionX
 
 
 #### v1.0.4
