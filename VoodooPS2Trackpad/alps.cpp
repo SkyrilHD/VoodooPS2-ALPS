@@ -257,18 +257,6 @@ bool ALPS::deviceSpecificInit() {
         goto init_fail;
     }
     
-    // init my stuff
-    memset(&fingerStates, 0, MAX_TOUCHES * sizeof(struct alps_hw_state));
-    // agmFingerCount = 0;
-    lastFingerCount = 0;
-    hadLiftFinger = false;
-    wasSkipped = false;
-    for (int i = 0; i < MAX_TOUCHES; i++)
-        fingerStates[i].virtualFingerIndex = -1;
-    
-    memset(freeFingerTypes, true, kMT2FingerTypeCount);
-    freeFingerTypes[kMT2FingerTypeUndefined] = false;
-    
     return true;
     
 init_fail:
@@ -290,54 +278,16 @@ bool ALPS::init(OSDictionary *dict) {
         return false;
     }
     
-    memset(&inputEvent, 0, sizeof(VoodooInputEvent));
-    
     // initialize state...
-    _device = NULL;
-    _interruptHandlerInstalled = false;
-    _powerControlHandlerInstalled = false;
-    _packetByteCount = 0;
-    _cmdGate = 0;
+    for (int i = 0; i < MAX_TOUCHES; i++)
+        fingerStates[i].virtualFingerIndex = -1;
     
-    // set defaults for configuration items
-    z_finger=45;
-    maxaftertyping = 500000000;
-    wakedelay = 1000;
-    _resolution = 2300;
-    _scrollresolution = 2300;
-    _buttonCount = 2;
-    
-    bogusdxthresh = 400;
-    bogusdythresh = 350;
-    
-    xupmm = yupmm = 50; // 50 is just arbitrary, but same
-    minXOverride = maxXOverride = minYOverride = maxYOverride = -1;
-    margin_size_x = margin_size_y = 0;
-    
-    // intialize state
-    last_fingers=0;
-    lastbuttons=0;
-    
-    // state for middle button
-    _buttonTimer = 0;
-    _mbuttonstate = STATE_NOBUTTONS;
-    _pendingbuttons = 0;
-    _buttontime = 0;
-    _maxmiddleclicktime = 100000000;
-    
-    keytime = 0;
-    ignoreall = false;
-    usb_mouse_stops_trackpad = true;
-    _modifierdown = 0;
-    
-    _forceTouchMode = FORCE_TOUCH_DISABLED;
-    _forceTouchPressureThreshold = 100;
+    memset(freeFingerTypes, true, kMT2FingerTypeCount);
+    freeFingerTypes[kMT2FingerTypeUndefined] = false;
     
     IOLog("VoodooPS2TouchPad Base Driver loaded...\n");
     
     setProperty("Revision", 24, 32);
-    
-    memset(&inputEvent, 0, sizeof(VoodooInputEvent));
     
     return true;
 }

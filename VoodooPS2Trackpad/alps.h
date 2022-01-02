@@ -517,7 +517,7 @@ class EXPORT ALPS : public IOHIPointing {
     
 private:
     IOService *voodooInputInstance;
-    VoodooInputEvent inputEvent;
+    VoodooInputEvent inputEvent {};
     
     alps_data priv;
     hw_init hw_init;
@@ -688,14 +688,14 @@ protected:
     
     void restart();
     
-    ApplePS2MouseDevice * _device;
-    bool                _interruptHandlerInstalled;
-    bool                _powerControlHandlerInstalled;
+    ApplePS2MouseDevice * _device {NULL};
+    bool                _interruptHandlerInstalled {false};
+    bool                _powerControlHandlerInstalled {false};
     RingBuffer<UInt8, kPacketLength*32> _ringBuffer;
-    UInt32              _packetByteCount;
+    UInt32              _packetByteCount {0};
     UInt16              _touchPadVersion;
 
-    IOCommandGate*      _cmdGate;
+    IOCommandGate*      _cmdGate {0};
     
     OSArray* transducers;
     
@@ -706,7 +706,7 @@ protected:
     
     unsigned int left_ts:1;
     
-    int margin_size_x, margin_size_y;
+    int margin_size_x {0}, margin_size_y {0};
     
     uint32_t logical_max_x;
     uint32_t logical_max_y;
@@ -743,8 +743,8 @@ protected:
     
     void set_resolution();
     
-    ForceTouchMode _forceTouchMode;
-    int _forceTouchPressureThreshold;
+    ForceTouchMode _forceTouchMode {FORCE_TOUCH_DISABLED};
+    int _forceTouchPressureThreshold {100};
     
     int _forceTouchCustomDownThreshold;
     int _forceTouchCustomUpThreshold;
@@ -752,34 +752,35 @@ protected:
     
     int clampedFingerCount;
     bool wasSkipped;
-    int z_finger;
-    uint64_t maxaftertyping;
-    int wakedelay;
-    int _resolution, _scrollresolution;
-    int _buttonCount;
-    int minXOverride, minYOverride, maxXOverride, maxYOverride;
-    int bogusdxthresh, bogusdythresh;
+    int z_finger {45};
+    uint64_t maxaftertyping {500000000};
+    int wakedelay {1000};
+    int _resolution {2300};
+    int _scrollresolution {2300};
+    int _buttonCount {2};
+    int minXOverride {-1}, minYOverride {-1}, maxXOverride {-1}, maxYOverride {-1};
+    int bogusdxthresh {400}, bogusdythresh {350};
     
     int rightclick_corner;
 
     // normal state
-    int last_fingers;
-    UInt32 lastbuttons;
+    int last_fingers {0};
+    UInt32 lastbuttons {0};
     UInt32 lastTrackStickButtons, lastTouchpadButtons;
     int ignoresingle;
     int touchx, touchy;
     bool scrolldebounce;
-    uint64_t keytime;
-    bool ignoreall;
+    uint64_t keytime {0};
+    bool ignoreall {false};
 #ifdef SIMULATE_PASSTHRU
     UInt32 trackbuttons;
 #endif
-    bool usb_mouse_stops_trackpad;
+    bool usb_mouse_stops_trackpad {true};
 
-    int _modifierdown; // state of left+right control keys
+    int _modifierdown {0}; // state of left+right control keys
 
     // for scaling x/y values
-    int xupmm, yupmm;
+    int xupmm {50}, yupmm {50}; // 50 is just arbitrary, but same
 
     // for middle button simulation
     enum mbuttonstate
@@ -789,12 +790,13 @@ protected:
         STATE_WAIT4TWO,
         STATE_WAIT4NONE,
         STATE_NOOP,
-    } _mbuttonstate;
+    } _mbuttonstate {STATE_NOBUTTONS};
 
-    UInt32 _pendingbuttons;
-    uint64_t _buttontime;
-    IOTimerEventSource* _buttonTimer;
-    uint64_t _maxmiddleclicktime;
+    // state for middle button
+    UInt32 _pendingbuttons {0};
+    uint64_t _buttontime {0};
+    IOTimerEventSource* _buttonTimer {0};
+    uint64_t _maxmiddleclicktime {100000000};
 
     // momentum scroll state
     bool wasScroll = false;
