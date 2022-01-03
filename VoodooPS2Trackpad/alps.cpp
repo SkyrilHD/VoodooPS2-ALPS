@@ -1812,6 +1812,9 @@ void ALPS::alps_process_packet_ss4_v2(UInt8 *packet) {
             return;
         }
         
+        // Y is inverted
+        y = -y;
+        
         //TODO: V8 Trackstick: Someone with the hardware needs to debug this.
         DEBUG_LOG("ALPS: Trackstick report: X=%d, Y=%d, Z=%d\n", x, y, pressure);
         dispatchRelativePointerEventX(x, y, buttons, now_abs);
