@@ -1844,13 +1844,9 @@ void ALPS::alps_process_packet_ss4_v2(UInt8 *packet) {
             return;
         }
         
-        // TODO: Maybe remove later
-        // x = (((packet[0] & 1) << 7) | (packet[1] & 0x7f));
-        // y = (((packet[3] & 1) << 7) | (packet[2] & 0x7f));
-        // pressure = (packet[4] & 0x7f);
-        x = SS4_TS_X_V2(packet);
-        y = SS4_TS_Y_V2(packet);
-        pressure = SS4_TS_Z_V2(packet);
+        x = (SInt8) (((packet[0] & 1) << 7) | (packet[1] & 0x7f));
+        y = (SInt8) (((packet[3] & 1) << 7) | (packet[2] & 0x7f));
+        pressure = (packet[4] & 0x7f);
         
         buttons |= f.ts_left ? 0x01 : 0;
         buttons |= f.ts_right ? 0x02 : 0;
@@ -1861,6 +1857,9 @@ void ALPS::alps_process_packet_ss4_v2(UInt8 *packet) {
         if ((abs(x) >= 0x7f) || (abs(y) >= 0x7f)) {
             return;
         }
+        
+        // Y is inverted
+        y = -y;
         
         //TODO: V8 Trackstick: Someone with the hardware needs to debug this.
         DEBUG_LOG("ALPS: Trackstick report: X=%d, Y=%d, Z=%d\n", x, y, pressure);

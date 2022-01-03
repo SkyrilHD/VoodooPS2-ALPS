@@ -273,19 +273,6 @@ enum SS4_PACKET_ID {
 #define SS4_IS_MF_CONTINUE(_b)    ((_b[2] & 0x10) == 0x10)
 #define SS4_IS_5F_DETECTED(_b)    ((_b[2] & 0x10) == 0x10)
 
-#define SS4_TS_X_V2(_b)        (int)(                \
-                 ((_b[0] & 0x01) << 7) |    \
-                 (_b[1] & 0x7F)        \
-                )
-
-#define SS4_TS_Y_V2(_b)        -(int)(                \
-                 ((_b[3] & 0x01) << 7) |    \
-                 (_b[2] & 0x7F)        \
-                )
-
-#define SS4_TS_Z_V2(_b)        (int)(_b[4] & 0x7F)
-
-
 #define SS4_MFPACKET_NO_AX        8160    /* X-Coordinate value */
 #define SS4_MFPACKET_NO_AY        4080    /* Y-Coordinate value */
 #define SS4_MFPACKET_NO_AX_BL        8176    /* Buttonless X-Coord value */
