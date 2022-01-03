@@ -4305,8 +4305,12 @@ void ALPS::setDevicePowerState( UInt32 whatToDo )
             
             IOSleep(wakedelay);
             
-            // Reset and enable the touchpad.
+            // Reset and re-initialize touchpad
+            _device->lock();
+            resetMouse();
+            identify();
             initTouchPad();
+            _device->unlock();
             break;
     }
 }
