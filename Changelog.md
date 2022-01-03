@@ -26,6 +26,7 @@ VoodooPS2 Changelog
 - added 'Trackpoint' property for V8 touchpads
 - added 'X/Y Max' and 'X/Y Res' property for V8 touchpads
 - updated HIDScrollResolutionX
+- fixed trackstick on V8 (huge thanks to PMD for testing)
 
 
 #### v1.0.4
