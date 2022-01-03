@@ -1794,13 +1794,9 @@ void ALPS::alps_process_packet_ss4_v2(UInt8 *packet) {
             return;
         }
         
-        // TODO: Maybe remove later
         x = (SInt8) (((packet[0] & 1) << 7) | (packet[1] & 0x7f));
         y = (SInt8) (((packet[3] & 1) << 7) | (packet[2] & 0x7f));
         pressure = (packet[4] & 0x7f);
-        //x = SS4_TS_X_V2(packet);
-        //y = SS4_TS_Y_V2(packet);
-        //pressure = SS4_TS_Z_V2(packet);
         
         buttons |= f.ts_left ? 0x01 : 0;
         buttons |= f.ts_right ? 0x02 : 0;
