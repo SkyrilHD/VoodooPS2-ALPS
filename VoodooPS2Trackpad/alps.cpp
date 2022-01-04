@@ -4305,6 +4305,9 @@ void ALPS::setDevicePowerState( UInt32 whatToDo )
             
             IOSleep(wakedelay);
             
+            // MARK: Find another way to fix trackpad breaking on V8 after sleep
+            // This workaround is very messy and unstable.
+            // A proper fix is needed.
             // Reset and re-initialize touchpad
             _device->lock();
             resetMouse();
