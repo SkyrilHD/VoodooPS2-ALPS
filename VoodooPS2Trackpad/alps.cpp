@@ -1324,21 +1324,6 @@ void ALPS::alps_process_packet_v6(UInt8 *packet)
     
     DEBUG_LOG("There are currently %d finger(s) accessing alps_parse_hw_state\n", f.fingers);
     
-    if (fingers >= 2) {
-        fingerStates[1].x = f.mt[1].x;
-        fingerStates[1].y = f.mt[1].y;
-        fingerStates[1].z = f.pressure;
-        
-        if (fingerStates[1].x > X_MAX_POSITIVE)
-            fingerStates[1].x -= 1 << ABS_POS_BITS;
-        else if (fingerStates[1].x == X_MAX_POSITIVE)
-            fingerStates[1].x = XMAX;
-        
-        if (fingerStates[1].y > Y_MAX_POSITIVE)
-            fingerStates[1].y -= 1 << ABS_POS_BITS;
-        else if (fingerStates[1].y == Y_MAX_POSITIVE)
-            fingerStates[1].y = YMAX;
-    }
     // normal "packet"
     // my port of synaptics_parse_hw_state from synaptics.c from Linux Kernel
     fingerStates[0].x = f.mt[0].x;
@@ -1368,15 +1353,6 @@ void ALPS::alps_process_packet_v6(UInt8 *packet)
                 break;
             case 1:
                 fingerCount = 1;
-                break;
-            case 2:
-                fingerCount = 2;
-                break;
-            case 3:
-                fingerCount = 3;
-                break;
-            case 4:
-                fingerCount = 4;
                 break;
         }
     }
