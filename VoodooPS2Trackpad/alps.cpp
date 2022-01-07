@@ -1517,10 +1517,10 @@ void ALPS::alps_process_packet_v4(UInt8 *packet) {
     // buttons |= f.left ? 0x01 : 0;
     // buttons |= f.right ? 0x02 : 0;
     
+    // mark single touch as first finger
     f.mt[0].x = f.st.x;
     f.mt[0].y = f.st.y;
     
-    //f.fingers = fingers;
     // get fingercounts from packets
     int fingers = 0;
     
