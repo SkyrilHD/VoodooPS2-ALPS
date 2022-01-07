@@ -1273,20 +1273,21 @@ void ALPS::alps_process_packet_v6(UInt8 *packet)
         x = packet[1] | ((packet[3] & 0x20) << 2);
         y = packet[2] | ((packet[3] & 0x40) << 1);
         z = packet[4];
-        // TODO: Check later if this is needed
-        /*
-         left = packet[3] & 0x01;
-         right = packet[3] & 0x02;
-         middle = packet[3] & 0x04;
-         
-         buttons |= left ? 0x01 : 0;
-         buttons |= right ? 0x02 : 0;
-         buttons |= middle ? 0x04 : 0;
-         */
+        
+        left = packet[3] & 0x01;
+        right = packet[3] & 0x02;
+        middle = packet[3] & 0x04;
+        
+        buttons |= left ? 0x01 : 0;
+        buttons |= right ? 0x02 : 0;
+        buttons |= middle ? 0x04 : 0;
         
         /* To prevent the cursor jump when finger lifted */
         if (x == 0x7F && y == 0x7F && z == 0x7F)
             x = y = z = 0;
+        
+        // Y is inverted
+        y = -y;
         
         /* Divide 4 since trackpoint's speed is too fast */
         dispatchRelativePointerEventX(x / 4, y / 4, buttons, now_abs);
@@ -1296,10 +1297,8 @@ void ALPS::alps_process_packet_v6(UInt8 *packet)
     /* Touchpad packet */
     struct alps_fields f;
     
-    // TODO: Recognize multitouch?
     f.mt[0].x = packet[1] | ((packet[3] & 0x78) << 4);
     f.mt[0].y = packet[2] | ((packet[4] & 0x78) << 4);
-    // TODO: Passthrough pressure?
     z = packet[5];
     f.pressure = z;
     f.left = packet[3] & 0x01;
@@ -2411,9 +2410,6 @@ bool ALPS::alps_hw_init_v1_v2() {
 
 bool ALPS::alps_hw_init_v6()
 {
-    //TODO: V6 is not yet fully implemented.
-    //unsigned char param[2] = {0xC8, 0x14};
-    
     /* Enter passthrough mode to let trackpoint enter 6byte raw mode */
     alps_passthrough_mode_v2(true);
     
@@ -3200,9 +3196,8 @@ void ALPS::set_protocol() {
             break;
             
         case ALPS_PROTO_V6:
-            // TODO: add support
-            //hw_init = &ApplePS2ALPSGlidePoint::hwInitV6_version2;
-            //process_packet = &ApplePS2ALPSGlidePoint::processPacketV6;
+            hw_init = &ALPS::alps_hw_init_v6;
+            process_packet = &ALPS::alps_process_packet_v6;
             //set_abs_params = alps_set_abs_params_st;
             priv.nibble_commands = alps_v6_nibble_commands;
             priv.addr_command = kDP_MouseResetWrap;
@@ -3211,8 +3206,6 @@ void ALPS::set_protocol() {
             priv.flags = 0;
             priv.x_max = 2047;
             priv.y_max = 1535;
-            // SkyrilHD: Where does this come from?
-            //decode_fields = &ApplePS2ALPSGlidePoint::decodePacketV6;
             break;
             
         case ALPS_PROTO_V7:
