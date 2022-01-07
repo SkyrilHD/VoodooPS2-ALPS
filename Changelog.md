@@ -31,7 +31,7 @@ VoodooPS2 Changelog
 - removed scaling for V7 touchpads
 - do not probe on fail
 - added kernel level USB and bluetooth mouse notifications
-
+- force Force Touch to be disabled when ForceTouchMode is set to 1 and booted in recovery
 
 #### v1.0.4
 - fixed random finger jumps with 2 fingers on V7
