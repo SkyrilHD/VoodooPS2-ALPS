@@ -820,6 +820,7 @@ protected:
     UInt32 middleButton(UInt32 buttons, uint64_t now, MBComingFrom from);
 
     virtual void setParamPropertiesGated(OSDictionary* dict);
+    void injectVersionDependentProperties(OSDictionary* dict);
 
     IOItemCount buttonCount() override;
     IOFixed     resolution() override;

@@ -206,6 +206,42 @@ bool ALPS::init(OSDictionary *dict) {
     return true;
 }
 
+void ALPS::injectVersionDependentProperties(OSDictionary *config)
+{
+    // inject properties specific to the version of Darwin that is runnning...
+    char buf[32];
+    OSDictionary* dict = NULL;
+    do
+    {
+        // check for "Darwin major.minor"
+        snprintf(buf, sizeof(buf), "Darwin %d.%d", version_major, version_minor);
+        if ((dict = OSDynamicCast(OSDictionary, config->getObject(buf))))
+            break;
+        // check for "Darwin major.x"
+        snprintf(buf, sizeof(buf), "Darwin %d.x", version_major);
+        if ((dict = OSDynamicCast(OSDictionary, config->getObject(buf))))
+            break;
+        // check for "Darwin 16+" (this is what is used currently, other formats are for future)
+        if (version_major >= 16 && (dict = OSDynamicCast(OSDictionary, config->getObject("Darwin 16+"))))
+            break;
+    } while (0);
+    
+    if (dict)
+    {
+        // found version specific properties above, inject...
+        if (OSCollectionIterator* iter = OSCollectionIterator::withCollection(dict))
+        {
+            // Note: OSDictionary always contains OSSymbol*
+            while (const OSSymbol* key = static_cast<const OSSymbol*>(iter->getNextObject()))
+            {
+                if (OSObject* value = dict->getObject(key))
+                    setProperty(key, value);
+            }
+            iter->release();
+        }
+    }
+}
+
 ALPS *ALPS::probe(IOService *provider, SInt32 *score) {
     bool success;
     
@@ -240,6 +276,7 @@ ALPS *ALPS::probe(IOService *provider, SInt32 *score) {
         // Load settings specific to Platform Profile
         //
         setParamPropertiesGated(config);
+        injectVersionDependentProperties(config);
         OSSafeReleaseNULL(config);
     }
     
