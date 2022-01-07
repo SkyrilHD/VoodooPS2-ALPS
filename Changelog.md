@@ -36,6 +36,7 @@ VoodooPS2 Changelog
 - made V6 independent from alps_parse_hw_state
 - removed V6 reporting multiple fingers to VoodooInput
 - disabled pressure support for V6
+- disabled pressure support for V3/V5
 
 #### v1.0.4
 - fixed random finger jumps with 2 fingers on V7
