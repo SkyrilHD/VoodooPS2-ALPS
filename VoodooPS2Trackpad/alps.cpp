@@ -1468,9 +1468,10 @@ void ALPS::alps_process_packet_v4(UInt8 *packet) {
         return;
     
     SInt32 offset;
-    // SInt32 fingers = 0;
     // UInt32 buttons = 0;
     struct alps_fields f;
+    
+    f.fingers = 0;
     
     /*
      * v4 has a 6-byte encoding for bitmap data, but this data is
