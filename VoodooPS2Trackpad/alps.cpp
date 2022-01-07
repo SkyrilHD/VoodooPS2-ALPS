@@ -3270,6 +3270,8 @@ void ALPS::set_protocol() {
             //set_abs_params = alps_set_abs_params_st;
             priv.x_max = 1023;
             priv.y_max = 767;
+            
+            set_resolution();
             break;
             
         case ALPS_PROTO_V3:
