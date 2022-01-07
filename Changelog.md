@@ -40,6 +40,7 @@ VoodooPS2 Changelog
 - made V1/V2 independent from alps_parse_hw_state
 - disabled pressure support for V1/V2
 - added buttons back to V1/V2 to make buttons work when using trackstick
+- made V4 independent from alps_parse_hw_state
 
 #### v1.0.4
 - fixed random finger jumps with 2 fingers on V7
