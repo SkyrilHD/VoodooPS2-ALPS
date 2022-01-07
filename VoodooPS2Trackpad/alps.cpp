@@ -4289,6 +4289,16 @@ void ALPS::setParamPropertiesGated(OSDictionary * config)
         ignoreall = usb_mouse_stops_trackpad;
         touchpadToggled();
     }
+    
+    if (_forceTouchMode == FORCE_TOUCH_BUTTON) {
+        int val[16];
+        if (PE_parse_boot_argn("rp0", val, sizeof(val)) ||
+            PE_parse_boot_argn("rp", val, sizeof(val)) ||
+            PE_parse_boot_argn("container-dmg", val, sizeof(val)) ||
+            PE_parse_boot_argn("root-dmg", val, sizeof(val)) ||
+            PE_parse_boot_argn("auth-root-dmg", val, sizeof(val)))
+        _forceTouchMode = FORCE_TOUCH_DISABLED;
+    }
 }
 
 IOReturn ALPS::setParamProperties(OSDictionary* dict)
