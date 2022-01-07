@@ -1062,7 +1062,6 @@ bool ALPS::alps_decode_dolphin(struct alps_fields *f, UInt8 *p) {
 
 void ALPS::alps_process_touchpad_packet_v3_v5(UInt8 *packet) {
     int fingers = 0;
-    //int buttons = 0;
     struct alps_fields f;
     
     // Check if input is disabled via ApplePS2Keyboard request
@@ -1147,18 +1146,12 @@ void ALPS::alps_process_touchpad_packet_v3_v5(UInt8 *packet) {
         //fingers = 2;
     }
     
-    //alps_parse_hw_state(_ringBuffer.tail(), f);
-    
     // scale x & y to the axis which has the most resolution
     if (xupmm < yupmm) {
         f.mt[0].x = f.mt[0].x * yupmm / xupmm;
     } else if (xupmm > yupmm) {
         f.mt[0].y = f.mt[0].y * xupmm / yupmm;
     }
-    
-    /* Dr Hurt: Scale all touchpads' axes to 6000 to be able to the same divisors for all models */
-    f.mt[0].x *= (6000 / ((priv.x_max + priv.y_max)/2));
-    f.mt[1].y *= (6000 / ((priv.x_max + priv.y_max)/2));
     
     fingers = f.fingers;
     
