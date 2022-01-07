@@ -1462,6 +1462,11 @@ void ALPS::alps_process_packet_v6(UInt8 *packet)
 }
 
 void ALPS::alps_process_packet_v4(UInt8 *packet) {
+    
+    // Check if input is disabled via ApplePS2Keyboard request
+    if (ignoreall)
+        return;
+    
     SInt32 offset;
     // SInt32 fingers = 0;
     // UInt32 buttons = 0;
@@ -1516,8 +1521,79 @@ void ALPS::alps_process_packet_v4(UInt8 *packet) {
     f.mt[0].y = f.st.y;
     
     //f.fingers = fingers;
+    // get fingercounts from packets
+    int fingers = 0;
     
-    alps_parse_hw_state(_ringBuffer.tail(), f);
+    fingers = f.fingers;
+    
+    DEBUG_LOG("There are currently %d finger(s) accessing alps_parse_hw_state\n", f.fingers);
+    
+    if (fingers >= 2) {
+        fingerStates[1].x = f.mt[1].x;
+        fingerStates[1].y = f.mt[1].y;
+        fingerStates[1].z = f.pressure;
+        
+        if (fingerStates[1].x > X_MAX_POSITIVE)
+            fingerStates[1].x -= 1 << ABS_POS_BITS;
+        else if (fingerStates[1].x == X_MAX_POSITIVE)
+            fingerStates[1].x = XMAX;
+        
+        if (fingerStates[1].y > Y_MAX_POSITIVE)
+            fingerStates[1].y -= 1 << ABS_POS_BITS;
+        else if (fingerStates[1].y == Y_MAX_POSITIVE)
+            fingerStates[1].y = YMAX;
+    }
+    // normal "packet"
+    // my port of synaptics_parse_hw_state from synaptics.c from Linux Kernel
+    fingerStates[0].x = f.mt[0].x;
+    fingerStates[0].y = f.mt[0].y;
+    fingerStates[0].z = f.pressure;
+    
+    DEBUG_LOG("ALPS: fingerStates[0] report: x: %d, y: %d, z: %d\n", fingerStates[0].x, fingerStates[0].y, fingerStates[0].z);
+    
+    if (fingerStates[0].x > X_MAX_POSITIVE)
+        fingerStates[0].x -= 1 << ABS_POS_BITS;
+    else if (fingerStates[0].x == X_MAX_POSITIVE)
+        fingerStates[0].x = XMAX;
+    
+    if (fingerStates[0].y > Y_MAX_POSITIVE)
+        fingerStates[0].y -= 1 << ABS_POS_BITS;
+    else if (fingerStates[0].y == Y_MAX_POSITIVE)
+        fingerStates[0].y = YMAX;
+    
+    // count the number of fingers
+    // my port of synaptics_process_packet from synaptics.c from Linux Kernel
+    int fingerCount = 0;
+    if (fingerStates[0].z == 0) {
+        fingerCount = 0;
+        switch (fingers) {
+            case 0:
+                fingerCount = 0;
+                break;
+            case 1:
+                fingerCount = 1;
+                break;
+            case 2:
+                fingerCount = 2;
+                break;
+            case 3:
+                fingerCount = 3;
+                break;
+            case 4:
+                fingerCount = 4;
+                break;
+        }
+    }
+    
+    clampedFingerCount = fingerCount;
+    
+    if (clampedFingerCount > MAX_TOUCHES)
+        clampedFingerCount = MAX_TOUCHES;
+    
+    if (renumberFingers())
+        sendTouchData();
+    
+    alps_buttons(f);
 }
 
 unsigned char ALPS::alps_get_packet_id_v7(UInt8 *byte)
