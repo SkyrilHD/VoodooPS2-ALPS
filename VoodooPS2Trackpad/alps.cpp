@@ -1513,10 +1513,6 @@ void ALPS::alps_process_packet_v4(UInt8 *packet) {
         
     }
     
-    // MARK: Remove later
-    // buttons |= f.left ? 0x01 : 0;
-    // buttons |= f.right ? 0x02 : 0;
-    
     /* Use st data when we don't have mt data */
     if (f.fingers < 2) {
         f.mt[0].x = f.st.x;
