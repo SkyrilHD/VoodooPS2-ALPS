@@ -734,15 +734,16 @@ void ALPS::alps_process_packet_v1_v2(UInt8 *packet) {
     f.mt[0].x = x;
     f.mt[0].y = y;
     f.pressure = z;
-    f.fingers = fingers;
+    //f.fingers = fingers;
     f.left = left;
     f.right = right;
     f.middle = middle;
     
-    fingers = f.fingers;
+    //fingers = f.fingers;
     
     DEBUG_LOG("There are currently %d finger(s) accessing alps_parse_hw_state\n", f.fingers);
     
+    // Maybe TODO: Add virtual finger for second finger to make gestures work
     if (fingers >= 2) {
         fingerStates[1].x = f.mt[1].x;
         fingerStates[1].y = f.mt[1].y;
