@@ -708,6 +708,18 @@ void ALPS::alps_process_packet_v1_v2(UInt8 *packet) {
         z = 40;
     }
     
+    // REVIEW: Check if this is correct
+    /*
+     * A "tap and drag" operation is reported by the hardware as a transition
+     * from (!fin && ges) to (fin && ges). This should be translated to the
+     * sequence Z>0, Z==0, Z>0, so the Z==0 event has to be generated manually.
+     */
+    // if (ges && fin && !priv.prev_fin) {
+    //     z = 0;
+    //     fingers = 0;
+    //     dispatchRelativePointerEventX(x, y, buttons, now_abs);
+    // }
+    
     priv.prev_fin = fin;
     
     if (z > 30) {
