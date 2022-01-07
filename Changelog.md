@@ -33,6 +33,7 @@ VoodooPS2 Changelog
 - added kernel level USB and bluetooth mouse notifications
 - force Force Touch to be disabled when ForceTouchMode is set to 1 and booted in recovery
 - added inital partial support for V6 (not tested)
+- made V6 independent from alps_parse_hw_state
 
 #### v1.0.4
 - fixed random finger jumps with 2 fingers on V7
