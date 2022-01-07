@@ -29,6 +29,8 @@ VoodooPS2 Changelog
 - fixed trackstick on V8 (huge thanks to PMD for testing)
 - fixed tochpad not working after sleep (mainly for V8) (huge thanks to forte500 and PMD for testing)
 - removed scaling for V7 touchpads
+- do not probe on fail
+- added kernel level USB and bluetooth mouse notifications
 
 
 #### v1.0.4
