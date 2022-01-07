@@ -3259,6 +3259,9 @@ void ALPS::set_protocol() {
             priv.flags = 0;
             priv.x_max = 2047;
             priv.y_max = 1535;
+            
+            set_resolution();
+            
             break;
             
         case ALPS_PROTO_V7:
