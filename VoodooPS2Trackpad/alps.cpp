@@ -1328,7 +1328,9 @@ void ALPS::alps_process_packet_v6(UInt8 *packet)
     // my port of synaptics_parse_hw_state from synaptics.c from Linux Kernel
     fingerStates[0].x = f.mt[0].x;
     fingerStates[0].y = f.mt[0].y;
-    fingerStates[0].z = f.pressure;
+    // Maybe TODO: Add pressure support
+    // Disable pressure report, otherwise finger counting does not work.
+    fingerStates[1].z = 0;
     
     DEBUG_LOG("ALPS: fingerStates[0] report: x: %d, y: %d, z: %d\n", fingerStates[0].x, fingerStates[0].y, fingerStates[0].z);
     
