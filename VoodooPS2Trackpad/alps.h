@@ -718,7 +718,6 @@ protected:
     int upperFingerIndex() const;
     const alps_hw_state& upperFinger() const;
     void swapFingers(int dst, int src);
-    void alps_parse_hw_state(const UInt8 buf[], struct alps_fields &f);
     void alps_buttons(struct alps_fields &f);
     
     /// Translates physical fingers into virtual fingers so that host software doesn't see 'jumps' and has coordinates for all fingers.
