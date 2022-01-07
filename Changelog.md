@@ -38,6 +38,7 @@ VoodooPS2 Changelog
 - disabled pressure support for V6
 - disabled pressure support for V3/V5
 - made V1/V2 independent from alps_parse_hw_state
+- disabled pressure support for V1/V2
 
 #### v1.0.4
 - fixed random finger jumps with 2 fingers on V7
