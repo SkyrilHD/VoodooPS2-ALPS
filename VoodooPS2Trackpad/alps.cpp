@@ -27,6 +27,9 @@
 #include <IOKit/hidsystem/IOHIDParameter.h>
 #include <IOKit/IOWorkLoop.h>
 #include <IOKit/IOTimerEventSource.h>
+#include <IOKit/usb/IOUSBHostFamily.h>
+#include <IOKit/usb/IOUSBHostHIDDevice.h>
+#include <IOKit/bluetooth/BluetoothAssignedNumbers.h>
 #include "VoodooPS2Controller.h"
 #include "VoodooInputMultitouch/VoodooInputTransducer.h"
 #include "VoodooInputMultitouch/VoodooInputMessages.h"
@@ -400,6 +403,9 @@ bool ALPS::start( IOService * provider )
     
     _device->lock();
     
+    attachedHIDPointerDevices = OSSet::withCapacity(1);
+    registerHIDPointerNotifications();
+    
     //
     // Perform any implementation specific device initialization
     //
@@ -448,6 +454,9 @@ void ALPS::stop(IOService *provider) {
     // connections to other service objects now (ie. no registered actions,
     // no pointers and retains to objects, etc), if any.
     //
+    
+    unregisterHIDPointerNotifications();
+    OSSafeReleaseNULL(attachedHIDPointerDevices);
     
     assert(_device == provider);
     
@@ -4214,10 +4223,12 @@ void ALPS::setParamPropertiesGated(OSDictionary * config)
         {"ForceTouchCustomUpThreshold",     &_forceTouchCustomUpThreshold}, // used in mode 4
         {"ForceTouchCustomPower",           &_forceTouchCustomPower}, // used in mode 4
     };
-    /*
+    
     const struct {const char *name; int *var;} boolvars[]={
+        {"ProcessUSBMouseStopsTrackpad",    &_processusbmouse},
+        {"ProcessBluetoothMouseStopsTrackpad", &_processbluetoothmouse},
     };
-    */
+    
     const struct {const char* name; bool* var;} lowbitvars[]={
         {"USBMouseStopsTrackpad",           &usb_mouse_stops_trackpad},
     };
@@ -4226,7 +4237,7 @@ void ALPS::setParamPropertiesGated(OSDictionary * config)
         {"MiddleClickTime",                 &_maxmiddleclicktime},
     };
     
-    //OSBoolean *bl;
+    OSBoolean *bl;
     OSNumber *num;
     // 64-bit config items
     for (int i = 0; i < countof(int64vars); i++) {
@@ -4237,7 +4248,7 @@ void ALPS::setParamPropertiesGated(OSDictionary * config)
             setProperty(int64vars[i].name, *int64vars[i].var, 64);
         }
     }
-    /*
+    
     // boolean config items
     for (int i = 0; i < countof(boolvars); i++) {
         if ((bl=OSDynamicCast (OSBoolean,config->getObject (boolvars[i].name))))
@@ -4247,7 +4258,7 @@ void ALPS::setParamPropertiesGated(OSDictionary * config)
             setProperty(boolvars[i].name, *boolvars[i].var ? kOSBooleanTrue : kOSBooleanFalse);
         }
     }
-    */
+    
     // 32-bit config items
     for (int i = 0; i < countof(int32vars);i++) {
         if ((num=OSDynamicCast (OSNumber,config->getObject (int32vars[i].name))))
@@ -4273,24 +4284,11 @@ void ALPS::setParamPropertiesGated(OSDictionary * config)
     if (!bogusdythresh)
         bogusdythresh = 0x7FFFFFFF;
     
-    /* // TODO: Add this function
-     // check for special terminating sequence from PS2Daemon
-     if (-1 == mousecount)
-     {
-     DEBUG_LOG("Shutdown touchpad, mousecount=%d\n", mousecount);
-     touchpadShutdown();
-     mousecount = oldmousecount;
-     }
-     
-     // disable trackpad when USB mouse is plugged in
-     // check for mouse count changing...
-     if ((oldmousecount != 0) != (mousecount != 0) || old_usb_mouse_stops_trackpad != usb_mouse_stops_trackpad)
-     {
-     // either last mouse removed or first mouse added
-     ignoreall = (mousecount != 0) && usb_mouse_stops_trackpad;
-     touchpadToggled();
-     }
-     */
+    // disable trackpad when USB mouse is plugged in and this functionality is requested
+    if (attachedHIDPointerDevices && attachedHIDPointerDevices->getCount() > 0) {
+        ignoreall = usb_mouse_stops_trackpad;
+        touchpadToggled();
+    }
 }
 
 IOReturn ALPS::setParamProperties(OSDictionary* dict)
@@ -4484,4 +4482,137 @@ IOReturn ALPS::message(UInt32 type, IOService* provider, void* argument) {
     }
 
     return kIOReturnSuccess;
+}
+
+void ALPS::registerHIDPointerNotifications()
+{
+    IOServiceMatchingNotificationHandler notificationHandler = OSMemberFunctionCast(IOServiceMatchingNotificationHandler, this, &ALPS::notificationHIDAttachedHandler);
+    
+    // Determine if we should listen for USB mouse attach events as per configuration
+    if (_processusbmouse) {
+        // USB mouse HID description as per USB spec: http://www.usb.org/developers/hidpage/HID1_11.pdf
+        OSDictionary* matchingDictionary = serviceMatching("IOUSBInterface");
+        
+        propertyMatching(OSSymbol::withCString(kUSBHostMatchingPropertyInterfaceClass), OSNumber::withNumber(kUSBHIDInterfaceClass, 8), matchingDictionary);
+        propertyMatching(OSSymbol::withCString(kUSBHostMatchingPropertyInterfaceSubClass), OSNumber::withNumber(kUSBHIDBootInterfaceSubClass, 8), matchingDictionary);
+        propertyMatching(OSSymbol::withCString(kUSBHostMatchingPropertyInterfaceProtocol), OSNumber::withNumber(kHIDMouseInterfaceProtocol, 8), matchingDictionary);
+        
+        // Register for future services
+        usb_hid_publish_notify = addMatchingNotification(gIOFirstPublishNotification, matchingDictionary, notificationHandler, this, NULL, 10000);
+        usb_hid_terminate_notify = addMatchingNotification(gIOTerminatedNotification, matchingDictionary, notificationHandler, this, NULL, 10000);
+        OSSafeReleaseNULL(matchingDictionary);
+    }
+    
+    // Determine if we should listen for bluetooth mouse attach events as per configuration
+    if (_processbluetoothmouse) {
+        // Bluetooth HID devices
+        OSDictionary* matchingDictionary = serviceMatching("IOBluetoothHIDDriver");
+        propertyMatching(OSSymbol::withCString(kIOHIDVirtualHIDevice), kOSBooleanFalse, matchingDictionary);
+        
+        // Register for future services
+        bluetooth_hid_publish_notify = addMatchingNotification(gIOFirstPublishNotification, matchingDictionary, notificationHandler, this, NULL, 10000);
+        bluetooth_hid_terminate_notify = addMatchingNotification(gIOTerminatedNotification, matchingDictionary, notificationHandler, this, NULL, 10000);
+        OSSafeReleaseNULL(matchingDictionary);
+    }
+}
+
+void ALPS::unregisterHIDPointerNotifications()
+{
+    // Free device matching notifiers
+    // remove() releases them
+    if (usb_hid_publish_notify)
+        usb_hid_publish_notify->remove();
+
+    if (usb_hid_terminate_notify)
+        usb_hid_terminate_notify->remove();
+
+    if (bluetooth_hid_publish_notify)
+        bluetooth_hid_publish_notify->remove();
+
+    if (bluetooth_hid_terminate_notify)
+        bluetooth_hid_terminate_notify->remove();
+
+    attachedHIDPointerDevices->flushCollection();
+}
+
+void ALPS::notificationHIDAttachedHandlerGated(IOService * newService,
+                                                                    IONotifier * notifier)
+{
+    char path[256];
+    int len = 255;
+    memset(path, 0, len);
+    newService->getPath(path, &len, gIOServicePlane);
+    
+    if (notifier == usb_hid_publish_notify) {
+        attachedHIDPointerDevices->setObject(newService);
+        DEBUG_LOG("%s: USB pointer HID device published: %s, # devices: %d\n", getName(), path, attachedHIDPointerDevices->getCount());
+    }
+    
+    if (notifier == usb_hid_terminate_notify) {
+        attachedHIDPointerDevices->removeObject(newService);
+        DEBUG_LOG("%s: USB pointer HID device terminated: %s, # devices: %d\n", getName(), path, attachedHIDPointerDevices->getCount());
+    }
+    
+    if (notifier == bluetooth_hid_publish_notify) {
+        
+        // Filter on specific CoD (Class of Device) bluetooth devices only
+        OSNumber* propDeviceClass = OSDynamicCast(OSNumber, newService->getProperty("ClassOfDevice"));
+        
+        if (propDeviceClass != NULL) {
+            
+            long classOfDevice = propDeviceClass->unsigned32BitValue();
+            
+            long deviceClassMajor = (classOfDevice & 0x1F00) >> 8;
+            long deviceClassMinor = (classOfDevice & 0xFF) >> 2;
+            
+            if (deviceClassMajor == kBluetoothDeviceClassMajorPeripheral) { // Bluetooth peripheral devices
+                
+                long deviceClassMinor1 = (deviceClassMinor) & 0x30;
+                long deviceClassMinor2 = (deviceClassMinor) & 0x0F;
+                
+                if (deviceClassMinor1 == kBluetoothDeviceClassMinorPeripheral1Pointing || // Seperate pointing device
+                    deviceClassMinor1 == kBluetoothDeviceClassMinorPeripheral1Combo) // Combo bluetooth keyboard/touchpad
+                {
+                    if (deviceClassMinor2 == kBluetoothDeviceClassMinorPeripheral2Unclassified || // Mouse
+                        deviceClassMinor2 == kBluetoothDeviceClassMinorPeripheral2DigitizerTablet || // Magic Touchpad
+                        deviceClassMinor2 == kBluetoothDeviceClassMinorPeripheral2DigitalPen) // Wacom Tablet
+                    {
+                        
+                        attachedHIDPointerDevices->setObject(newService);
+                        DEBUG_LOG("%s: Bluetooth pointer HID device published: %s, # devices: %d\n", getName(), path, attachedHIDPointerDevices->getCount());
+                    }
+                }
+            }
+        }
+    }
+    
+    if (notifier == bluetooth_hid_terminate_notify) {
+        attachedHIDPointerDevices->removeObject(newService);
+        DEBUG_LOG("%s: Bluetooth pointer HID device terminated: %s, # devices: %d\n", getName(), path, attachedHIDPointerDevices->getCount());
+    }
+    
+    if (notifier == usb_hid_publish_notify || notifier == bluetooth_hid_publish_notify) {
+        if (usb_mouse_stops_trackpad && attachedHIDPointerDevices->getCount() > 0) {
+            // One or more USB or Bluetooth pointer devices attached, disable trackpad
+            ignoreall = true;
+        }
+    }
+    
+    if (notifier == usb_hid_terminate_notify || notifier == bluetooth_hid_terminate_notify) {
+        if (usb_mouse_stops_trackpad && attachedHIDPointerDevices->getCount() == 0) {
+            // No USB or bluetooth pointer devices attached, re-enable trackpad
+            ignoreall = false;
+        }
+    }
+}
+
+bool ALPS::notificationHIDAttachedHandler(void * refCon,
+                                                               IOService * newService,
+                                                               IONotifier * notifier)
+{
+    if (_cmdGate) { // defensive
+        _cmdGate->runAction(OSMemberFunctionCast(IOCommandGate::Action, this, &ALPS::notificationHIDAttachedHandlerGated), newService, notifier);
+    }
+
+    return true;
 }

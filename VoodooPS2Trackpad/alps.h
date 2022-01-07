@@ -763,6 +763,17 @@ protected:
     UInt32 trackbuttons;
 #endif
     bool usb_mouse_stops_trackpad {true};
+    
+    int _processusbmouse {true};
+    int _processbluetoothmouse {true};
+    
+    OSSet* attachedHIDPointerDevices {nullptr};
+    
+    IONotifier* usb_hid_publish_notify {nullptr};     // Notification when an USB mouse HID device is connected
+    IONotifier* usb_hid_terminate_notify {nullptr}; // Notification when an USB mouse HID device is disconnected
+    
+    IONotifier* bluetooth_hid_publish_notify {nullptr}; // Notification when a bluetooth HID device is connected
+    IONotifier* bluetooth_hid_terminate_notify {nullptr}; // Notification when a bluetooth HID device is disconnected
 
     int _modifierdown {0}; // state of left+right control keys
 
@@ -821,6 +832,12 @@ protected:
 
     virtual void setParamPropertiesGated(OSDictionary* dict);
     void injectVersionDependentProperties(OSDictionary* dict);
+    
+    void registerHIDPointerNotifications();
+    void unregisterHIDPointerNotifications();
+    
+    void notificationHIDAttachedHandlerGated(IOService * newService, IONotifier * notifier);
+    bool notificationHIDAttachedHandler(void * refCon, IOService * newService, IONotifier * notifier);
 
     IOItemCount buttonCount() override;
     IOFixed     resolution() override;

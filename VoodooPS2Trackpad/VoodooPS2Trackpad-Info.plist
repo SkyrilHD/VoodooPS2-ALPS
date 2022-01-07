@@ -73,6 +73,10 @@
 					<integer>0</integer>
 					<key>ForceTouchPressureThreshold</key>
 					<integer>100</integer>
+					<key>ProcessBluetoothMouseStopsTrackpad</key>
+					<true/>
+					<key>ProcessUSBMouseStopsTrackpad</key>
+					<true/>
 					<key>QuietTimeAfterTyping</key>
 					<integer>500000000</integer>
 					<key>Resolution</key>
