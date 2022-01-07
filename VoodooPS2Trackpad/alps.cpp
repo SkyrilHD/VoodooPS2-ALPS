@@ -253,6 +253,9 @@ ALPS *ALPS::probe(IOService *provider, SInt32 *score) {
     // responses expected by the commands we send it).
     //
     
+    if (!super::probe(provider, score))
+        return 0;
+    
     _device = (ApplePS2MouseDevice *) provider;
     
     // find config specific to Platform Profile
