@@ -1330,7 +1330,7 @@ void ALPS::alps_process_packet_v6(UInt8 *packet)
     fingerStates[0].y = f.mt[0].y;
     // Maybe TODO: Add pressure support
     // Disable pressure report, otherwise finger counting does not work.
-    fingerStates[1].z = 0;
+    fingerStates[0].z = 0;
     
     DEBUG_LOG("ALPS: fingerStates[0] report: x: %d, y: %d, z: %d\n", fingerStates[0].x, fingerStates[0].y, fingerStates[0].z);
     
