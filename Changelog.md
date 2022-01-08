@@ -43,7 +43,7 @@ VoodooPS2 Changelog
 - made V4 independent from alps_parse_hw_state
 - ported alps_report_semi_mt_data to V4
 - disabled pressure support for V4
-- use alps_fiels for fingercount on V4
+- use alps_fields for fingercount on V4
 - removed alps_parse_hw_state
 - removed redundant codes in set_protocol
 - cleaned up alps header
