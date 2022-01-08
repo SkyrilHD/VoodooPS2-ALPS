@@ -505,161 +505,6 @@ private:
     process_packet process_packet;
     //    set_abs_params set_abs_params;
     
-public:
-    ALPS * probe(IOService *provider, SInt32 *score) override;
-    
-    bool init(OSDictionary * dict) override;
-    
-    bool start(IOService *provider) override;
-    void stop(IOService *provider) override;
-
-    UInt32 deviceType() override;
-    UInt32 interfaceID() override;
-
-    IOReturn setParamProperties(OSDictionary * dict) override;
-    IOReturn setProperties(OSObject *props) override;
-    
-    IOReturn message(UInt32 type, IOService* provider, void* argument) override;
-    
-    // Acidanthera VoodooPS2
-    bool handleOpen(IOService *forClient, IOOptionBits options, void *arg) override;
-    void handleClose(IOService *forClient, IOOptionBits options) override;
-    
-protected:
-    virtual bool deviceSpecificInit();
-    
-    bool resetMouse();
-    
-    void alps_process_packet_v1_v2(UInt8 *packet);
-    
-    int alps_process_bitmap(struct alps_data *priv, struct alps_fields *f);
-    
-    void alps_process_trackstick_packet_v3(UInt8 * packet);
-    
-    bool alps_decode_buttons_v3(struct alps_fields *f, UInt8 *p);
-    
-    bool alps_decode_pinnacle(struct alps_fields *f, UInt8 *p);
-    
-    bool alps_decode_rushmore(struct alps_fields *f, UInt8 *p);
-    
-    bool alps_decode_dolphin(struct alps_fields *f, UInt8 *p);
-    
-    void alps_process_touchpad_packet_v3_v5(UInt8 * packet);
-    
-    void alps_process_packet_v3(UInt8 *packet);
-    
-    void alps_process_packet_v6(UInt8 *packet);
-    
-    void alps_process_packet_v4(UInt8 *packet);
-    
-    unsigned char alps_get_packet_id_v7(UInt8 *byte);
-    
-    void alps_get_finger_coordinate_v7(struct input_mt_pos *mt, UInt8 *pkt, UInt8 pkt_id);
-    
-    int alps_get_mt_count(struct input_mt_pos *mt);
-    
-    bool alps_decode_packet_v7(struct alps_fields *f, UInt8 *p);
-    
-    void alps_process_trackstick_packet_v7(UInt8 *packet);
-    
-    void alps_process_touchpad_packet_v7(UInt8 *packet);
-    
-    void alps_process_packet_v7(UInt8 *packet);
-    
-    unsigned char alps_get_pkt_id_ss4_v2(UInt8 *byte);
-    
-    bool alps_decode_ss4_v2(struct alps_fields *f, UInt8 *p);
-    
-    void alps_process_packet_ss4_v2(UInt8 *packet);
-    
-    void setTouchPadEnable(bool enable);
-    
-    PS2InterruptResult interruptOccurred(UInt8 data);
-    
-    void packetReady();
-    
-    bool alps_command_mode_send_nibble(int value);
-    
-    bool alps_command_mode_set_addr(int addr);
-    
-    int alps_command_mode_read_reg(int addr);
-    
-    bool alps_command_mode_write_reg(int addr, UInt8 value);
-    
-    bool alps_command_mode_write_reg(UInt8 value);
-    
-    bool alps_rpt_cmd(SInt32 init_command, SInt32 init_arg, SInt32 repeated_command, ALPSStatus_t *report);
-    
-    bool alps_enter_command_mode();
-    
-    bool alps_exit_command_mode();
-    
-    bool alps_passthrough_mode_v2(bool enable);
-        
-    bool alps_absolute_mode_v1_v2();
-    
-    int alps_monitor_mode_send_word(int word);
-    
-    int alps_monitor_mode_write_reg(int addr, int value);
-    
-    int alps_monitor_mode(bool enable);
-    
-    void alps_absolute_mode_v6();
-    
-    bool alps_get_status(ALPSStatus_t *status);
-    
-    bool alps_tap_mode(bool enable);
-    
-    bool alps_hw_init_v1_v2();
-    
-    bool alps_hw_init_v6();
-    
-    bool alps_passthrough_mode_v3(int regBase, bool enable);
-    
-    bool alps_absolute_mode_v3();
-    
-    IOReturn alps_probe_trackstick_v3_v7(int regBase);
-    
-    IOReturn alps_setup_trackstick_v3(int regBase);
-    
-    bool alps_hw_init_v3();
-    
-    bool alps_get_v3_v7_resolution(int reg_pitch);
-    
-    bool alps_hw_init_rushmore_v3();
-    
-    bool alps_absolute_mode_v4();
-    
-    bool alps_hw_init_v4();
-    
-    void alps_get_otp_values_ss4_v2(unsigned char index, unsigned char otp[]);
-    
-    void alps_update_device_area_ss4_v2(unsigned char otp[][4], struct alps_data *priv);
-    
-    void alps_update_btn_info_ss4_v2(unsigned char otp[][4], struct alps_data *priv);
-    
-    void alps_update_dual_info_ss4_v2(unsigned char otp[][4], struct alps_data *priv);
-    
-    void alps_set_defaults_ss4_v2(struct alps_data *priv);
-    
-    int alps_dolphin_get_device_area(struct alps_data *priv);
-    
-    bool alps_hw_init_dolphin_v1();
-    
-    bool alps_hw_init_v7();
-    
-    bool alps_hw_init_ss4_v2();
-    
-    void ps2_command_short(UInt8 command);
-    
-    void ps2_command(unsigned char value, UInt8 command);
-        
-    void set_protocol();
-    
-    bool matchTable(ALPSStatus_t *e7, ALPSStatus_t *ec);
-    
-    IOReturn identify();
-    
     ApplePS2MouseDevice * _device {NULL};
     bool                _interruptHandlerInstalled {false};
     bool                _powerControlHandlerInstalled {false};
@@ -669,6 +514,100 @@ protected:
     IOCommandGate*      _cmdGate {0};
     
     OSArray* transducers;
+    
+    void injectVersionDependentProperties(OSDictionary* dict);
+    bool resetMouse();
+    bool handleOpen(IOService *forClient, IOOptionBits options, void *arg) override;
+    void handleClose(IOService *forClient, IOOptionBits options) override;
+    PS2InterruptResult interruptOccurred(UInt8 data);
+    void packetReady();
+    virtual bool deviceSpecificInit();
+    
+    void alps_process_packet_v1_v2(UInt8 *packet);
+    int alps_process_bitmap(struct alps_data *priv, struct alps_fields *f);
+    void alps_process_trackstick_packet_v3(UInt8 * packet);
+    bool alps_decode_buttons_v3(struct alps_fields *f, UInt8 *p);
+    bool alps_decode_pinnacle(struct alps_fields *f, UInt8 *p);
+    bool alps_decode_rushmore(struct alps_fields *f, UInt8 *p);
+    bool alps_decode_dolphin(struct alps_fields *f, UInt8 *p);
+    void alps_process_touchpad_packet_v3_v5(UInt8 * packet);
+    void alps_process_packet_v3(UInt8 *packet);
+    void alps_process_packet_v6(UInt8 *packet);
+    void alps_process_packet_v4(UInt8 *packet);
+    unsigned char alps_get_packet_id_v7(UInt8 *byte);
+    void alps_get_finger_coordinate_v7(struct input_mt_pos *mt, UInt8 *pkt, UInt8 pkt_id);
+    int alps_get_mt_count(struct input_mt_pos *mt);
+    bool alps_decode_packet_v7(struct alps_fields *f, UInt8 *p);
+    void alps_process_trackstick_packet_v7(UInt8 *packet);
+    void alps_process_touchpad_packet_v7(UInt8 *packet);
+    void alps_process_packet_v7(UInt8 *packet);
+    unsigned char alps_get_pkt_id_ss4_v2(UInt8 *byte);
+    bool alps_decode_ss4_v2(struct alps_fields *f, UInt8 *p);
+    void alps_process_packet_ss4_v2(UInt8 *packet);
+    bool alps_command_mode_send_nibble(int value);
+    bool alps_command_mode_set_addr(int addr);
+    int alps_command_mode_read_reg(int addr);
+    bool alps_command_mode_write_reg(int addr, UInt8 value);
+    bool alps_command_mode_write_reg(UInt8 value);
+    bool alps_rpt_cmd(SInt32 init_command, SInt32 init_arg, SInt32 repeated_command, ALPSStatus_t *report);
+    bool alps_enter_command_mode();
+    bool alps_exit_command_mode();
+    bool alps_passthrough_mode_v2(bool enable);
+    bool alps_absolute_mode_v1_v2();
+    int alps_monitor_mode_send_word(int word);
+    int alps_monitor_mode_write_reg(int addr, int value);
+    int alps_monitor_mode(bool enable);
+    void alps_absolute_mode_v6();
+    bool alps_get_status(ALPSStatus_t *status);
+    bool alps_tap_mode(bool enable);
+    bool alps_hw_init_v1_v2();
+    bool alps_hw_init_v6();
+    bool alps_passthrough_mode_v3(int regBase, bool enable);
+    bool alps_absolute_mode_v3();
+    IOReturn alps_probe_trackstick_v3_v7(int regBase);
+    IOReturn alps_setup_trackstick_v3(int regBase);
+    bool alps_hw_init_v3();
+    bool alps_get_v3_v7_resolution(int reg_pitch);
+    bool alps_hw_init_rushmore_v3();
+    bool alps_absolute_mode_v4();
+    bool alps_hw_init_v4();
+    void alps_get_otp_values_ss4_v2(unsigned char index, unsigned char otp[]);
+    void alps_update_device_area_ss4_v2(unsigned char otp[][4], struct alps_data *priv);
+    void alps_update_btn_info_ss4_v2(unsigned char otp[][4], struct alps_data *priv);
+    void alps_update_dual_info_ss4_v2(unsigned char otp[][4], struct alps_data *priv);
+    void alps_set_defaults_ss4_v2(struct alps_data *priv);
+    int alps_dolphin_get_device_area(struct alps_data *priv);
+    bool alps_hw_init_dolphin_v1();
+    bool alps_hw_init_v7();
+    bool alps_hw_init_ss4_v2();
+    void set_protocol();
+    bool matchTable(ALPSStatus_t *e7, ALPSStatus_t *ec);
+    IOReturn identify();
+    void setTouchPadEnable(bool enable);
+    void ps2_command(unsigned char value, UInt8 command);
+    void ps2_command_short(UInt8 command);
+    void set_resolution();
+    void alps_buttons(struct alps_fields &f);
+    
+    int dist(int physicalFinger, int virtualFinger);
+    void assignVirtualFinger(int physicalFinger);
+    void assignFingerType(virtual_finger_state &vf);
+    void freeAndMarkVirtualFingers();
+    int upperFingerIndex() const;
+    const alps_hw_state& upperFinger() const;
+    void swapFingers(int dst, int src);
+    bool renumberFingers();
+    void sendTouchData();
+    
+    virtual void initTouchPad();
+    virtual void setParamPropertiesGated(OSDictionary* dict);
+    virtual void setDevicePowerState(UInt32 whatToDo);
+    
+    void registerHIDPointerNotifications();
+    void unregisterHIDPointerNotifications();
+    
+    void notificationHIDAttachedHandlerGated(IOService * newService, IONotifier * notifier);
+    bool notificationHIDAttachedHandler(void * refCon, IOService * newService, IONotifier * notifier);
     
     // buttons and scroll wheel
     unsigned int left:1;
@@ -693,25 +632,12 @@ protected:
     
     static_assert(MAX_TOUCHES <= kMT2FingerTypeLittleFinger, "Too many fingers for one hand");
     
-    void assignVirtualFinger(int physicalFinger);
-    void assignFingerType(virtual_finger_state &vf);
     int lastFingerCount;
     int lastSentFingerCount;
     bool hadLiftFinger;
     
-    int upperFingerIndex() const;
-    const alps_hw_state& upperFinger() const;
-    void swapFingers(int dst, int src);
-    void alps_buttons(struct alps_fields &f);
-    
     /// Translates physical fingers into virtual fingers so that host software doesn't see 'jumps' and has coordinates for all fingers.
     /// @return True if is ready to send finger state to host interface
-    bool renumberFingers();
-    void sendTouchData();
-    void freeAndMarkVirtualFingers();
-    int dist(int physicalFinger, int virtualFinger);
-    
-    void set_resolution();
     
     ForceTouchMode _forceTouchMode {FORCE_TOUCH_DISABLED};
     int _forceTouchPressureThreshold {100};
@@ -776,27 +702,30 @@ protected:
     //DecayingAverage<int, int64_t, 1, 1, 2> y2_avg;
     UndecayAverage<int, int64_t, 1, 1, 2> x2_undo;
     UndecayAverage<int, int64_t, 1, 1, 2> y2_undo;
-
-    virtual void setDevicePowerState(UInt32 whatToDo);
     
-    virtual void initTouchPad();
-
     enum MBComingFrom { fromPassthru, fromTimer, fromTrackpad, fromCancel };
     UInt32 middleButton(UInt32 buttons, uint64_t now, MBComingFrom from);
-
-    virtual void setParamPropertiesGated(OSDictionary* dict);
-    void injectVersionDependentProperties(OSDictionary* dict);
     
-    void registerHIDPointerNotifications();
-    void unregisterHIDPointerNotifications();
-    
-    void notificationHIDAttachedHandlerGated(IOService * newService, IONotifier * notifier);
-    bool notificationHIDAttachedHandler(void * refCon, IOService * newService, IONotifier * notifier);
-
+protected:
     IOItemCount buttonCount() override;
     IOFixed     resolution() override;
     inline void dispatchRelativePointerEventX(int dx, int dy, UInt32 buttonState, uint64_t now)
         { dispatchRelativePointerEvent(dx, dy, buttonState, *(AbsoluteTime*)&now); }
     inline void dispatchScrollWheelEventX(short deltaAxis1, short deltaAxis2, short deltaAxis3, uint64_t now)
         { dispatchScrollWheelEvent(deltaAxis1, deltaAxis2, deltaAxis3, *(AbsoluteTime*)&now); }
+    
+public:
+    bool init(OSDictionary * dict) override;
+    ALPS * probe(IOService *provider, SInt32 *score) override;
+    
+    bool start(IOService *provider) override;
+    void stop(IOService *provider) override;
+
+    UInt32 deviceType() override;
+    UInt32 interfaceID() override;
+
+    IOReturn setParamProperties(OSDictionary * dict) override;
+    IOReturn setProperties(OSObject *props) override;
+    
+    IOReturn message(UInt32 type, IOService* provider, void* argument) override;
 };
