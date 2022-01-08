@@ -627,7 +627,7 @@ void ALPS::alps_process_packet_v1_v2(UInt8 *packet) {
         return;
     
     int x, y, z, ges, fin, left, right, middle, buttons = 0, fingers = 0;
-    int back = 0, forward = 0;
+    //int back = 0, forward = 0;
     uint64_t now_abs;
     
     clock_get_uptime(&now_abs);
@@ -648,6 +648,8 @@ void ALPS::alps_process_packet_v1_v2(UInt8 *packet) {
         z = packet[5];
     }
     
+    // macOS does not support forward and back buttons
+    /*
     if (priv.flags & ALPS_FW_BK_1) {
         back = packet[0] & 0x10;
         forward = packet[2] & 4;
@@ -660,6 +662,7 @@ void ALPS::alps_process_packet_v1_v2(UInt8 *packet) {
             forward = back = 0;
         }
     }
+    */
     
     ges = packet[2] & 1;
     fin = packet[2] & 2;
@@ -1228,9 +1231,9 @@ void ALPS::alps_process_touchpad_packet_v3_v5(UInt8 *packet) {
         f.mt[0].y = f.mt[0].y * xupmm / yupmm;
     }
     
-    fingers = f.fingers;
+    //fingers = f.fingers;
     
-    DEBUG_LOG("ALPS: Amount of finger(s) accessing alps_process_touchpad_packet_v3_v5: %d\n", f.fingers);
+    DEBUG_LOG("ALPS: Amount of finger(s) accessing alps_process_touchpad_packet_v3_v5: %d\n", fingers);
     
     if (fingers >= 2) {
         fingerStates[1].x = f.mt[1].x;
