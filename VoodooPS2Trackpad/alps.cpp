@@ -3351,8 +3351,6 @@ void ALPS::set_protocol() {
             //set_abs_params = alps_set_abs_params_st;
             priv.x_max = 1023;
             priv.y_max = 767;
-            
-            set_resolution();
             break;
             
         case ALPS_PROTO_V3:
@@ -3362,8 +3360,6 @@ void ALPS::set_protocol() {
             decode_fields = &ALPS::alps_decode_pinnacle;
             priv.nibble_commands = alps_v3_nibble_commands;
             priv.addr_command = kDP_MouseResetWrap;
-            
-            set_resolution();
             
             if (alps_probe_trackstick_v3_v7(ALPS_REG_BASE_PINNACLE)) {
                 priv.flags &= ~ALPS_DUALPOINT;
@@ -3382,8 +3378,6 @@ void ALPS::set_protocol() {
             priv.addr_command = kDP_MouseResetWrap;
             priv.x_bits = 16;
             priv.y_bits = 12;
-            
-            set_resolution();
             
             if (alps_probe_trackstick_v3_v7(ALPS_REG_BASE_RUSHMORE)) {
                 priv.flags &= ~ALPS_DUALPOINT;
@@ -3417,9 +3411,6 @@ void ALPS::set_protocol() {
             priv.y_bits = 12;
             
             alps_dolphin_get_device_area(&priv);
-            
-            set_resolution();
-            
             break;
             
         case ALPS_PROTO_V6:
@@ -3433,9 +3424,6 @@ void ALPS::set_protocol() {
             priv.flags = 0;
             priv.x_max = 2047;
             priv.y_max = 1535;
-            
-            set_resolution();
-            
             break;
             
         case ALPS_PROTO_V7:
@@ -3450,8 +3438,6 @@ void ALPS::set_protocol() {
             
             priv.x_max = 0xfff;
             priv.y_max = 0x7ff;
-            
-            set_resolution();
             
             if (priv.fw_ver[1] != 0xba){
                 priv.flags |= ALPS_BUTTONPAD;
@@ -3478,10 +3464,10 @@ void ALPS::set_protocol() {
             priv.flags = 0;
             
             alps_set_defaults_ss4_v2(&priv);
-            
-            set_resolution();
             break;
     }
+    
+    set_resolution();
 }
 
 bool ALPS::matchTable(ALPSStatus_t *e7, ALPSStatus_t *ec) {
