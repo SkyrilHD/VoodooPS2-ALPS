@@ -495,24 +495,93 @@ class EXPORT ALPS : public IOHIPointing {
         OSDeclareDefaultStructors( ALPS );
     
 private:
-    IOService *voodooInputInstance;
+    IOService *voodooInputInstance {nullptr};
+    ApplePS2MouseDevice * _device {nullptr};
+    bool                _interruptHandlerInstalled {false};
+    bool                _powerControlHandlerInstalled {false};
+    RingBuffer<UInt8, kPacketLength*32> _ringBuffer {};
+    UInt32              _packetByteCount {0};
+
+    IOCommandGate*      _cmdGate {nullptr};
+    
     VoodooInputEvent inputEvent {};
+    
+    // buttons and scroll wheel
+    unsigned int left:1;
+    unsigned int right:1;
+    unsigned int middle:1;
+    
+    unsigned int left_ts:1;
+    
+    // VoodooInput
+    int margin_size_x {0}, margin_size_y {0};
+    
+    uint32_t logical_max_x {0};
+    uint32_t logical_max_y {0};
+    uint32_t logical_min_x {0};
+    uint32_t logical_min_y {0};
+
+    uint32_t physical_max_x {0};
+    uint32_t physical_max_y {0};
+    
+    alps_hw_state fingerStates[MAX_TOUCHES] {};
+    virtual_finger_state virtualFingerStates[MAX_TOUCHES] {};
+    bool freeFingerTypes[kMT2FingerTypeCount];
+    
+    static_assert(MAX_TOUCHES <= kMT2FingerTypeLittleFinger, "Too many fingers for one hand");
+    
+    int clampedFingerCount {0};
+    bool wasSkipped {false};
+    
+    int minXOverride {-1}, minYOverride {-1}, maxXOverride {-1}, maxYOverride {-1};
+    
+    int lastFingerCount;
+    int lastSentFingerCount;
+    bool hadLiftFinger;
+    
+    ForceTouchMode _forceTouchMode {FORCE_TOUCH_DISABLED};
+    int _forceTouchPressureThreshold {100};
+    
+    int _forceTouchCustomDownThreshold {90};
+    int _forceTouchCustomUpThreshold {20};
+    int _forceTouchCustomPower {8};
+
+    // normal state
+    UInt32 lastbuttons {0};
+    UInt32 lastTrackStickButtons, lastTouchpadButtons;
+    uint64_t keytime {0};
+    bool ignoreall {false};
+    int z_finger {45};
+    uint64_t maxaftertyping {500000000};
+    int wakedelay {1000};
+    int _resolution {2300};
+    int _scrollresolution {2300};
+    int _buttonCount {2};
+    
+    // HID Notification
+    bool usb_mouse_stops_trackpad {true};
+    
+    int _processusbmouse {true};
+    int _processbluetoothmouse {true};
+    
+    OSSet* attachedHIDPointerDevices {nullptr};
+    
+    IONotifier* usb_hid_publish_notify {nullptr};     // Notification when an USB mouse HID device is connected
+    IONotifier* usb_hid_terminate_notify {nullptr}; // Notification when an USB mouse HID device is disconnected
+    
+    IONotifier* bluetooth_hid_publish_notify {nullptr}; // Notification when a bluetooth HID device is connected
+    IONotifier* bluetooth_hid_terminate_notify {nullptr}; // Notification when a bluetooth HID device is disconnected
+
+    int _modifierdown {0}; // state of left+right control keys
+
+    // for scaling x/y values
+    int xupmm {50}, yupmm {50}; // 50 is just arbitrary, but same
     
     alps_data priv;
     hw_init hw_init;
     decode_fields decode_fields;
     process_packet process_packet;
     //    set_abs_params set_abs_params;
-    
-    ApplePS2MouseDevice * _device {NULL};
-    bool                _interruptHandlerInstalled {false};
-    bool                _powerControlHandlerInstalled {false};
-    RingBuffer<UInt8, kPacketLength*32> _ringBuffer;
-    UInt32              _packetByteCount {0};
-
-    IOCommandGate*      _cmdGate {0};
-    
-    OSArray* transducers;
     
     void injectVersionDependentProperties(OSDictionary* dict);
     bool resetMouse();
@@ -595,6 +664,8 @@ private:
     int upperFingerIndex() const;
     const alps_hw_state& upperFinger() const;
     void swapFingers(int dst, int src);
+    /// Translates physical fingers into virtual fingers so that host software doesn't see 'jumps' and has coordinates for all fingers.
+    /// @return True if is ready to send finger state to host interface
     bool renumberFingers();
     void sendTouchData();
     
@@ -607,103 +678,6 @@ private:
     
     void notificationHIDAttachedHandlerGated(IOService * newService, IONotifier * notifier);
     bool notificationHIDAttachedHandler(void * refCon, IOService * newService, IONotifier * notifier);
-    
-    // buttons and scroll wheel
-    unsigned int left:1;
-    unsigned int right:1;
-    unsigned int middle:1;
-    
-    unsigned int left_ts:1;
-    
-    int margin_size_x {0}, margin_size_y {0};
-    
-    uint32_t logical_max_x;
-    uint32_t logical_max_y;
-    uint32_t logical_min_x;
-    uint32_t logical_min_y;
-    
-    uint32_t physical_max_x;
-    uint32_t physical_max_y;
-    
-    struct alps_hw_state fingerStates[MAX_TOUCHES];
-    struct virtual_finger_state virtualFingerStates[MAX_TOUCHES];
-    bool freeFingerTypes[kMT2FingerTypeCount];
-    
-    static_assert(MAX_TOUCHES <= kMT2FingerTypeLittleFinger, "Too many fingers for one hand");
-    
-    int lastFingerCount;
-    int lastSentFingerCount;
-    bool hadLiftFinger;
-    
-    /// Translates physical fingers into virtual fingers so that host software doesn't see 'jumps' and has coordinates for all fingers.
-    /// @return True if is ready to send finger state to host interface
-    
-    ForceTouchMode _forceTouchMode {FORCE_TOUCH_DISABLED};
-    int _forceTouchPressureThreshold {100};
-    
-    int _forceTouchCustomDownThreshold;
-    int _forceTouchCustomUpThreshold;
-    int _forceTouchCustomPower;
-    
-    int clampedFingerCount;
-    bool wasSkipped;
-    int z_finger {45};
-    uint64_t maxaftertyping {500000000};
-    int wakedelay {1000};
-    int _resolution {2300};
-    int _scrollresolution {2300};
-    int _buttonCount {2};
-    int minXOverride {-1}, minYOverride {-1}, maxXOverride {-1}, maxYOverride {-1};
-
-    // normal state
-    UInt32 lastbuttons {0};
-    UInt32 lastTrackStickButtons, lastTouchpadButtons;
-    uint64_t keytime {0};
-    bool ignoreall {false};
-    bool usb_mouse_stops_trackpad {true};
-    
-    int _processusbmouse {true};
-    int _processbluetoothmouse {true};
-    
-    OSSet* attachedHIDPointerDevices {nullptr};
-    
-    IONotifier* usb_hid_publish_notify {nullptr};     // Notification when an USB mouse HID device is connected
-    IONotifier* usb_hid_terminate_notify {nullptr}; // Notification when an USB mouse HID device is disconnected
-    
-    IONotifier* bluetooth_hid_publish_notify {nullptr}; // Notification when a bluetooth HID device is connected
-    IONotifier* bluetooth_hid_terminate_notify {nullptr}; // Notification when a bluetooth HID device is disconnected
-
-    int _modifierdown {0}; // state of left+right control keys
-
-    // for scaling x/y values
-    int xupmm {50}, yupmm {50}; // 50 is just arbitrary, but same
-
-    // for middle button simulation
-    enum mbuttonstate
-    {
-        STATE_NOBUTTONS,
-        STATE_MIDDLE,
-        STATE_WAIT4TWO,
-        STATE_WAIT4NONE,
-        STATE_NOOP,
-    } _mbuttonstate {STATE_NOBUTTONS};
-    
-    SimpleAverage<int, 5> x_avg;
-    SimpleAverage<int, 5> y_avg;
-    //DecayingAverage<int, int64_t, 1, 1, 2> x_avg;
-    //DecayingAverage<int, int64_t, 1, 1, 2> y_avg;
-    UndecayAverage<int, int64_t, 1, 1, 2> x_undo;
-    UndecayAverage<int, int64_t, 1, 1, 2> y_undo;
-
-    SimpleAverage<int, 5> x2_avg;
-    SimpleAverage<int, 5> y2_avg;
-    //DecayingAverage<int, int64_t, 1, 1, 2> x2_avg;
-    //DecayingAverage<int, int64_t, 1, 1, 2> y2_avg;
-    UndecayAverage<int, int64_t, 1, 1, 2> x2_undo;
-    UndecayAverage<int, int64_t, 1, 1, 2> y2_undo;
-    
-    enum MBComingFrom { fromPassthru, fromTimer, fromTrackpad, fromCancel };
-    UInt32 middleButton(UInt32 buttons, uint64_t now, MBComingFrom from);
     
 protected:
     IOItemCount buttonCount() override;
