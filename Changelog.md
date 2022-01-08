@@ -46,6 +46,7 @@ VoodooPS2 Changelog
 - use alps_fiels for fingercount on V4
 - removed alps_parse_hw_state
 - removed redundant codes in set_protocol
+- cleaned up alps header
 
 #### v1.0.4
 - fixed random finger jumps with 2 fingers on V7
