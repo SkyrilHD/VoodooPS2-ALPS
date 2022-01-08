@@ -24,13 +24,8 @@
 #include <IOKit/IOTimerEventSource.h>
 #include <IOKit/hidsystem/IOHIPointing.h>
 #include <IOKit/IOCommandGate.h>
-#include "VoodooPS2Common.h"
-
 #include "VoodooInputMultitouch/VoodooInputEvent.h"
-
-// #include "../VoodooInput/VoodooInput/VoodooInputMultitouch/VoodooInputTransducer.h"
-// #include "../VoodooInput/VoodooInput/VoodooInputMultitouch/VoodooInputMessages.h"
-// #include "../VoodooInput/VoodooInput/VoodooInputMultitouch/VoodooInputEvent.h"
+#include "VoodooPS2Common.h"
 
 #define ALPS_PROTO_V1             0x100
 #define ALPS_PROTO_V2             0x200
@@ -49,7 +44,7 @@
 #define DOLPHIN_PROFILE_XOFFSET		8	/* x-electrode offset */
 #define DOLPHIN_PROFILE_YOFFSET		1	/* y-electrode offset */
 
-// TODO: Remove or move?
+//
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 // SimpleAverage Class Declaration
 //
@@ -122,6 +117,7 @@ public:
     }
 };
 
+//
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 // DecayingAverage Class Declaration
 //
@@ -467,6 +463,7 @@ typedef void (ALPS::*process_packet)(UInt8 *packet);
 
 #define ALPS_QUIRK_TRACKSTICK_BUTTONS	1 /* trakcstick buttons in trackstick packet */
 
+//
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 // ALPS Class Declaration
 //
@@ -489,11 +486,7 @@ typedef struct ALPSStatus {
 #define Y_MAX_POSITIVE 8176
 
 #define kPacketLength 6
-#define kPacketLengthSmall  3
-#define kPacketLengthLarge  6
-#define kPacketLengthMax    6
 #define kDP_CommandNibble10 0xf2
-#define BITS_PER_BYTE 8
 
 // predeclure stuff
 struct alps_data;
@@ -533,12 +526,6 @@ public:
     void handleClose(IOService *forClient, IOOptionBits options) override;
     
 protected:
-    int _multiPacket;
-    
-    UInt8 _multiData[6];
-    
-    IOGBounds _bounds;
-    
     virtual bool deviceSpecificInit();
     
     bool resetMouse();
@@ -673,14 +660,11 @@ protected:
     
     IOReturn identify();
     
-    void restart();
-    
     ApplePS2MouseDevice * _device {NULL};
     bool                _interruptHandlerInstalled {false};
     bool                _powerControlHandlerInstalled {false};
     RingBuffer<UInt8, kPacketLength*32> _ringBuffer;
     UInt32              _packetByteCount {0};
-    UInt16              _touchPadVersion;
 
     IOCommandGate*      _cmdGate {0};
     
@@ -745,22 +729,12 @@ protected:
     int _scrollresolution {2300};
     int _buttonCount {2};
     int minXOverride {-1}, minYOverride {-1}, maxXOverride {-1}, maxYOverride {-1};
-    int bogusdxthresh {400}, bogusdythresh {350};
-    
-    int rightclick_corner;
 
     // normal state
-    int last_fingers {0};
     UInt32 lastbuttons {0};
     UInt32 lastTrackStickButtons, lastTouchpadButtons;
-    int ignoresingle;
-    int touchx, touchy;
-    bool scrolldebounce;
     uint64_t keytime {0};
     bool ignoreall {false};
-#ifdef SIMULATE_PASSTHRU
-    UInt32 trackbuttons;
-#endif
     bool usb_mouse_stops_trackpad {true};
     
     int _processusbmouse {true};
@@ -788,19 +762,6 @@ protected:
         STATE_WAIT4NONE,
         STATE_NOOP,
     } _mbuttonstate {STATE_NOBUTTONS};
-
-    // state for middle button
-    UInt32 _pendingbuttons {0};
-    uint64_t _buttontime {0};
-    IOTimerEventSource* _buttonTimer {0};
-    uint64_t _maxmiddleclicktime {100000000};
-
-    // momentum scroll state
-    bool wasScroll = false;
-    SimpleAverage<int, 32> dy_history;
-    SimpleAverage<uint64_t, 32> time_history;
-    
-    IOTimerEventSource* scrollDebounceTIMER;
     
     SimpleAverage<int, 5> x_avg;
     SimpleAverage<int, 5> y_avg;
@@ -815,16 +776,10 @@ protected:
     //DecayingAverage<int, int64_t, 1, 1, 2> y2_avg;
     UndecayAverage<int, int64_t, 1, 1, 2> x2_undo;
     UndecayAverage<int, int64_t, 1, 1, 2> y2_undo;
+
+    virtual void setDevicePowerState(UInt32 whatToDo);
     
-    const char* modeName(int touchmode);
-
-    virtual void   setDevicePowerState(UInt32 whatToDo);
-
-    virtual void touchpadToggled() {};
-    virtual void touchpadShutdown() {};
     virtual void initTouchPad();
-
-    inline bool isFingerTouch(int z) { return z>z_finger; }
 
     enum MBComingFrom { fromPassthru, fromTimer, fromTrackpad, fromCancel };
     UInt32 middleButton(UInt32 buttons, uint64_t now, MBComingFrom from);

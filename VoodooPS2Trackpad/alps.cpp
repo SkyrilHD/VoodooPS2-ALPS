@@ -302,18 +302,6 @@ ALPS *ALPS::probe(IOService *provider, SInt32 *score) {
     return success ? this : 0;
 }
 
-void ALPS::restart() {
-    
-    _device->lock();
-    
-    resetMouse();
-    
-    identify();
-    
-    _device->unlock();
-    
-}
-
 bool ALPS::resetMouse() {
     TPS2Request<3> request;
     
@@ -464,12 +452,6 @@ void ALPS::stop(IOService *provider) {
     IOWorkLoop* pWorkLoop = getWorkLoop();
     if (pWorkLoop)
     {
-        if (_buttonTimer)
-        {
-            pWorkLoop->removeEventSource(_buttonTimer);
-            _buttonTimer->release();
-            _buttonTimer = 0;
-        }
         if (_cmdGate)
         {
             pWorkLoop->removeEventSource(_cmdGate);
@@ -1236,9 +1218,8 @@ void ALPS::alps_process_touchpad_packet_v3_v5(UInt8 *packet) {
     f.mt[1].y = priv.y_max - f.mt[1].y;
     
     /* Ignore 1 finger events after 2 finger scroll to prevent jitter */
-    if (last_fingers == 2 && fingers == 1 && scrolldebounce) {
-        //fingers = 2;
-    }
+    // if (last_fingers == 2 && fingers == 1 && scrolldebounce)
+    //     fingers = 2;
     
     // scale x & y to the axis which has the most resolution
     if (xupmm < yupmm) {
@@ -4362,7 +4343,6 @@ void ALPS::setParamPropertiesGated(OSDictionary * config)
     };
     const struct {const char* name; uint64_t* var; } int64vars[]={
         {"QuietTimeAfterTyping",            &maxaftertyping},
-        {"MiddleClickTime",                 &_maxmiddleclicktime},
     };
     
     OSBoolean *bl;
@@ -4406,16 +4386,9 @@ void ALPS::setParamPropertiesGated(OSDictionary * config)
         }
     }
     
-    // bogusdeltathreshx/y = 0 is MAX_INT
-    if (!bogusdxthresh)
-        bogusdxthresh = 0x7FFFFFFF;
-    if (!bogusdythresh)
-        bogusdythresh = 0x7FFFFFFF;
-    
     // disable trackpad when USB mouse is plugged in and this functionality is requested
     if (attachedHIDPointerDevices && attachedHIDPointerDevices->getCount() > 0) {
         ignoreall = usb_mouse_stops_trackpad;
-        touchpadToggled();
     }
     
     if (_forceTouchMode == FORCE_TOUCH_BUTTON) {
@@ -4518,7 +4491,6 @@ IOReturn ALPS::message(UInt32 type, IOService* provider, void* argument) {
             {
                 // save state, and update LED
                 ignoreall = !enable;
-                touchpadToggled();
             }
             break;
         }
