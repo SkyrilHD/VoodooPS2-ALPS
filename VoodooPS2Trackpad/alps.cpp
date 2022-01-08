@@ -4645,8 +4645,7 @@ void ALPS::unregisterHIDPointerNotifications()
     attachedHIDPointerDevices->flushCollection();
 }
 
-void ALPS::notificationHIDAttachedHandlerGated(IOService * newService,
-                                                                    IONotifier * notifier)
+void ALPS::notificationHIDAttachedHandlerGated(IOService * newService, IONotifier * notifier)
 {
     char path[256];
     int len = 255;
@@ -4716,9 +4715,7 @@ void ALPS::notificationHIDAttachedHandlerGated(IOService * newService,
     }
 }
 
-bool ALPS::notificationHIDAttachedHandler(void * refCon,
-                                                               IOService * newService,
-                                                               IONotifier * notifier)
+bool ALPS::notificationHIDAttachedHandler(void * refCon, IOService * newService, IONotifier * notifier)
 {
     if (_cmdGate) { // defensive
         _cmdGate->runAction(OSMemberFunctionCast(IOCommandGate::Action, this, &ALPS::notificationHIDAttachedHandlerGated), newService, notifier);
