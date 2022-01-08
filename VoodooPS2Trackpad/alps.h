@@ -172,6 +172,22 @@ public:
     }
 };
 
+struct alps_hw_state {
+     int x;
+     int y;
+     int z;
+     int virtualFingerIndex;
+ };
+
+struct virtual_finger_state {
+     SimpleAverage<int, 5> x_avg;
+     SimpleAverage<int, 5> y_avg;
+     uint8_t pressure;
+     bool touch;
+     bool button;
+     MT2FingerType fingerType;
+ };
+
 /*
  * enum SS4_PACKET_ID - defines the packet type for V8
  * SS4_PACKET_ID_IDLE: There's no finger and no button activity.
@@ -275,23 +291,6 @@ enum SS4_PACKET_ID {
 #define SS4_MFPACKET_NO_AY_BL        4088    /* Buttonless Y-Coord value */
 #define SS4_PLUS_MFPACKET_NO_AX        4080    /* SS4 PLUS, X */
 #define SS4_PLUS_MFPACKET_NO_AX_BL    4088    /* Buttonless SS4 PLUS, X */
-
-// TODO: Move to different place
-struct alps_hw_state {
-     int x;
-     int y;
-     int z;
-     int virtualFingerIndex;
- };
-
-struct virtual_finger_state {
-     SimpleAverage<int, 5> x_avg;
-     SimpleAverage<int, 5> y_avg;
-     uint8_t pressure;
-     bool touch;
-     bool button;
-     MT2FingerType fingerType;
- };
 
 /*
  * enum V7_PACKET_ID - defines the packet type for V7
