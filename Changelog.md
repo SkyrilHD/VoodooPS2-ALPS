@@ -47,6 +47,8 @@ VoodooPS2 Changelog
 - removed alps_parse_hw_state
 - removed redundant codes in set_protocol
 - cleaned up alps header
+- replaced 12.0 libkmod with 10.11
+- fixed some unused codes
 
 #### v1.0.4
 - fixed random finger jumps with 2 fingers on V7
