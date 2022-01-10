@@ -13,7 +13,7 @@ VoodooPS2 Changelog
 - resolution of touchpad gets saved as property
 - touchpad version gets saved as property
 - added support for V8 touchpads (huge thanks to forte500 for testing)
-    - made V8 independent from alps_parse_hw_state
+    - made V8 independent of alps_parse_hw_state
     - removed scaling for V8 touchpads
     - disabled pressure report for V8 touchpads
     - added more logging for V8
@@ -33,14 +33,14 @@ VoodooPS2 Changelog
 - added kernel level USB and bluetooth mouse notifications
 - force Force Touch to be disabled when ForceTouchMode is set to 1 and booted in recovery
 - added inital partial support for V6 (not tested)
-- made V6 independent from alps_parse_hw_state
+- made V6 independent of alps_parse_hw_state
 - removed V6 reporting multiple fingers to VoodooInput
 - disabled pressure support for V6
 - disabled pressure support for V3/V5
-- made V1/V2 independent from alps_parse_hw_state
+- made V1/V2 independent of alps_parse_hw_state
 - disabled pressure support for V1/V2
 - added buttons back to V1/V2 to make buttons work when using trackstick
-- made V4 independent from alps_parse_hw_state
+- made V4 independent of alps_parse_hw_state
 - ported alps_report_semi_mt_data to V4
 - disabled pressure support for V4
 - use alps_fields for fingercount on V4
@@ -52,7 +52,7 @@ VoodooPS2 Changelog
 
 #### v1.0.4
 - fixed random finger jumps with 2 fingers on V7
-- made V7 independent from alps_parse_hw_state
+- made V7 independent of alps_parse_hw_state
 - separated buttons to its own function
 - replaced packetReady code with pre-VoodooInput
 - added partial support for V3 and V5 (needs testing)
