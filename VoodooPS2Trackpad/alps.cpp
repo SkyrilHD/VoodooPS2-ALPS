@@ -2116,7 +2116,12 @@ void ALPS::alps_process_packet_ss4_v2(UInt8 *packet) {
         y = -y;
         
         DEBUG_LOG("ALPS: Trackstick report: X=%d, Y=%d, Z=%d\n", x, y, pressure);
-        dispatchRelativePointerEventX(x, y, buttons, now_abs);
+        /* If middle button is pressed, switch to scroll mode. Else, move pointer normally */
+        if (0 == (buttons & 0x04)) {
+            dispatchRelativePointerEventX(x, y, buttons, now_abs);
+        } else {
+            dispatchScrollWheelEventX(-y, -x, 0, now_abs);
+        }
         return;
     }
     
@@ -3658,7 +3663,7 @@ void ALPS::alps_buttons(struct alps_fields &f)
     
     left = f.left;
     right = f.right | f.ts_right;
-    middle = f.middle | f.ts_middle;
+    middle = f.middle;
     left_ts = f.ts_left;
     
     AbsoluteTime timestamp;
