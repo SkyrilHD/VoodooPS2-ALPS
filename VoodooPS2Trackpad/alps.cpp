@@ -2106,8 +2106,6 @@ void ALPS::alps_process_packet_ss4_v2(UInt8 *packet) {
         buttons |= f.ts_right ? 0x02 : 0;
         buttons |= f.ts_middle ? 0x04 : 0;
         
-        f.pressure = pressure;
-        
         if ((abs(x) >= 0x7f) || (abs(y) >= 0x7f)) {
             return;
         }
