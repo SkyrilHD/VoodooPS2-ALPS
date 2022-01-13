@@ -3740,29 +3740,6 @@ void ALPS::assignFingerType(virtual_finger_state &vf) {
         }
 }
 
-template <typename TValue, typename TLimit, typename TMargin>
-static void clip_no_update_limits(TValue& value, TLimit minimum, TLimit maximum, TMargin margin)
-{
-    if (value < minimum)
-        value = minimum;
-    if (value > maximum)
-        value = maximum;
-}
-
-template <typename TValue, typename TLimit, typename TMargin>
-static void clip(TValue& value, TLimit& minimum, TLimit& maximum, TMargin margin, bool &dimensions_changed)
-{
-    if (value < minimum - margin) {
-        dimensions_changed = true;
-        minimum = value + margin;
-    }
-    if (value > maximum + margin) {
-        dimensions_changed = true;
-        maximum = value - margin;
-    }
-    clip_no_update_limits(value, minimum, maximum, margin);
-}
-
 void ALPS::freeAndMarkVirtualFingers() {
     memset(freeFingerTypes, true, kMT2FingerTypeCount);
     freeFingerTypes[kMT2FingerTypeUndefined] = false;
@@ -3836,9 +3813,6 @@ bool ALPS::renumberFingers() {
                     fj.x += fi.x - fiv.x_avg.newest();
                     fj.y += fi.y - fiv.y_avg.newest();
                     fj.z = fi.z;
-                    
-                    clip_no_update_limits(fj.x, logical_min_x, logical_max_x, margin_size_x);
-                    clip_no_update_limits(fj.y, logical_min_y, logical_max_y, margin_size_y);
                 }
             }
             else if (clampedFingerCount == 3) {
@@ -3848,9 +3822,6 @@ bool ALPS::renumberFingers() {
                 f2.x += ((f0.x - f0v.x_avg.newest()) + (f1.x - f1v.x_avg.newest())) / 2;
                 f2.y += ((f0.y - f0v.y_avg.newest()) + (f1.y - f1v.y_avg.newest())) / 2;
                 f2.z = (f0.z + f1.z) / 2;
-                
-                clip_no_update_limits(f2.x, logical_min_x, logical_max_x, margin_size_x);
-                clip_no_update_limits(f2.y, logical_min_y, logical_max_y, margin_size_y);
             }
         }
         else
@@ -4177,8 +4148,6 @@ void ALPS::sendTouchData() {
     
     static_assert(VOODOO_INPUT_MAX_TRANSDUCERS >= MAX_TOUCHES, "Trackpad supports too many fingers");
     
-    bool dimensions_changed = false;
-    
     int transducers_count = 0;
     for(int i = 0; i < MAX_TOUCHES; i++) {
         const auto& state = virtualFingerStates[i];
@@ -4193,9 +4162,6 @@ void ALPS::sendTouchData() {
         
         int posX = state.x_avg.average();
         int posY = state.y_avg.average();
-        
-        clip(posX, logical_min_x, logical_max_x, margin_size_x, dimensions_changed);
-        clip(posY, logical_min_y, logical_max_y, margin_size_y, dimensions_changed);
         
         posX -= logical_min_x;
         posY = logical_max_y + 1 - posY;
@@ -4279,16 +4245,6 @@ void ALPS::sendTouchData() {
     // create new VoodooI2CMultitouchEvent
     inputEvent.contact_count = transducers_count;
     inputEvent.timestamp = timestamp;
-    
-    
-    if (dimensions_changed) {
-        VoodooInputDimensions d;
-        d.min_x = logical_min_x;
-        d.max_x = logical_max_x;
-        d.min_y = logical_min_y;
-        d.max_y = logical_max_y;
-        super::messageClient(kIOMessageVoodooInputUpdateDimensionsMessage, voodooInputInstance, &d, sizeof(VoodooInputDimensions));
-    }
     
     // send the event into the multitouch interface
     // send the 0 finger message only once
