@@ -3090,13 +3090,7 @@ void ALPS::alps_update_btn_info_ss4_v2(unsigned char otp[][4], struct alps_data 
     if (is_btnless)
         priv->flags |= ALPS_BUTTONPAD;
     
-    if (is_btnless)
-    {
-        setProperty("Clickpad", kOSBooleanTrue);
-    } else
-    {
-        setProperty("Clickpad", kOSBooleanFalse);
-    }
+    is_btnless ? setProperty("Clickpad", kOSBooleanTrue) : setProperty("Clickpad", kOSBooleanFalse);
 }
 
 void ALPS::alps_update_dual_info_ss4_v2(unsigned char otp[][4], struct alps_data *priv) {
@@ -3123,13 +3117,7 @@ void ALPS::alps_update_dual_info_ss4_v2(unsigned char otp[][4], struct alps_data
         priv->flags |= ALPS_DUALPOINT |
         ALPS_DUALPOINT_WITH_PRESSURE;
     
-    if (is_dual)
-    {
-        setProperty("Trackpoint", kOSBooleanTrue);
-    } else
-    {
-        setProperty("Trackpoint", kOSBooleanFalse);
-    }
+    is_dual ? setProperty("Trackpoint", kOSBooleanTrue) : setProperty("Trackpoint", kOSBooleanFalse);
 }
 
 void ALPS::alps_set_defaults_ss4_v2(struct alps_data *priv) {
