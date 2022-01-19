@@ -4255,41 +4255,39 @@ void ALPS::setParamPropertiesGated(OSDictionary * config) {
     OSBoolean *bl;
     OSNumber *num;
     // 64-bit config items
-    for (int i = 0; i < countof(int64vars); i++) {
+    for (int i = 0; i < countof(int64vars); i++)
         if ((num=OSDynamicCast(OSNumber, config->getObject(int64vars[i].name))))
         {
             *int64vars[i].var = num->unsigned64BitValue();
-            ////DEBUG_LOG("%s::setProperty64(%s, %llu)\n", getName(), int64vars[i].name, *int64vars[i].var);
             setProperty(int64vars[i].name, *int64vars[i].var, 64);
         }
-    }
-    
     // boolean config items
-    for (int i = 0; i < countof(boolvars); i++) {
+    for (int i = 0; i < countof(boolvars); i++)
         if ((bl=OSDynamicCast (OSBoolean,config->getObject (boolvars[i].name))))
         {
             *boolvars[i].var = bl->isTrue();
-            ////DEBUG_LOG("%s::setPropertyBool(%s, %d)\n", getName(), boolvars[i].name, *boolvars[i].var);
             setProperty(boolvars[i].name, *boolvars[i].var ? kOSBooleanTrue : kOSBooleanFalse);
         }
-    }
-    
     // 32-bit config items
-    for (int i = 0; i < countof(int32vars);i++) {
+    for (int i = 0; i < countof(int32vars);i++)
         if ((num=OSDynamicCast (OSNumber,config->getObject (int32vars[i].name))))
         {
             *int32vars[i].var = num->unsigned32BitValue();
-            ////DEBUG_LOG("%s::setProperty32(%s, %d)\n", getName(), int32vars[i].name, *int32vars[i].var);
             setProperty(int32vars[i].name, *int32vars[i].var, 32);
         }
-    }
     // lowbit config items
-    for (int i = 0; i < countof(lowbitvars); i++) {
+    for (int i = 0; i < countof(lowbitvars); i++)
+    {
         if ((num=OSDynamicCast (OSNumber,config->getObject(lowbitvars[i].name))))
         {
             *lowbitvars[i].var = (num->unsigned32BitValue()&0x1)?true:false;
-            ////DEBUG_LOG("%s::setPropertyLowBit(%s, %d)\n", getName(), lowbitvars[i].name, *lowbitvars[i].var);
             setProperty(lowbitvars[i].name, *lowbitvars[i].var ? 1 : 0, 32);
+        }
+        //REVIEW: are these items ever carried in a boolean?
+        else if ((bl=OSDynamicCast(OSBoolean, config->getObject(lowbitvars[i].name))))
+        {
+            *lowbitvars[i].var = bl->isTrue();
+            setProperty(lowbitvars[i].name, *lowbitvars[i].var ? kOSBooleanTrue : kOSBooleanFalse);
         }
     }
     
