@@ -1332,7 +1332,7 @@ void ALPS::alps_process_packet_v6(UInt8 *packet) {
     if (packet[5] == 0x7F) {
         /* It should be a DualPoint when received Trackpoint packet */
         if (!(priv.flags & ALPS_DUALPOINT)) {
-            DEBUG_LOG("ALPS: Rejected trackstick packet from non DualPoint device");
+            DEBUG_LOG("ALPS: Rejected trackstick packet from non DualPoint device\n");
             return;
         }
         
