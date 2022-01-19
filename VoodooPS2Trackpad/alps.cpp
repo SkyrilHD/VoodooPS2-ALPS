@@ -2862,11 +2862,6 @@ bool ALPS::alps_get_v3_v7_resolution(int reg_pitch) {
      x_pitch, y_pitch, x_electrode, y_electrode,
      x_phys / 10, y_phys / 10, priv.x_res, priv.y_res);*/
     
-    setProperty("X Max", priv.x_max, 32);
-    setProperty("Y Max", priv.y_max, 32);
-    setProperty("X Res", priv.x_res, 32);
-    setProperty("Y Res", priv.y_res, 32);
-    
     return true;
 }
 
@@ -3082,11 +3077,6 @@ void ALPS::alps_update_device_area_ss4_v2(unsigned char otp[][4], struct alps_da
     
     priv->x_res = priv->x_max * 10 / x_phys; /* units / mm */
     priv->y_res = priv->y_max * 10 / y_phys; /* units / mm */
-    
-    setProperty("X Max", priv->x_max, 32);
-    setProperty("Y Max", priv->y_max, 32);
-    setProperty("X Res", priv->x_res, 32);
-    setProperty("Y Res", priv->y_res, 32);
 }
 
 void ALPS::alps_update_btn_info_ss4_v2(unsigned char otp[][4], struct alps_data *priv) {
@@ -3592,6 +3582,9 @@ void ALPS::set_resolution() {
     
     setProperty(VOODOO_INPUT_LOGICAL_MAX_X_KEY, logical_max_x - logical_min_x, 32);
     setProperty(VOODOO_INPUT_LOGICAL_MAX_Y_KEY, logical_max_y - logical_min_y, 32);
+    setProperty("X Max", priv.x_max, 32);
+    setProperty("Y Max", priv.y_max, 32);
+    
     
     setProperty(VOODOO_INPUT_PHYSICAL_MAX_X_KEY, physical_max_x, 32);
     setProperty(VOODOO_INPUT_PHYSICAL_MAX_Y_KEY, physical_max_y, 32);
