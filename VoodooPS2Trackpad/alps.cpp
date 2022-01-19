@@ -711,6 +711,12 @@ void ALPS::alps_process_packet_v1_v2(UInt8 *packet) {
         fingers = 0;
     }
     
+    // MARK: Switch to IOHIPointing
+    // Since V1 & V2 only report 1 finger, there is no benefit to using VoodooInput.
+    // The best option would be to switch back to a regular mouse.
+    //
+    // dispatchRelativePointerEventX(x, y, buttons, now_abs);
+    
     struct alps_fields f;
     f.mt[0].x = x;
     f.mt[0].y = y;
@@ -1372,6 +1378,8 @@ void ALPS::alps_process_packet_v6(UInt8 *packet) {
     f.right = packet[3] & 0x02;
     
     //fingers = z > 0 ? 1 : 0;
+    // MARK: Indication that multiple fingers do not work?
+    // Switch to IOHIDPointing
     if (z > 30)
         f.fingers = 1;
     if (z < 25)
@@ -3614,27 +3622,19 @@ void ALPS::alps_buttons(struct alps_fields &f) {
     AbsoluteTime timestamp;
     clock_get_uptime(&timestamp);
     // Physical left button (for non-Clickpads)
-    // Only use this if trackpad is not a clickpad
+    // Only used if trackpad is not a clickpad
     if (!(priv.flags & ALPS_BUTTONPAD)) {
         if (left && !prev_left)
             dispatchRelativePointerEvent(0, 0, 0x01, timestamp);
         else if (prev_left && !left)
             dispatchRelativePointerEvent(0, 0, 0x00, timestamp);
     }
-    /*
-    // FOR DEBUGGING PURPOSES
-    // Allow Clickpads to report left click as well
-    if (left && !prev_left)
-        dispatchRelativePointerEvent(0, 0, 0x01, timestamp);
-    else if (prev_left && !left)
-        dispatchRelativePointerEvent(0, 0, 0x00, timestamp);
-    */
-    // Physical right button (non-passthrough)
+    // Physical right button
     if (right && !prev_right)
         dispatchRelativePointerEvent(0, 0, 0x02, timestamp);
     else if (prev_right && !right)
         dispatchRelativePointerEvent(0, 0, 0x00, timestamp);
-    // Physical middle button (non-passthrough)
+    // Physical middle button
     if (middle && !prev_middle)
         dispatchRelativePointerEvent(0, 0, 0x04, timestamp);
     else if (prev_middle && !middle)
