@@ -2732,7 +2732,7 @@ IOReturn ALPS::alps_setup_trackstick_v3(int regBase) {
             goto error;
         }
         if (!(alps_command_mode_send_nibble(0x9) && alps_command_mode_send_nibble(0x4))) {
-            IOLog("ALPS: error sending magic E6 nibble sequence\n");
+            IOLog("ALPS: Error sending magic E6 nibble sequence\n");
             ret = kIOReturnIOError;
             goto error;
         }
@@ -3426,7 +3426,7 @@ bool ALPS::matchTable(ALPSStatus_t *e7, ALPSStatus_t *ec) {
             } else if (priv.proto_version == ALPS_PROTO_V2) {
                 IOLog("ALPS: Found an ALPS V2 TouchPad\n");
             } else if (priv.proto_version == ALPS_PROTO_V3_RUSHMORE) {
-                IOLog("ALPS: Found an ALPS V3 Rushmore TouchPad\n!");
+                IOLog("ALPS: Found an ALPS V3 Rushmore TouchPad\n");
             } else if (priv.proto_version == ALPS_PROTO_V4) {
                 IOLog("ALPS: Found an ALPS V4 TouchPad\n");
             }else if (priv.proto_version == ALPS_PROTO_V6) {
