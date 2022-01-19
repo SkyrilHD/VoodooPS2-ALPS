@@ -722,7 +722,7 @@ void ALPS::alps_process_packet_v1_v2(UInt8 *packet) {
     
     //fingers = f.fingers;
     
-    DEBUG_LOG("There are currently %d finger(s) accessing alps_parse_hw_state\n", f.fingers);
+    DEBUG_LOG("ALPS: There are currently %d finger(s) accessing alps_parse_hw_state\n", f.fingers);
     
     // Maybe TODO: Add virtual finger for second finger to make gestures work
     if (fingers >= 2) {
@@ -956,7 +956,7 @@ int ALPS::alps_process_bitmap(struct alps_data *priv,
             strcat(bitLog, (ymap & 1 && xmap & 1) ? "1 " : "0 ");
         }
         
-        IOLog("%s\n", bitLog);
+        IOLog("ALPS: %s\n", bitLog);
     }
     
     IOLog("ALPS: Process Bitmap, Corner=%d, Fingers=%d, x1=%d, x2=%d, y1=%d, y2=%d xmap=%d ymap=%d\n", priv->second_touch, fingers, fields->mt[0].x, fields->mt[1].x, fields->mt[0].y, fields->mt[1].y, fields->x_map, fields->y_map);
@@ -1385,7 +1385,7 @@ void ALPS::alps_process_packet_v6(UInt8 *packet) {
     
     fingers = f.fingers;
     
-    DEBUG_LOG("There are currently %d finger(s) accessing alps_parse_hw_state\n", f.fingers);
+    DEBUG_LOG("ALPS: There are currently %d finger(s) accessing alps_parse_hw_state\n", f.fingers);
     
     // normal "packet"
     // my port of synaptics_parse_hw_state from synaptics.c from Linux Kernel
@@ -1498,7 +1498,7 @@ void ALPS::alps_process_packet_v4(UInt8 *packet) {
     
     fingers = f.fingers;
     
-    DEBUG_LOG("There are currently %d finger(s) accessing alps_parse_hw_state\n", f.fingers);
+    DEBUG_LOG("ALPS: There are currently %d finger(s) accessing alps_parse_hw_state\n", f.fingers);
     
     if (fingers >= 2) {
         fingerStates[1].x = f.mt[1].x;
@@ -1645,7 +1645,7 @@ int ALPS::alps_get_mt_count(struct input_mt_pos *mt) {
 }
 
 bool ALPS::alps_decode_packet_v7(struct alps_fields *f, UInt8 *p){
-    //IOLog("Decode V7 touchpad Packet... 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x\n", p[0], p[1], p[2], p[3], p[4], p[5]);
+    //IOLog("ALPS: Decode V7 touchpad Packet... 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x\n", p[0], p[1], p[2], p[3], p[4], p[5]);
     
     unsigned char pkt_id;
     
@@ -2113,7 +2113,7 @@ void ALPS::alps_process_packet_ss4_v2(UInt8 *packet) {
     
     fingers = f.fingers;
     
-    DEBUG_LOG("There are currently %d finger(s) accessing alps_parse_hw_state\n", f.fingers);
+    DEBUG_LOG("ALPS: There are currently %d finger(s) accessing alps_parse_hw_state\n", f.fingers);
     
     if (fingers >= 2) {
         fingerStates[1].x = f.mt[1].x;
@@ -2237,7 +2237,7 @@ bool ALPS::alps_command_mode_set_addr(int addr) {
     TPS2Request<1> request;
     int i, nibble;
     
-    //    DEBUG_LOG("command mode set addr with addr command: 0x%02x\n", priv.addr_command);
+    // DEBUG_LOG("ALPS: command mode set addr with addr command: 0x%02x\n", priv.addr_command);
     request.commands[0].command = kPS2C_SendCommandAndCompareAck;
     request.commands[0].inOrOut = priv.addr_command;
     request.commandsCount = 1;
@@ -2262,7 +2262,7 @@ int ALPS::alps_command_mode_read_reg(int addr) {
     ALPSStatus_t status;
     
     if (!alps_command_mode_set_addr(addr)) {
-        DEBUG_LOG("Failed to set addr to read register\n");
+        DEBUG_LOG("ALPS: Failed to set addr to read register\n");
         return -1;
     }
     
@@ -2286,14 +2286,14 @@ int ALPS::alps_command_mode_read_reg(int addr) {
     status.bytes[1] = request.commands[2].inOrOut;
     status.bytes[2] = request.commands[3].inOrOut;
     
-    //IOLog("ALPS read reg result: { 0x%02x, 0x%02x, 0x%02x }\n", status.bytes[0], status.bytes[1], status.bytes[2]);
+    // IOLog("ALPS: read reg result: { 0x%02x, 0x%02x, 0x%02x }\n", status.bytes[0], status.bytes[1], status.bytes[2]);
     
     /* The address being read is returned in the first 2 bytes
      * of the result. Check that the address matches the expected
      * address.
      */
     if (addr != ((status.bytes[0] << 8) | status.bytes[1])) {
-        DEBUG_LOG("ALPS ERROR: read wrong registry value, expected: %x\n", addr);
+        DEBUG_LOG("ALPS: ERROR: read wrong registry value, expected: %x\n", addr);
         return -1;
     }
     
@@ -2359,7 +2359,7 @@ bool ALPS::alps_rpt_cmd(SInt32 init_command, SInt32 init_arg, SInt32 repeated_co
     report->bytes[1] = request.commands[byte0+1].inOrOut;
     report->bytes[2] = request.commands[byte0+2].inOrOut;
     
-    DEBUG_LOG("%02x report: [0x%02x 0x%02x 0x%02x]\n",
+    DEBUG_LOG("ALPS: %02x report: [0x%02x 0x%02x 0x%02x]\n",
               repeated_command,
               report->bytes[0],
               report->bytes[1],
@@ -2369,7 +2369,7 @@ bool ALPS::alps_rpt_cmd(SInt32 init_command, SInt32 init_arg, SInt32 repeated_co
 }
 
 bool ALPS::alps_enter_command_mode() {
-    DEBUG_LOG("enter command mode\n");
+    DEBUG_LOG("ALPS: enter command mode\n");
     TPS2Request<4> request;
     ALPSStatus_t status;
     
@@ -2381,7 +2381,7 @@ bool ALPS::alps_enter_command_mode() {
 }
 
 bool ALPS::alps_exit_command_mode() {
-    DEBUG_LOG("exit command mode\n");
+    DEBUG_LOG("ALPS: exit command mode\n");
     TPS2Request<1> request;
     
     request.commands[0].command = kPS2C_SendCommandAndCompareAck;
@@ -2548,7 +2548,7 @@ bool ALPS::alps_tap_mode(bool enable) {
     _device->submitRequestAndBlock(&request);
     
     if (request.commandsCount != 8) {
-        DEBUG_LOG("Enabling tap mode failed before getStatus call, command count=%d\n",
+        DEBUG_LOG("ALPS: Enabling tap mode failed before getStatus call, command count=%d\n",
                   request.commandsCount);
         return false;
     }
@@ -2613,7 +2613,7 @@ bool ALPS::alps_passthrough_mode_v3(int regBase, bool enable) {
     int regVal;
     bool ret = false;
     
-    DEBUG_LOG("passthrough mode enable=%d\n", enable);
+    DEBUG_LOG("ALPS: passthrough mode enable=%d\n", enable);
     
     if (!alps_enter_command_mode()) {
         IOLog("ALPS: Failed to enter command mode while enabling passthrough mode\n");
@@ -2736,7 +2736,7 @@ IOReturn ALPS::alps_setup_trackstick_v3(int regBase) {
             ret = kIOReturnIOError;
             goto error;
         }
-        DEBUG_LOG("Sent magic E6 sequence\n");
+        DEBUG_LOG("ALPS: Sent magic E6 sequence\n");
         
         /*
          * This ensures the trackstick packets are in the format
@@ -3513,7 +3513,7 @@ IOReturn ALPS::identify() {
         IOLog("ALPS: Found a unsupported V9 TouchPad with ID: E7=0x%02x 0x%02x 0x%02x, EC=0x%02x 0x%02x 0x%02x\n", e7.bytes[0], e7.bytes[1], e7.bytes[2], ec.bytes[0], ec.bytes[1], ec.bytes[2]);
         
     } else {
-        IOLog("ALPS DRIVER: TouchPad didn't match any known IDs: E7=0x%02x 0x%02x 0x%02x, EC=0x%02x 0x%02x 0x%02x ... driver will now exit\n",
+        IOLog("ALPS: Touchpad didn't match any known IDs: E7=0x%02x 0x%02x 0x%02x, EC=0x%02x 0x%02x 0x%02x ... driver will now exit\n",
               e7.bytes[0], e7.bytes[1], e7.bytes[2], ec.bytes[0], ec.bytes[1], ec.bytes[2]);
         return kIOReturnInvalid;
     }
@@ -3528,7 +3528,7 @@ IOReturn ALPS::identify() {
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 void ALPS::setTouchPadEnable(bool enable) {
-    DEBUG_LOG("setTouchpadEnable enter\n");
+    DEBUG_LOG("ALPS: setTouchpadEnable enter\n");
     //
     // Instructs the trackpad to start or stop the reporting of data packets.
     // It is safe to issue this request from the interrupt/completion context.
@@ -3657,7 +3657,7 @@ int ALPS::dist(int physicalFinger, int virtualFinger) {
 
 void ALPS::assignVirtualFinger(int physicalFinger) {
     if (physicalFinger < 0 || physicalFinger >= MAX_TOUCHES) {
-        IOLog("VoodooPS2ALPS::assignVirtualFinger ERROR: invalid physical finger %d\n", physicalFinger);
+        IOLog("alps_parse_hw_state: ALPS::assignVirtualFinger ERROR: invalid physical finger %d\n", physicalFinger);
         return;
     }
     for (int j = 0; j < MAX_TOUCHES; j++) {
