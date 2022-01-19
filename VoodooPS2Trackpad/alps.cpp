@@ -1723,7 +1723,7 @@ void ALPS::alps_process_trackstick_packet_v7(UInt8 *packet) {
     
     /* It should be a DualPoint when received trackstick packet */
     if (!(priv.flags & ALPS_DUALPOINT)) {
-        IOLog("ALPS: Rejected trackstick packet from non DualPoint device");
+        IOLog("ALPS: Rejected trackstick packet from non DualPoint device\n");
         return;
     }
     
@@ -3411,7 +3411,7 @@ bool ALPS::matchTable(ALPSStatus_t *e7, ALPSStatus_t *ec) {
     const struct alps_model_info *model;
     int i;
     
-    IOLog("ALPS: Touchpad with Signature { %d, %d, %d }", e7->bytes[0], e7->bytes[1], e7->bytes[2]);
+    IOLog("ALPS: Touchpad with Signature { %d, %d, %d }\n", e7->bytes[0], e7->bytes[1], e7->bytes[2]);
     
     for (i = 0; i < ARRAY_SIZE(alps_model_data); i++) {
         model = &alps_model_data[i];
@@ -3698,7 +3698,7 @@ void ALPS::freeAndMarkVirtualFingers() {
     for (int i = 0; i < clampedFingerCount; i++) { // mark virtual fingers as used
         int j = fingerStates[i].virtualFingerIndex;
         if (j == -1) {
-            IOLog("alps_parse_hw_state: WTF!? Finger %d has no virtual finger", i);
+            IOLog("alps_parse_hw_state: WTF!? Finger %d has no virtual finger\n", i);
             continue;
         }
         auto &vfj = virtualFingerStates[j];
@@ -3768,7 +3768,7 @@ bool ALPS::renumberFingers() {
             }
         }
         else
-            IOLog("alps_parse_hw_state: WTF - have %d fingers, but first 2 don't have virtual finger", clampedFingerCount);
+            IOLog("alps_parse_hw_state: WTF - have %d fingers, but first 2 don't have virtual finger\n", clampedFingerCount);
     }
     
     // We really need to send the "no touch" event
@@ -3793,7 +3793,7 @@ bool ALPS::renumberFingers() {
         int d = dist(i, j);
         if (d > FINGER_DIST) { // this number was determined experimentally
             // Prevent jumps by unpressing finger. Other way could be leaving the old finger pressed.
-            DEBUG_LOG("alps_parse_hw_state: unpressing finger: dist is %d", d);
+            DEBUG_LOG("alps_parse_hw_state: unpressing finger: dist is %d\n", d);
             auto &vfj = virtualFingerStates[j];
             vfj.x_avg.reset();
             vfj.y_avg.reset();
@@ -3808,7 +3808,7 @@ bool ALPS::renumberFingers() {
             if (wasSkipped)
                 wasSkipped = false;
             else {
-                DEBUG_LOG("alps_parse_hw_state: Skip sending touch data");
+                DEBUG_LOG("alps_parse_hw_state: Skip sending touch data\n");
                 wasSkipped = true;
                 return false;
             }
@@ -3870,7 +3870,7 @@ bool ALPS::renumberFingers() {
                     assignVirtualFinger(4);
                     break;
                 default:
-                    IOLog("alps_parse_hw_state: WTF!? fc=%d lfc=%d", clampedFingerCount, lastFingerCount);
+                    IOLog("alps_parse_hw_state: WTF!? fc=%d lfc=%d\n", clampedFingerCount, lastFingerCount);
             }
         }
         else if (clampedFingerCount > lastFingerCount && hadLiftFinger) {
@@ -3895,7 +3895,7 @@ bool ALPS::renumberFingers() {
                     }
                 }
                 if (minIndex == -1) {
-                    IOLog("alps_parse_hw_state: WTF!? minIndex is -1");
+                    IOLog("alps_parse_hw_state: WTF!? minIndex is -1\n");
                     continue;
                 }
                 if (minDist > maxMinDist) {
@@ -3913,13 +3913,13 @@ bool ALPS::renumberFingers() {
                     assignVirtualFinger(i); // here OK
             
             if (clampedFingerCount == 3) {
-                DEBUG_LOG("alps_parse_hw_state: adding third finger, maxMinDist=%d", maxMinDist);
+                DEBUG_LOG("alps_parse_hw_state: adding third finger, maxMinDist=%d\n", maxMinDist);
                 f2.z = (f0.z + f1.z) / 2;
                 if (maxMinDist > FINGER_DIST && maxMinDistIndex >= 0) {
                     // i-th physical finger was replaced, save its old coordinates to the 3rd physical finger and map it to a new virtual finger.
                     // The third physical finger should now be mapped to the old fingerStates[i].virtualFingerIndex.
                     swapFingers(2, maxMinDistIndex);
-                    DEBUG_LOG("alps_parse_hw_state: swapped, saving location");
+                    DEBUG_LOG("alps_parse_hw_state: swapped, saving location\n");
                 }
                 else {
                     // existing fingers didn't change or were swapped, so we don't know the location of the third finger
@@ -3928,12 +3928,12 @@ bool ALPS::renumberFingers() {
                     f2.x = fj.x;
                     f2.y = fj.y;
                     assignVirtualFinger(2);
-                    DEBUG_LOG("alps_parse_hw_state: not swapped, taking upper finger position");
+                    DEBUG_LOG("alps_parse_hw_state: not swapped, taking upper finger position\n");
                 }
             }
             else if (clampedFingerCount >= 4) {
                 // Is it possible that both 0 and 1 fingers were swapped with 2 and 3?
-                DEBUG_LOG("alps_parse_hw_state: adding third and fourth fingers, maxMinDist=%d, secondMaxMinDist=%d", maxMinDist, secondMaxMinDist);
+                DEBUG_LOG("alps_parse_hw_state: adding third and fourth fingers, maxMinDist=%d, secondMaxMinDist=%d\n", maxMinDist, secondMaxMinDist);
                 f2.z = f3.z = (f0.z + f1.z) / 2;
                 
                 // Possible situations:
@@ -3970,10 +3970,10 @@ bool ALPS::renumberFingers() {
                         // The fourth physical finger should now be mapped to the old fingerStates[i].virtualFingerIndex.
                         swapFingers(3, maxMinDistIndex);
                         if (secondMaxMinDist > FINGER_DIST && secondMaxMinDistIndex >= 0) {
-                            IOLog("alps_parse_hw_state: WTF, I thought it is impossible: fc=%d, lfc=%d, mdi=%d(%d), smdi=%d(%d)", clampedFingerCount, lastFingerCount, maxMinDist, maxMinDistIndex, secondMaxMinDist, secondMaxMinDistIndex);
+                            IOLog("alps_parse_hw_state: WTF, I thought it is impossible: fc=%d, lfc=%d, mdi=%d(%d), smdi=%d(%d)\n", clampedFingerCount, lastFingerCount, maxMinDist, maxMinDistIndex, secondMaxMinDist, secondMaxMinDistIndex);
                         }
                     }
-                    DEBUG_LOG("alps_parse_hw_state: swapped, saving location");
+                    DEBUG_LOG("alps_parse_hw_state: swapped, saving location\n");
                 }
                 else {
                     // existing fingers didn't change or were swapped, so we don't know the location of the third and fourth fingers
@@ -3983,13 +3983,13 @@ bool ALPS::renumberFingers() {
                         assignVirtualFinger(2);
                     clone(f3, fj);
                     assignVirtualFinger(3);
-                    DEBUG_LOG("alps_parse_hw_state: not swapped, cloning existing fingers");
+                    DEBUG_LOG("alps_parse_hw_state: not swapped, cloning existing fingers\n");
                 }
                 if (clampedFingerCount >= 5) {
                     // Don't bother with 5th finger, always clone
                     clone(f4, upperFinger());
                     assignVirtualFinger(4);
-                    DEBUG_LOG("cloning 5th finger");
+                    DEBUG_LOG("alps_parse_hw_state: cloning 5th finger\n");
                 }
             }
             freeAndMarkVirtualFingers();
@@ -4030,9 +4030,9 @@ bool ALPS::renumberFingers() {
     
     for (int i = 0; i < clampedFingerCount; i++) {
         const auto &fi = fingerStates[i];
-        DEBUG_LOG("alps_parse_hw_state: finger %d -> virtual finger %d", i, fi.virtualFingerIndex);
+        DEBUG_LOG("alps_parse_hw_state: finger %d -> virtual finger %d\n", i, fi.virtualFingerIndex);
         if (fi.virtualFingerIndex < 0 || fi.virtualFingerIndex >= MAX_TOUCHES) {
-            IOLog("alps_parse_hw_state: ERROR: invalid physical finger %d", fi.virtualFingerIndex);
+            IOLog("alps_parse_hw_state: ERROR: invalid physical finger %d\n", fi.virtualFingerIndex);
             continue;
         }
         virtual_finger_state &fiv = virtualFingerStates[fi.virtualFingerIndex];
@@ -4053,15 +4053,15 @@ bool ALPS::renumberFingers() {
         int min_y = INT_MAX;
         for (int i = 0; i < MAX_TOUCHES; i++) {
             const auto &vfi = virtualFingerStates[i];
-            DEBUG_LOG("finger %d: touch %d, y %d", i, vfi.touch, vfi.y_avg.average());
+            DEBUG_LOG("alps_parse_hw_state: finger %d: touch %d, y %d\n", i, vfi.touch, vfi.y_avg.average());
             if (vfi.touch && vfi.y_avg.average() < min_y) {
                 lowestFingerIndex = i;
                 min_y = vfi.y_avg.average();
             }
         }
-        DEBUG_LOG("lowest finger: %d", lowestFingerIndex);
+        DEBUG_LOG("alps_parse_hw_state: lowest finger: %d\n", lowestFingerIndex);
         if (lowestFingerIndex == -1)
-            IOLog("alps_parse_hw_state: WTF?! lowest finger not found!");
+            IOLog("alps_parse_hw_state: WTF?! lowest finger not found!\n");
         else {
             auto &vf = virtualFingerStates[lowestFingerIndex];
             freeFingerTypes[vf.fingerType] = true;
@@ -4070,7 +4070,7 @@ bool ALPS::renumberFingers() {
         }
     }
     
-    DEBUG_LOG("alps_parse_hw_state: lastFingerCount=%d clampedFingerCount=%d left=%d", lastFingerCount,  clampedFingerCount, left);
+    DEBUG_LOG("alps_parse_hw_state: lastFingerCount=%d clampedFingerCount=%d left=%d\n", lastFingerCount,  clampedFingerCount, left);
     return true;
 }
 
@@ -4109,7 +4109,7 @@ void ALPS::sendTouchData() {
         posX -= logical_min_x;
         posY = logical_max_y + 1 - posY;
         
-        DEBUG_LOG("alps_parse_hw_state finger[%d] x=%d y=%d raw_x=%d raw_y=%d", i, posX, posY, state.x_avg.average(), state.y_avg.average());
+        DEBUG_LOG("alps_parse_hw_state: finger[%d] x=%d y=%d raw_x=%d raw_y=%d\n", i, posX, posY, state.x_avg.average(), state.y_avg.average());
         
         transducer.previousCoordinates = transducer.currentCoordinates;
         
@@ -4180,10 +4180,10 @@ void ALPS::sendTouchData() {
     for (int i = 0; i < transducers_count; i++)
         for (int j = i + 1; j < transducers_count; j++)
             if (inputEvent.transducers[i].fingerType == inputEvent.transducers[j].fingerType)
-                IOLog("alps_parse_hw_state: WTF!? equal finger types");
+                IOLog("alps_parse_hw_state: WTF!? equal finger types\n");
     
     if (transducers_count != clampedFingerCount)
-        IOLog("alps_parse_hw_state: WTF?! tducers_count %d clampedFingerCount %d", transducers_count, clampedFingerCount);
+        IOLog("alps_parse_hw_state: WTF?! tducers_count %d clampedFingerCount %d\n", transducers_count, clampedFingerCount);
     
     // create new VoodooI2CMultitouchEvent
     inputEvent.contact_count = transducers_count;
