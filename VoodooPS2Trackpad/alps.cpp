@@ -209,8 +209,7 @@ bool ALPS::init(OSDictionary *dict) {
     return true;
 }
 
-void ALPS::injectVersionDependentProperties(OSDictionary *config)
-{
+void ALPS::injectVersionDependentProperties(OSDictionary *config) {
     // inject properties specific to the version of Darwin that is runnning...
     char buf[32];
     OSDictionary* dict = NULL;
@@ -278,9 +277,7 @@ ALPS *ALPS::probe(IOService *provider, SInt32 *score) {
         // save configuration for later/diagnostics...
         setProperty(kMergedConfiguration, config);
 #endif
-        //
-        // Load settings specific to Platform Profile
-        //
+        // load settings specific to Platform Profile
         setParamPropertiesGated(config);
         injectVersionDependentProperties(config);
         OSSafeReleaseNULL(config);
@@ -339,8 +336,7 @@ void ALPS::handleClose(IOService *forClient, IOOptionBits options) {
     super::handleClose(forClient, options);
 }
 
-bool ALPS::start( IOService * provider )
-{
+bool ALPS::start( IOService * provider ) {
     //
     // The driver has been instructed to start. This is called after a
     // successful probe and match.
@@ -408,7 +404,7 @@ bool ALPS::start( IOService * provider )
     //
     
     _device->installInterruptAction(this,
-                                    OSMemberFunctionCast(PS2InterruptAction,this,&ALPS::interruptOccurred),
+                                    OSMemberFunctionCast(PS2InterruptAction, this, &ALPS::interruptOccurred),
                                     OSMemberFunctionCast(PS2PacketAction, this, &ALPS::packetReady));
     _interruptHandlerInstalled = true;
     
@@ -1322,8 +1318,7 @@ void ALPS::alps_process_packet_v3(UInt8 *packet) {
     alps_process_touchpad_packet_v3_v5(packet);
 }
 
-void ALPS::alps_process_packet_v6(UInt8 *packet)
-{
+void ALPS::alps_process_packet_v6(UInt8 *packet) {
     // Check if input is disabled via ApplePS2Keyboard request
     if (ignoreall)
         return;
@@ -1446,7 +1441,6 @@ void ALPS::alps_process_packet_v6(UInt8 *packet)
 }
 
 void ALPS::alps_process_packet_v4(UInt8 *packet) {
-    
     // Check if input is disabled via ApplePS2Keyboard request
     if (ignoreall)
         return;
@@ -1585,8 +1579,7 @@ void ALPS::alps_process_packet_v4(UInt8 *packet) {
     alps_buttons(f);
 }
 
-unsigned char ALPS::alps_get_packet_id_v7(UInt8 *byte)
-{
+unsigned char ALPS::alps_get_packet_id_v7(UInt8 *byte) {
     unsigned char packet_id;
     
     if (byte[4] & 0x40)
@@ -1647,8 +1640,7 @@ void ALPS::alps_get_finger_coordinate_v7(struct input_mt_pos *mt,
     mt[1].y = 0x7FF - mt[1].y;
 }
 
-int ALPS::alps_get_mt_count(struct input_mt_pos *mt)
-{
+int ALPS::alps_get_mt_count(struct input_mt_pos *mt) {
     int i, fingers = 0;
     
     for (i = 0; i < MAX_TOUCHES; i++) {
@@ -1729,8 +1721,7 @@ bool ALPS::alps_decode_packet_v7(struct alps_fields *f, UInt8 *p){
     return true;
 }
 
-void ALPS::alps_process_trackstick_packet_v7(UInt8 *packet)
-{
+void ALPS::alps_process_trackstick_packet_v7(UInt8 *packet) {
     int x, y, z, left, right, middle;
     int buttons = 0;
     
@@ -1744,8 +1735,7 @@ void ALPS::alps_process_trackstick_packet_v7(UInt8 *packet)
     }
     
     x = (SInt8) ((packet[2] & 0xbf) | ((packet[3] & 0x10) << 2));
-    y = (SInt8) ((packet[3] & 0x07) | (packet[4] & 0xb8) |
-                 ((packet[3] & 0x20) << 1));
+    y = (SInt8) ((packet[3] & 0x07) | (packet[4] & 0xb8) | ((packet[3] & 0x20) << 1));
     z = (packet[5] & 0x3f) | ((packet[3] & 0x80) >> 1);
     
     // Y is inverted
@@ -1872,8 +1862,7 @@ void ALPS::alps_process_packet_v7(UInt8 *packet){
         alps_process_touchpad_packet_v7(packet);
 }
 
-unsigned char ALPS::alps_get_pkt_id_ss4_v2(UInt8 *byte)
-{
+unsigned char ALPS::alps_get_pkt_id_ss4_v2(UInt8 *byte) {
     unsigned char pkt_id = SS4_PACKET_ID_IDLE;
     
     switch (byte[3] & 0x30) {
@@ -2467,8 +2456,7 @@ bool ALPS::alps_absolute_mode_v1_v2() {
     return true;
 }
 
-int ALPS::alps_monitor_mode_send_word(int word)
-{
+int ALPS::alps_monitor_mode_send_word(int word) {
     int i, nibble;
     
     for (i = 0; i <= 8; i += 4) {
@@ -2479,8 +2467,7 @@ int ALPS::alps_monitor_mode_send_word(int word)
     return 0;
 }
 
-int ALPS::alps_monitor_mode_write_reg(int addr, int value)
-{
+int ALPS::alps_monitor_mode_write_reg(int addr, int value) {
     ps2_command_short(kDP_Enable);
     alps_monitor_mode_send_word(0x0A0);
     alps_monitor_mode_send_word(addr);
@@ -2490,8 +2477,7 @@ int ALPS::alps_monitor_mode_write_reg(int addr, int value)
     return 0;
 }
 
-int ALPS::alps_monitor_mode(bool enable)
-{
+int ALPS::alps_monitor_mode(bool enable) {
     TPS2Request<4> request;
     int cmd = 0;
     
@@ -2536,8 +2522,7 @@ int ALPS::alps_monitor_mode(bool enable)
     return 0;
 }
 
-void ALPS::alps_absolute_mode_v6()
-{
+void ALPS::alps_absolute_mode_v6() {
     // enter monitor mode, to write the register /
     alps_monitor_mode(true);
     alps_monitor_mode_write_reg(0x000, 0x181);
@@ -2624,8 +2609,7 @@ bool ALPS::alps_hw_init_v1_v2() {
     return true;
 }
 
-bool ALPS::alps_hw_init_v6()
-{
+bool ALPS::alps_hw_init_v6() {
     /* Enter passthrough mode to let trackpoint enter 6byte raw mode */
     alps_passthrough_mode_v2(true);
     
@@ -2858,8 +2842,7 @@ error:
     return false;
 }
 
-bool ALPS::alps_get_v3_v7_resolution(int reg_pitch)
-{
+bool ALPS::alps_get_v3_v7_resolution(int reg_pitch) {
     int reg, x_pitch, y_pitch, x_electrode, y_electrode, x_phys, y_phys;
     
     reg = alps_command_mode_read_reg(reg_pitch);
@@ -2966,46 +2949,37 @@ bool ALPS::alps_absolute_mode_v4() {
 
 bool ALPS::alps_hw_init_v4() {
     
-    if (!alps_enter_command_mode()) {
+    if (!alps_enter_command_mode())
         goto error;
-    }
     
     if (!alps_absolute_mode_v4()) {
         IOLog("ALPS: Failed to enter absolute mode\n");
         goto error;
     }
     
-    if (!alps_command_mode_write_reg(0x0007, 0x8c)) {
+    if (!alps_command_mode_write_reg(0x0007, 0x8c))
         goto error;
-    }
     
-    if (!alps_command_mode_write_reg(0x0149, 0x03)) {
+    if (!alps_command_mode_write_reg(0x0149, 0x03))
         goto error;
-    }
     
-    if (!alps_command_mode_write_reg(0x0160, 0x03)) {
+    if (!alps_command_mode_write_reg(0x0160, 0x03))
         goto error;
-    }
     
-    if (!alps_command_mode_write_reg(0x017f, 0x15)) {
+    if (!alps_command_mode_write_reg(0x017f, 0x15))
         goto error;
-    }
     
-    if (!alps_command_mode_write_reg(0x0151, 0x01)) {
+    if (!alps_command_mode_write_reg(0x0151, 0x01))
         goto error;
-    }
     
-    if (!alps_command_mode_write_reg(0x0168, 0x03)) {
+    if (!alps_command_mode_write_reg(0x0168, 0x03))
         goto error;
-    }
     
-    if (!alps_command_mode_write_reg(0x014a, 0x03)) {
+    if (!alps_command_mode_write_reg(0x014a, 0x03))
         goto error;
-    }
     
-    if (!alps_command_mode_write_reg(0x0161, 0x03)) {
+    if (!alps_command_mode_write_reg(0x0161, 0x03))
         goto error;
-    }
     
     alps_exit_command_mode();
     
@@ -3034,8 +3008,7 @@ error:
     return false;
 }
 
-void ALPS::alps_get_otp_values_ss4_v2(unsigned char index, unsigned char otp[])
-{
+void ALPS::alps_get_otp_values_ss4_v2(unsigned char index, unsigned char otp[]) {
     TPS2Request<4> request;
     
     switch (index) {
@@ -3085,8 +3058,7 @@ void ALPS::alps_get_otp_values_ss4_v2(unsigned char index, unsigned char otp[])
     }
 }
 
-void ALPS::alps_update_device_area_ss4_v2(unsigned char otp[][4], struct alps_data *priv)
-{
+void ALPS::alps_update_device_area_ss4_v2(unsigned char otp[][4], struct alps_data *priv) {
     int num_x_electrode;
     int num_y_electrode;
     int x_pitch, y_pitch, x_phys, y_phys;
@@ -3130,8 +3102,7 @@ void ALPS::alps_update_device_area_ss4_v2(unsigned char otp[][4], struct alps_da
     setProperty("Y Res", priv->y_res, 32);
 }
 
-void ALPS::alps_update_btn_info_ss4_v2(unsigned char otp[][4], struct alps_data *priv)
-{
+void ALPS::alps_update_btn_info_ss4_v2(unsigned char otp[][4], struct alps_data *priv) {
     unsigned char is_btnless;
     
     if (IS_SS4PLUS_DEV(priv->dev_id))
@@ -3151,8 +3122,7 @@ void ALPS::alps_update_btn_info_ss4_v2(unsigned char otp[][4], struct alps_data 
     }
 }
 
-void ALPS::alps_update_dual_info_ss4_v2(unsigned char otp[][4], struct alps_data *priv)
-{
+void ALPS::alps_update_dual_info_ss4_v2(unsigned char otp[][4], struct alps_data *priv) {
     bool is_dual = false;
     int reg_val = 0;
     
@@ -3185,8 +3155,7 @@ void ALPS::alps_update_dual_info_ss4_v2(unsigned char otp[][4], struct alps_data
     }
 }
 
-void ALPS::alps_set_defaults_ss4_v2(struct alps_data *priv)
-{
+void ALPS::alps_set_defaults_ss4_v2(struct alps_data *priv) {
     unsigned char otp[2][4];
     
     memset(otp, 0, sizeof(otp));
@@ -3201,8 +3170,7 @@ void ALPS::alps_set_defaults_ss4_v2(struct alps_data *priv)
     alps_update_dual_info_ss4_v2(otp, priv);
 }
 
-int ALPS::alps_dolphin_get_device_area(struct alps_data *priv)
-{
+int ALPS::alps_dolphin_get_device_area(struct alps_data *priv) {
     int num_x_electrode, num_y_electrode;
     TPS2Request<4> request;
     int cmd = 0;
@@ -3301,8 +3269,7 @@ error:
     return false;
 }
 
-bool ALPS::alps_hw_init_ss4_v2()
-{
+bool ALPS::alps_hw_init_ss4_v2() {
     /* enter absolute mode */
     ps2_command_short(kDP_SetMouseStreamMode);
     ps2_command_short(kDP_SetMouseStreamMode);
@@ -3596,8 +3563,7 @@ void ALPS::setTouchPadEnable(bool enable) {
     }
 }
 
-void ALPS::ps2_command(unsigned char value, UInt8 command)
-{
+void ALPS::ps2_command(unsigned char value, UInt8 command) {
     TPS2Request<2> request;
     int cmdCount = 0;
     
@@ -3612,8 +3578,7 @@ void ALPS::ps2_command(unsigned char value, UInt8 command)
     //return request.commandsCount = cmdCount;
 }
 
-void ALPS::ps2_command_short(UInt8 command)
-{
+void ALPS::ps2_command_short(UInt8 command) {
     TPS2Request<1> request;
     int cmdCount = 0;
     
@@ -3656,8 +3621,7 @@ void ALPS::set_resolution() {
               xupmm, yupmm);
 }
 
-void ALPS::alps_buttons(struct alps_fields &f)
-{
+void ALPS::alps_buttons(struct alps_fields &f) {
     bool prev_left = left;
     bool prev_right = right;
     bool prev_middle = middle;
@@ -4257,8 +4221,7 @@ void ALPS::sendTouchData() {
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-void ALPS::initTouchPad()
-{
+void ALPS::initTouchPad() {
     //
     // Clear packet buffer pointer to avoid issues caused by
     // stale packet fragments.
@@ -4276,8 +4239,7 @@ void ALPS::initTouchPad()
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-void ALPS::setParamPropertiesGated(OSDictionary * config)
-{
+void ALPS::setParamPropertiesGated(OSDictionary * config) {
     if (NULL == config)
         return;
     
@@ -4368,8 +4330,7 @@ void ALPS::setParamPropertiesGated(OSDictionary * config)
     }
 }
 
-IOReturn ALPS::setParamProperties(OSDictionary* dict)
-{
+IOReturn ALPS::setParamProperties(OSDictionary* dict) {
     ////IOReturn result = super::IOHIDevice::setParamProperties(dict);
     if (_cmdGate)
     {
@@ -4382,8 +4343,7 @@ IOReturn ALPS::setParamProperties(OSDictionary* dict)
     ////return result;
 }
 
-IOReturn ALPS::setProperties(OSObject *props)
-{
+IOReturn ALPS::setProperties(OSObject *props) {
     OSDictionary *dict = OSDynamicCast(OSDictionary, props);
     if (dict && _cmdGate)
     {
@@ -4396,8 +4356,7 @@ IOReturn ALPS::setProperties(OSObject *props)
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-void ALPS::setDevicePowerState( UInt32 whatToDo )
-{
+void ALPS::setDevicePowerState( UInt32 whatToDo ) {
     switch ( whatToDo )
     {
         case kPS2C_DisableDevice:
@@ -4432,6 +4391,7 @@ void ALPS::setDevicePowerState( UInt32 whatToDo )
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 IOReturn ALPS::message(UInt32 type, IOService* provider, void* argument) {
+    //
     // Here is where we receive messages from the keyboard driver
     //
     // This allows for the keyboard driver to enable/disable the trackpad
@@ -4440,6 +4400,8 @@ IOReturn ALPS::message(UInt32 type, IOService* provider, void* argument) {
     // It also allows the trackpad driver to learn the last time a key
     // has been pressed, so it can implement various "ignore trackpad
     // input while typing" options.
+    //
+    
     switch (type)
     {
         case kPS2M_getDisableTouchpad:
@@ -4560,8 +4522,7 @@ IOReturn ALPS::message(UInt32 type, IOService* provider, void* argument) {
     return kIOReturnSuccess;
 }
 
-void ALPS::registerHIDPointerNotifications()
-{
+void ALPS::registerHIDPointerNotifications() {
     IOServiceMatchingNotificationHandler notificationHandler = OSMemberFunctionCast(IOServiceMatchingNotificationHandler, this, &ALPS::notificationHIDAttachedHandler);
     
     // Determine if we should listen for USB mouse attach events as per configuration
@@ -4592,8 +4553,7 @@ void ALPS::registerHIDPointerNotifications()
     }
 }
 
-void ALPS::unregisterHIDPointerNotifications()
-{
+void ALPS::unregisterHIDPointerNotifications() {
     // Free device matching notifiers
     // remove() releases them
     if (usb_hid_publish_notify)
@@ -4611,8 +4571,7 @@ void ALPS::unregisterHIDPointerNotifications()
     attachedHIDPointerDevices->flushCollection();
 }
 
-void ALPS::notificationHIDAttachedHandlerGated(IOService * newService, IONotifier * notifier)
-{
+void ALPS::notificationHIDAttachedHandlerGated(IOService * newService, IONotifier * notifier) {
     char path[256];
     int len = 255;
     memset(path, 0, len);
@@ -4681,8 +4640,7 @@ void ALPS::notificationHIDAttachedHandlerGated(IOService * newService, IONotifie
     }
 }
 
-bool ALPS::notificationHIDAttachedHandler(void * refCon, IOService * newService, IONotifier * notifier)
-{
+bool ALPS::notificationHIDAttachedHandler(void * refCon, IOService * newService, IONotifier * notifier) {
     if (_cmdGate) { // defensive
         _cmdGate->runAction(OSMemberFunctionCast(IOCommandGate::Action, this, &ALPS::notificationHIDAttachedHandlerGated), newService, notifier);
     }
