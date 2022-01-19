@@ -1220,13 +1220,6 @@ void ALPS::alps_process_touchpad_packet_v3_v5(UInt8 *packet) {
     // if (last_fingers == 2 && fingers == 1 && scrolldebounce)
     //     fingers = 2;
     
-    // scale x & y to the axis which has the most resolution
-    if (xupmm < yupmm) {
-        f.mt[0].x = f.mt[0].x * yupmm / xupmm;
-    } else if (xupmm > yupmm) {
-        f.mt[0].y = f.mt[0].y * xupmm / yupmm;
-    }
-    
     //fingers = f.fingers;
     
     DEBUG_LOG("ALPS: Amount of finger(s) accessing alps_process_touchpad_packet_v3_v5: %d\n", fingers);
@@ -1778,13 +1771,6 @@ void ALPS::alps_process_touchpad_packet_v7(UInt8 *packet){
     f.mt[0].y = priv.y_max - f.mt[0].y;
     f.mt[1].y = priv.y_max - f.mt[1].y;
     
-    // scale x & y to the axis which has the most resolution
-    if (xupmm < yupmm) {
-        f.mt[0].x = f.mt[0].x * yupmm / xupmm;
-    } else if (xupmm > yupmm) {
-        f.mt[0].y = f.mt[0].y * xupmm / yupmm;
-    }
-    
     fingers = f.fingers;
     
     DEBUG_LOG("ALPS: Amount of finger(s) accessing alps_process_touchpad_packet_v7: %d\n", f.fingers);
@@ -2121,13 +2107,6 @@ void ALPS::alps_process_packet_ss4_v2(UInt8 *packet) {
     f.mt[1].y = priv.y_max - f.mt[1].y;
     
     DEBUG_LOG("ALPS: There are currently %d fingers in alps_process_packet_ss4_v2\n", f.fingers);
-    
-    // scale x & y to the axis which has the most resolution
-    if (xupmm < yupmm) {
-        f.mt[0].x = f.mt[0].x * yupmm / xupmm;
-    } else if (xupmm > yupmm) {
-        f.mt[0].y = f.mt[0].y * xupmm / yupmm;
-    }
     
     // get fingercounts from packets
     int fingers = 0;
