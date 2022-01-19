@@ -4433,39 +4433,7 @@ IOReturn ALPS::message(UInt32 type, IOService* provider, void* argument) {
                 0x04,       // 0x3e
                 0x200000,   // 0x3f
             };
-#ifdef SIMULATE_PASSTHRU
-            /*
-            static int buttons = 0;
-            int button;
-            switch (pInfo->adbKeyCode)
-            {
-                // make right Alt,Menu,Ctrl into three button passthru
-                case 0x36:
-                    button = 0x1;
-                    goto dispatch_it;
-                case 0x3f:
-                    button = 0x4;
-                    goto dispatch_it;
-                case 0x3e:
-                    button = 0x2;
-                    // fall through...
-                dispatch_it:
-                    if (pInfo->goingDown)
-                        buttons |= button;
-                    else
-                        buttons &= ~button;
-                    UInt8 packet[6];
-                    packet[0] = 0x84 | trackbuttons;
-                    packet[1] = 0x08 | buttons;
-                    packet[2] = 0;
-                    packet[3] = 0xC4 | trackbuttons;
-                    packet[4] = 0;
-                    packet[5] = 0;
-                    dispatchEventsWithPacket(packet, 6);
-                    pInfo->eatKey = true;
-            }
-             */
-#endif
+            
             switch (pInfo->adbKeyCode)
             {
                 // don't store key time for modifier keys going down
