@@ -447,6 +447,7 @@ void ALPS::stop(IOService *provider) {
     unregisterHIDPointerNotifications();
     OSSafeReleaseNULL(attachedHIDPointerDevices);
     
+    ignoreall = false;
     
     // free up timer for scroll momentum
     IOWorkLoop* pWorkLoop = getWorkLoop();
