@@ -16,6 +16,7 @@ VoodooPS2 Changelog
 - touchpad will be disabled until probing is done
 - removed VoodooInput support for V1, V2 and V6 touchpads
     - V1, V2 and V6 touchpads only report 1 finger, which is not enough to benefit from VoodooInput
+- fixed notification centre on V7 touchpads
 
 #### v1.0.5
 - synced code from acidanthera
