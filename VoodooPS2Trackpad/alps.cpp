@@ -3175,7 +3175,8 @@ void ALPS::set_protocol() {
             break;
     }
     
-    set_resolution();
+    if (priv.proto_version != (ALPS_PROTO_V1 | ALPS_PROTO_V2 | ALPS_PROTO_V6))
+        set_resolution();
 }
 
 bool ALPS::matchTable(ALPSStatus_t *e7, ALPSStatus_t *ec) {
