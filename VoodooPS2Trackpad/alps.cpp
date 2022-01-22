@@ -4172,12 +4172,13 @@ IOReturn ALPS::message(UInt32 type, IOService* provider, void* argument) {
             int *reqCode = (int *)argument;
             DEBUG_LOG("ALPS::kPS2M_resetTouchpad reqCode: %d\n", *reqCode);
             if (*reqCode == 1) {
-                setTouchPadEnable(false);
-                IOSleep(wakedelay);
-
                 ignoreall = false;
-                
-                setTouchPadEnable(true);
+                _device->lock();
+                resetMouse();
+                IOSleep(wakedelay);
+                identify();
+                initTouchPad();
+                _device->unlock();
             }
             break;
         }
