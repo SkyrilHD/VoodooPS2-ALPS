@@ -1373,8 +1373,8 @@ void ALPS::alps_process_packet_v6(UInt8 *packet) {
     if (z < 25)
         f.fingers = 0;
     
-    // buttons |= left ? 0x01 : 0;
-    // buttons |= right ? 0x02 : 0;
+    buttons |= f.left ? 0x01 : 0;
+    buttons |= f.right ? 0x02 : 0;
     
     dispatchRelativePointerEventX(f.mt[0].x, f.mt[0].y, buttons, now_abs);
 }
