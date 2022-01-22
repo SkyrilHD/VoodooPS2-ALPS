@@ -1768,9 +1768,6 @@ void ALPS::alps_process_touchpad_packet_v7(UInt8 *packet){
     if (ignoreall)
         return;
     
-    // get fingercounts from packets
-    int fingers = 0;
-    
     memset(&f, 0, sizeof(alps_fields));
     
     (this->alps_decode_packet_v7)(&f, packet);
@@ -1779,11 +1776,9 @@ void ALPS::alps_process_touchpad_packet_v7(UInt8 *packet){
     f.mt[0].y = priv.y_max - f.mt[0].y;
     f.mt[1].y = priv.y_max - f.mt[1].y;
     
-    fingers = f.fingers;
-    
     DEBUG_LOG("ALPS: Amount of finger(s) accessing alps_process_touchpad_packet_v7: %d\n", f.fingers);
     
-    if (fingers >= 2) {
+    if (f.fingers >= 2) {
         fingerStates[1].x = f.mt[1].x;
         fingerStates[1].y = f.mt[1].y;
         fingerStates[1].z = f.pressure;
@@ -1815,27 +1810,10 @@ void ALPS::alps_process_touchpad_packet_v7(UInt8 *packet){
     else if (fingerStates[0].y == Y_MAX_POSITIVE)
         fingerStates[0].y = YMAX;
     
-    // count the number of fingers
     int fingerCount = 0;
     if (fingerStates[0].z == 0) {
         fingerCount = 0;
-        switch (fingers) {
-            case 0:
-                fingerCount = 0;
-                break;
-            case 1:
-                fingerCount = 1;
-                break;
-            case 2:
-                fingerCount = 2;
-                break;
-            case 3:
-                fingerCount = 3;
-                break;
-            case 4:
-                fingerCount = 4;
-                break;
-        }
+        fingerCount = f.fingers;
     }
     
     clampedFingerCount = fingerCount;
