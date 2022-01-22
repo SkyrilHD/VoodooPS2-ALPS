@@ -6,10 +6,12 @@ This driver is a fork of DrHurt's VoodooPS2 repo with included fixes by 1Revenge
 
 The aim of this driver is to improve the usability of ALPS touchpads in macOS and merge the code with acidanthera's VoodooPS2 repo.
 
+V1, V2 and V6 touchpads only support as a normal mouse due to hardware limitation.
+
 ## Driver Features:
 
-- Supports ALPS hardware version V7 and V8
-    - not tested: V1, V2, V3, V4, V5, V6
+- Supports ALPS hardware version V1, V2, V6, V7 and V8
+    - not tested: V3, V4, V5
 - Supports macOS 10.11 to 12.0
 - Look up & data detectors
 - Secondary click (with two fingers, in bottom left corner, in bottom right corner)
