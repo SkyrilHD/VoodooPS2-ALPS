@@ -17,6 +17,8 @@ VoodooPS2 Changelog
 - removed VoodooInput support for V1, V2 and V6 touchpads
     - V1, V2 and V6 touchpads only report 1 finger, which is not enough to benefit from VoodooInput
 - fixed notification centre on V7 touchpads
+- (BETA) added ALPSForceFT property to enable Force Touch on V8 touchpads
+    - set ALPSForceFT to 1 and ForceTouchMode to 2 inside Info.plist of VoodooPS2Trackpad to enable pressure support
 
 #### v1.0.5
 - synced code from acidanthera
