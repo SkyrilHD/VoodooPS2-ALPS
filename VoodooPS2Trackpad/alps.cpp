@@ -1973,7 +1973,7 @@ void ALPS::alps_process_packet_ss4_v2(UInt8 *packet) {
     
     int fingerCount = 0;
     if (ALPSForceFT == 1) {
-        if (fingerStates[0].z > 30) {
+        if (fingerStates[0].z > z_finger) {
             fingerCount = 0;
             fingerCount = f.fingers;
         }
