@@ -14,6 +14,8 @@ VoodooPS2 Changelog
 - removed logical_min reporting
 - touchpad will now enabled when it is restarted disabled
 - touchpad will be disabled until probing is done
+- removed VoodooInput support for V1, V2 and V6 touchpads
+    - V1, V2 and V6 touchpads only report 1 finger, which is not enough to benefit from VoodooInput
 
 #### v1.0.5
 - synced code from acidanthera
