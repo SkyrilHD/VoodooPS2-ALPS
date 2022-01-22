@@ -543,6 +543,8 @@ private:
     int _forceTouchCustomDownThreshold {90};
     int _forceTouchCustomUpThreshold {20};
     int _forceTouchCustomPower {8};
+    
+    int ALPSForceFT {0};
 
     // normal state
     UInt32 lastbuttons {0};
