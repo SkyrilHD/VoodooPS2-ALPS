@@ -6,6 +6,14 @@ VoodooPS2 Changelog
 - prevent the trackstick pressure from being saved in the touchpad pressure on V8
 - removed ability to update logical dimensions in VoodooInput
     - After a while, V8 touchpads break for some reason. Removing fixes that. (Huge thanks to Jake Lo for testing)
+- prevent unsupported V9 loading with V8 properties
+- removed xupmm/yupmm scaling
+- let all ALPS touchpad report their dimensions
+- simplified V8 properties
+- simplified fingerCount for V3, V5, V7 and V8
+- removed logical_min reporting
+- touchpad will now enabled when it is restarted disabled
+- touchpad will be disabled until probing is done
 
 #### v1.0.5
 - synced code from acidanthera
