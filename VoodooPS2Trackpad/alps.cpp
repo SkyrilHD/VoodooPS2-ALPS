@@ -1367,11 +1367,7 @@ void ALPS::alps_process_packet_v6(UInt8 *packet) {
     f.left = packet[3] & 0x01;
     f.right = packet[3] & 0x02;
     
-    //fingers = z > 0 ? 1 : 0;
-    if (z > 30)
-        f.fingers = 1;
-    if (z < 25)
-        f.fingers = 0;
+    f.fingers = z > 30 ? 1 : 0;
     
     buttons |= f.left ? 0x01 : 0;
     buttons |= f.right ? 0x02 : 0;
