@@ -449,6 +449,12 @@ void ALPS::stop(IOService *provider) {
     
     ignoreall = false;
     
+    //
+    // Disable the mouse itself, so that it may stop reporting mouse events.
+    //
+
+    setTouchPadEnable(false);
+    
     // free up timer for scroll momentum
     IOWorkLoop* pWorkLoop = getWorkLoop();
     if (pWorkLoop)
@@ -480,8 +486,6 @@ void ALPS::stop(IOService *provider) {
         _device->uninstallPowerControlAction();
         _powerControlHandlerInstalled = false;
     }
-    
-    resetMouse();
     
     //
     // Release the pointer to the provider object.
