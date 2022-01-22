@@ -3359,7 +3359,14 @@ void ALPS::set_resolution() {
     setProperty("X Max", priv.x_max, 32);
     setProperty("Y Max", priv.y_max, 32);
     
-    setProperty(VOODOO_INPUT_LOGICAL_MAX_X_KEY, logical_max_x, 32);
+    if (priv.proto_version == ALPS_PROTO_V7) {
+        margin_size_x = 3 * xupmm;
+        
+        if (maxXOverride != -1)
+            logical_max_x = maxXOverride;
+    }
+    
+    setProperty(VOODOO_INPUT_LOGICAL_MAX_X_KEY, logical_max_x - margin_size_x, 32);
     setProperty(VOODOO_INPUT_LOGICAL_MAX_Y_KEY, logical_max_y, 32);
     
     setProperty(VOODOO_INPUT_PHYSICAL_MAX_X_KEY, physical_max_x, 32);

@@ -514,7 +514,7 @@ private:
     unsigned int left_ts:1;
     
     // VoodooInput
-    int margin_size_x {0}, margin_size_y {0};
+    int margin_size_x {0};
     
     uint32_t logical_max_x {0};
     uint32_t logical_max_y {0};
