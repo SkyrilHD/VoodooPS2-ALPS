@@ -202,7 +202,9 @@ bool ALPS::init(OSDictionary *dict) {
     memset(freeFingerTypes, true, kMT2FingerTypeCount);
     freeFingerTypes[kMT2FingerTypeUndefined] = false;
     
-    IOLog("VoodooPS2TouchPad Base Driver loaded...\n");
+    // announce version
+    extern kmod_info_t kmod_info;
+    DEBUG_LOG("ALPS: Version %s starting on OS X Darwin %d.%d.\n", kmod_info.version, version_major, version_minor);
     
     setProperty("Revision", 24, 32);
     
