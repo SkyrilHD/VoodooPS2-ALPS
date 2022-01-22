@@ -247,7 +247,7 @@ void ALPS::injectVersionDependentProperties(OSDictionary *config) {
 }
 
 ALPS *ALPS::probe(IOService *provider, SInt32 *score) {
-    bool success;
+    DEBUG_LOG("ALPS: probe entered...\n");
     
     //
     // The driver has been instructed to verify the presence of the actual
@@ -288,6 +288,7 @@ ALPS *ALPS::probe(IOService *provider, SInt32 *score) {
     _device->lock();
     resetMouse();
     
+    bool success;
     if (identify() != 0) {
         success = false;
     } else {
@@ -441,10 +442,11 @@ void ALPS::stop(IOService *provider) {
     // no pointers and retains to objects, etc), if any.
     //
     
+    assert(_device == provider);
+    
     unregisterHIDPointerNotifications();
     OSSafeReleaseNULL(attachedHIDPointerDevices);
     
-    assert(_device == provider);
     
     // free up timer for scroll momentum
     IOWorkLoop* pWorkLoop = getWorkLoop();
