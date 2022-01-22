@@ -3502,11 +3502,11 @@ void ALPS::set_resolution() {
     logical_max_x = priv.x_max;
     logical_max_y = priv.y_max;
     
-    setProperty(VOODOO_INPUT_LOGICAL_MAX_X_KEY, logical_max_x - logical_min_x, 32);
-    setProperty(VOODOO_INPUT_LOGICAL_MAX_Y_KEY, logical_max_y - logical_min_y, 32);
     setProperty("X Max", priv.x_max, 32);
     setProperty("Y Max", priv.y_max, 32);
     
+    setProperty(VOODOO_INPUT_LOGICAL_MAX_X_KEY, logical_max_x, 32);
+    setProperty(VOODOO_INPUT_LOGICAL_MAX_Y_KEY, logical_max_y, 32);
     
     setProperty(VOODOO_INPUT_PHYSICAL_MAX_X_KEY, physical_max_x, 32);
     setProperty(VOODOO_INPUT_PHYSICAL_MAX_Y_KEY, physical_max_y, 32);
@@ -3516,8 +3516,7 @@ void ALPS::set_resolution() {
     
     registerService();
     
-    DEBUG_LOG("VoodooPS2Trackpad: logical %dx%d-%dx%d physical_max %dx%d upmm %dx%d",
-              logical_min_x, logical_min_y,
+    DEBUG_LOG("VoodooPS2Trackpad: logical_max %dx%d physical_max %dx%d upmm %dx%d\n",
               logical_max_x, logical_max_y,
               physical_max_x, physical_max_y,
               xupmm, yupmm);
@@ -4021,7 +4020,6 @@ void ALPS::sendTouchData() {
         int posX = state.x_avg.average();
         int posY = state.y_avg.average();
         
-        posX -= logical_min_x;
         posY = logical_max_y + 1 - posY;
         
         DEBUG_LOG("alps_parse_hw_state: finger[%d] x=%d y=%d raw_x=%d raw_y=%d\n", i, posX, posY, state.x_avg.average(), state.y_avg.average());

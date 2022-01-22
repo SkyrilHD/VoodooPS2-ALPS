@@ -518,8 +518,6 @@ private:
     
     uint32_t logical_max_x {0};
     uint32_t logical_max_y {0};
-    uint32_t logical_min_x {0};
-    uint32_t logical_min_y {0};
 
     uint32_t physical_max_x {0};
     uint32_t physical_max_y {0};
