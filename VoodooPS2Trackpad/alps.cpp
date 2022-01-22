@@ -3175,7 +3175,9 @@ void ALPS::set_protocol() {
             break;
     }
     
-    if (priv.proto_version != (ALPS_PROTO_V1 | ALPS_PROTO_V2 | ALPS_PROTO_V6))
+    if (priv.proto_version != ALPS_PROTO_V1 ||
+        priv.proto_version != ALPS_PROTO_V2 ||
+        priv.proto_version != ALPS_PROTO_V6)
         set_resolution();
 }
 
