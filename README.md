@@ -33,7 +33,21 @@ V1, V2 and V6 touchpads only support as a normal mouse due to hardware limitatio
 
 ## Force Touch
 
-Force Touch has been disabled for ALPS trackpads as they do not suport width/pressure report. So, the best option is to keep Force Touch disabled.
+By default, Force Touch is disabled. However, if you have a clickpad (button inside the touchpad), you can use ForceTouchMode 1, which uses the button as a hard press. In addition, V8 touchpads support pressure reports. To enable pressure report, one must set ALPSForceFT to 1 and ForceTouchMode to 2. The touchpad will now trigger a hard press after exceeding a threshold (defined in ForceTouchPressureThreshold [100 by default]).
+
+| ALPS version | supported <br> ForceTouchMode |
+| -- | --- |
+| V1 | -/- |
+| V2 | -/- |
+| V3 | 0 |
+| V4 | 0 |
+| V5 | 0 |
+| V6 | -/- |
+| V7 | 0, 1* |
+| V8 | 0, 1*, 2, 3, 4 |
+
+*: only if touchpad is a clickpad
+
 
 ## Old driver
 
