@@ -10,12 +10,13 @@ VoodooPS2 Changelog
 - removed xupmm/yupmm scaling
 - let all ALPS touchpad report their dimensions
 - simplified V8 properties
-- simplified fingerCount for V3, V5, V7 and V8
+- simplified fingerCount for V3, V4, V5, V7 and V8
 - removed logical_min reporting
 - touchpad will now enabled when it is restarted disabled
 - touchpad will be disabled until probing is done
 - removed VoodooInput support for V1, V2 and V6 touchpads
     - V1, V2 and V6 touchpads only report 1 finger, which is not enough to benefit from VoodooInput
+- fixed touchpad not resetting completely after Ctrl+Alt+PrntScr combo
 - fixed notification centre on V7 touchpads
 - (BETA) added ALPSForceFT property to enable Force Touch on V8 touchpads
     - set ALPSForceFT to 1 and ForceTouchMode to 2 inside Info.plist of VoodooPS2Trackpad to enable pressure support
