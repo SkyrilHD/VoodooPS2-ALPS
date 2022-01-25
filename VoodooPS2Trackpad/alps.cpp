@@ -3978,7 +3978,6 @@ void ALPS::setParamPropertiesGated(OSDictionary * config) {
         {"ForceTouchCustomDownThreshold",   &_forceTouchCustomDownThreshold}, // used in mode 4
         {"ForceTouchCustomUpThreshold",     &_forceTouchCustomUpThreshold}, // used in mode 4
         {"ForceTouchCustomPower",           &_forceTouchCustomPower}, // used in mode 4
-        {"ALPSForceFT",                     &ALPSForceFT},
     };
     
     const struct {const char *name; int *var;} boolvars[]={
