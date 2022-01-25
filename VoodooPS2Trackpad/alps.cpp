@@ -452,7 +452,7 @@ void ALPS::stop(IOService *provider) {
     //
     // Disable the mouse itself, so that it may stop reporting mouse events.
     //
-
+    
     setTouchPadEnable(false);
     
     // free up timer for scroll momentum
@@ -4043,7 +4043,7 @@ void ALPS::setParamPropertiesGated(OSDictionary * config) {
             PE_parse_boot_argn("container-dmg", val, sizeof(val)) ||
             PE_parse_boot_argn("root-dmg", val, sizeof(val)) ||
             PE_parse_boot_argn("auth-root-dmg", val, sizeof(val)))
-        _forceTouchMode = FORCE_TOUCH_DISABLED;
+            _forceTouchMode = FORCE_TOUCH_DISABLED;
     }
 }
 
@@ -4127,7 +4127,7 @@ IOReturn ALPS::message(UInt32 type, IOService* provider, void* argument) {
             *pResult = !ignoreall;
             break;
         }
-
+            
         case kPS2M_setDisableTouchpad:
         {
             bool enable = *((bool*)argument);
@@ -4139,7 +4139,7 @@ IOReturn ALPS::message(UInt32 type, IOService* provider, void* argument) {
             }
             break;
         }
-
+            
         case kPS2M_resetTouchpad:
         {
             int *reqCode = (int *)argument;
@@ -4155,7 +4155,7 @@ IOReturn ALPS::message(UInt32 type, IOService* provider, void* argument) {
             }
             break;
         }
-
+            
         case kPS2M_notifyKeyPressed:
         {
             // just remember last time key pressed... this can be used in
@@ -4204,7 +4204,7 @@ IOReturn ALPS::message(UInt32 type, IOService* provider, void* argument) {
             break;
         }
     }
-
+    
     return kIOReturnSuccess;
 }
 
@@ -4244,16 +4244,16 @@ void ALPS::unregisterHIDPointerNotifications() {
     // remove() releases them
     if (usb_hid_publish_notify)
         usb_hid_publish_notify->remove();
-
+    
     if (usb_hid_terminate_notify)
         usb_hid_terminate_notify->remove();
-
+    
     if (bluetooth_hid_publish_notify)
         bluetooth_hid_publish_notify->remove();
-
+    
     if (bluetooth_hid_terminate_notify)
         bluetooth_hid_terminate_notify->remove();
-
+    
     attachedHIDPointerDevices->flushCollection();
 }
 
@@ -4330,6 +4330,6 @@ bool ALPS::notificationHIDAttachedHandler(void * refCon, IOService * newService,
     if (_cmdGate) { // defensive
         _cmdGate->runAction(OSMemberFunctionCast(IOCommandGate::Action, this, &ALPS::notificationHIDAttachedHandlerGated), newService, notifier);
     }
-
+    
     return true;
 }
