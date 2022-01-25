@@ -39,9 +39,9 @@ By default, Force Touch is disabled. However, if you have a clickpad (button ins
 | -- | --- |
 | V1 | -/- |
 | V2 | -/- |
-| V3 | 0 |
-| V4 | 0 |
-| V5 | 0 |
+| V3 | 0, 2, 3, 4 |
+| V4 | 0, 2, 3, 4 |
+| V5 | 0, 2, 3, 4 |
 | V6 | -/- |
 | V7 | 0, 1* |
 | V8 | 0, 1*, 2, 3, 4 |
