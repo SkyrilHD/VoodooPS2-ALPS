@@ -173,20 +173,20 @@ public:
 };
 
 struct alps_hw_state {
-     int x;
-     int y;
-     int z;
-     int virtualFingerIndex;
- };
+    int x;
+    int y;
+    int z;
+    int virtualFingerIndex;
+};
 
 struct virtual_finger_state {
-     SimpleAverage<int, 5> x_avg;
-     SimpleAverage<int, 5> y_avg;
-     uint8_t pressure;
-     bool touch;
-     bool button;
-     MT2FingerType fingerType;
- };
+    SimpleAverage<int, 5> x_avg;
+    SimpleAverage<int, 5> y_avg;
+    uint8_t pressure;
+    bool touch;
+    bool button;
+    MT2FingerType fingerType;
+};
 
 /*
  * enum SS4_PACKET_ID - defines the packet type for V8
@@ -218,34 +218,34 @@ enum SS4_PACKET_ID {
 #define SS4PLUS_MIN_PITCH_MM        37
 
 #define IS_SS4PLUS_DEV(_b)    (((_b[0]) == 0x73) &&    \
-                 ((_b[1]) == 0x03) &&    \
-                 ((_b[2]) == 0x28)        \
-                )
+                               ((_b[1]) == 0x03) &&    \
+                               ((_b[2]) == 0x28)       \
+                              )
 
 #define SS4_IS_IDLE_V2(_b)    (((_b[0]) == 0x18) &&        \
-                 ((_b[1]) == 0x10) &&        \
-                 ((_b[2]) == 0x00) &&        \
-                 ((_b[3] & 0x88) == 0x08) &&    \
-                 ((_b[4]) == 0x10) &&        \
-                 ((_b[5]) == 0x00)        \
-                )
+                               ((_b[1]) == 0x10) &&        \
+                               ((_b[2]) == 0x00) &&        \
+                               ((_b[3] & 0x88) == 0x08) && \
+                               ((_b[4]) == 0x10) &&        \
+                               ((_b[5]) == 0x00)           \
+                              )
 
 #define SS4_1F_X_V2(_b)        (((_b[0]) & 0x0007) |        \
-                 ((_b[1] << 3) & 0x0078) |    \
-                 ((_b[1] << 2) & 0x0380) |    \
-                 ((_b[2] << 5) & 0x1C00)    \
-                )
+                                ((_b[1] << 3) & 0x0078) |   \
+                                ((_b[1] << 2) & 0x0380) |   \
+                                ((_b[2] << 5) & 0x1C00)     \
+                               )
 
 #define SS4_1F_Y_V2(_b)        (((_b[2]) & 0x000F) |        \
-                 ((_b[3] >> 2) & 0x0030) |    \
-                 ((_b[4] << 6) & 0x03C0) |    \
-                 ((_b[4] << 5) & 0x0C00)    \
-                )
+                                ((_b[3] >> 2) & 0x0030) |   \
+                                ((_b[4] << 6) & 0x03C0) |   \
+                                ((_b[4] << 5) & 0x0C00)     \
+                               )
 
 #define SS4_1F_Z_V2(_b)        (((_b[5]) & 0x0F) |        \
-                 ((_b[5] >> 1) & 0x70) |    \
-                 ((_b[4]) & 0x80)        \
-                )
+                                ((_b[5] >> 1) & 0x70) |   \
+                                ((_b[4]) & 0x80)          \
+                               )
 
 #define SS4_1F_LFB_V2(_b)    (((_b[2] >> 4) & 0x01) == 0x01)
 
@@ -254,43 +254,43 @@ enum SS4_PACKET_ID {
 #define SS4_BTN_V2(_b)        ((_b[0] >> 5) & SS4_MASK_NORMAL_BUTTONS)
 
 #define SS4_STD_MF_X_V2(_b, _i)    (((_b[0 + (_i) * 3] << 5) & 0x00E0) |    \
-                 ((_b[1 + _i * 3]  << 5) & 0x1F00)    \
-                )
+                                    ((_b[1 + _i * 3]  << 5) & 0x1F00)       \
+                                   )
 
 #define SS4_PLUS_STD_MF_X_V2(_b, _i) (((_b[0 + (_i) * 3] << 4) & 0x0070) | \
-                 ((_b[1 + (_i) * 3]  << 4) & 0x0F80)    \
-                )
+                                      ((_b[1 + (_i) * 3]  << 4) & 0x0F80)  \
+                                     )
 
 #define SS4_STD_MF_Y_V2(_b, _i)    (((_b[1 + (_i) * 3] << 3) & 0x0010) |    \
-                 ((_b[2 + (_i) * 3] << 5) & 0x01E0) |    \
-                 ((_b[2 + (_i) * 3] << 4) & 0x0E00)    \
-                )
+                                    ((_b[2 + (_i) * 3] << 5) & 0x01E0) |    \
+                                    ((_b[2 + (_i) * 3] << 4) & 0x0E00)      \
+                                   )
 
-#define SS4_BTL_MF_X_V2(_b, _i)    (SS4_STD_MF_X_V2(_b, _i) |        \
-                 ((_b[0 + (_i) * 3] >> 3) & 0x0010)    \
-                )
+#define SS4_BTL_MF_X_V2(_b, _i)    (SS4_STD_MF_X_V2(_b, _i) |             \
+                                    ((_b[0 + (_i) * 3] >> 3) & 0x0010)    \
+                                   )
 
-#define SS4_PLUS_BTL_MF_X_V2(_b, _i) (SS4_PLUS_STD_MF_X_V2(_b, _i) |    \
-                 ((_b[0 + (_i) * 3] >> 4) & 0x0008)    \
-                )
+#define SS4_PLUS_BTL_MF_X_V2(_b, _i) (SS4_PLUS_STD_MF_X_V2(_b, _i) |     \
+                                      ((_b[0 + (_i) * 3] >> 4) & 0x0008) \
+                                     )
 
-#define SS4_BTL_MF_Y_V2(_b, _i)    (SS4_STD_MF_Y_V2(_b, _i) | \
-                 ((_b[0 + (_i) * 3] >> 3) & 0x0008)    \
-                )
+#define SS4_BTL_MF_Y_V2(_b, _i)    (SS4_STD_MF_Y_V2(_b, _i) |             \
+                                    ((_b[0 + (_i) * 3] >> 3) & 0x0008)    \
+                                   )
 
 #define SS4_MF_Z_V2(_b, _i)    (((_b[1 + (_i) * 3]) & 0x0001) |    \
-                 ((_b[1 + (_i) * 3] >> 1) & 0x0002)    \
-                )
+                                ((_b[1 + (_i) * 3] >> 1) & 0x0002) \
+                               )
 
 #define SS4_IS_MF_CONTINUE(_b)    ((_b[2] & 0x10) == 0x10)
 #define SS4_IS_5F_DETECTED(_b)    ((_b[2] & 0x10) == 0x10)
 
-#define SS4_MFPACKET_NO_AX        8160    /* X-Coordinate value */
-#define SS4_MFPACKET_NO_AY        4080    /* Y-Coordinate value */
+#define SS4_MFPACKET_NO_AX           8160    /* X-Coordinate value */
+#define SS4_MFPACKET_NO_AY           4080    /* Y-Coordinate value */
 #define SS4_MFPACKET_NO_AX_BL        8176    /* Buttonless X-Coord value */
 #define SS4_MFPACKET_NO_AY_BL        4088    /* Buttonless Y-Coord value */
-#define SS4_PLUS_MFPACKET_NO_AX        4080    /* SS4 PLUS, X */
-#define SS4_PLUS_MFPACKET_NO_AX_BL    4088    /* Buttonless SS4 PLUS, X */
+#define SS4_PLUS_MFPACKET_NO_AX      4080    /* SS4 PLUS, X */
+#define SS4_PLUS_MFPACKET_NO_AX_BL   4088    /* Buttonless SS4 PLUS, X */
 
 /*
  * enum V7_PACKET_ID - defines the packet type for V7
@@ -385,18 +385,18 @@ struct alps_fields {
     unsigned int x_map;
     unsigned int y_map;
     unsigned int fingers;
-
+    
     int pressure;
     struct input_mt_pos st;
     struct input_mt_pos mt[MAX_TOUCHES];
-
+    
     unsigned int first_mp:1;
     unsigned int is_mp:1;
-
+    
     unsigned int left:1;
     unsigned int right:1;
     unsigned int middle:1;
-
+    
     unsigned int ts_left:1;
     unsigned int ts_right:1;
     unsigned int ts_middle:1;
@@ -492,7 +492,7 @@ struct alps_data;
 
 class EXPORT ALPS : public IOHIPointing {
     typedef IOHIPointing super;
-        OSDeclareDefaultStructors( ALPS );
+    OSDeclareDefaultStructors( ALPS );
     
 private:
     IOService *voodooInputInstance {nullptr};
@@ -501,7 +501,7 @@ private:
     bool                _powerControlHandlerInstalled {false};
     RingBuffer<UInt8, kPacketLength*32> _ringBuffer {};
     UInt32              _packetByteCount {0};
-
+    
     IOCommandGate*      _cmdGate {nullptr};
     
     VoodooInputEvent inputEvent {};
@@ -518,7 +518,7 @@ private:
     
     uint32_t logical_max_x {0};
     uint32_t logical_max_y {0};
-
+    
     uint32_t physical_max_x {0};
     uint32_t physical_max_y {0};
     
@@ -543,7 +543,7 @@ private:
     int _forceTouchCustomDownThreshold {90};
     int _forceTouchCustomUpThreshold {20};
     int _forceTouchCustomPower {8};
-
+    
     // normal state
     UInt32 lastbuttons {0};
     UInt32 lastTrackStickButtons, lastTouchpadButtons;
@@ -569,9 +569,9 @@ private:
     
     IONotifier* bluetooth_hid_publish_notify {nullptr}; // Notification when a bluetooth HID device is connected
     IONotifier* bluetooth_hid_terminate_notify {nullptr}; // Notification when a bluetooth HID device is disconnected
-
+    
     int _modifierdown {0}; // state of left+right control keys
-
+    
     // for scaling x/y values
     int xupmm {50}, yupmm {50}; // 50 is just arbitrary, but same
     
@@ -681,9 +681,9 @@ protected:
     IOItemCount buttonCount() override;
     IOFixed     resolution() override;
     inline void dispatchRelativePointerEventX(int dx, int dy, UInt32 buttonState, uint64_t now)
-        { dispatchRelativePointerEvent(dx, dy, buttonState, *(AbsoluteTime*)&now); }
+    { dispatchRelativePointerEvent(dx, dy, buttonState, *(AbsoluteTime*)&now); }
     inline void dispatchScrollWheelEventX(short deltaAxis1, short deltaAxis2, short deltaAxis3, uint64_t now)
-        { dispatchScrollWheelEvent(deltaAxis1, deltaAxis2, deltaAxis3, *(AbsoluteTime*)&now); }
+    { dispatchScrollWheelEvent(deltaAxis1, deltaAxis2, deltaAxis3, *(AbsoluteTime*)&now); }
     
 public:
     bool init(OSDictionary * dict) override;
@@ -691,10 +691,10 @@ public:
     
     bool start(IOService *provider) override;
     void stop(IOService *provider) override;
-
+    
     UInt32 deviceType() override;
     UInt32 interfaceID() override;
-
+    
     IOReturn setParamProperties(OSDictionary * dict) override;
     IOReturn setProperties(OSObject *props) override;
     
