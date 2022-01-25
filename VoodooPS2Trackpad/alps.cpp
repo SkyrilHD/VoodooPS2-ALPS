@@ -1906,12 +1906,7 @@ void ALPS::alps_process_packet_ss4_v2(UInt8 *packet) {
     if (f.fingers >= 2) {
         fingerStates[1].x = f.mt[1].x;
         fingerStates[1].y = f.mt[1].y;
-        // Maybe TODO: Add pressure support
-        if (ALPSForceFT == 1)
-            fingerStates[1].z = f.pressure;
-        else
-            // Disable pressure report, otherwise finger counting does not work.
-            fingerStates[1].z = 0;
+        fingerStates[1].z = f.pressure;
         
         if (fingerStates[1].x > X_MAX_POSITIVE)
             fingerStates[1].x -= 1 << ABS_POS_BITS;
@@ -1926,15 +1921,9 @@ void ALPS::alps_process_packet_ss4_v2(UInt8 *packet) {
         DEBUG_LOG("ALPS: fingerStates[1] report: x: %d, y: %d, z: %d\n", fingerStates[1].x, fingerStates[1].y, fingerStates[1].z);
     }
     // normal "packet"
-    // my port of synaptics_parse_hw_state from synaptics.c from Linux Kernel
     fingerStates[0].x = f.mt[0].x;
     fingerStates[0].y = f.mt[0].y;
-    // Maybe TODO: Add pressure support
-    if (ALPSForceFT == 1)
-        fingerStates[0].z = f.pressure;
-    else
-        // Disable pressure report, otherwise finger counting does not work.
-        fingerStates[0].z = 0;
+    fingerStates[0].z = f.pressure;
     
     DEBUG_LOG("ALPS: fingerStates[0] report: x: %d, y: %d, z: %d\n", fingerStates[0].x, fingerStates[0].y, fingerStates[0].z);
     
@@ -1949,16 +1938,9 @@ void ALPS::alps_process_packet_ss4_v2(UInt8 *packet) {
         fingerStates[0].y = YMAX;
     
     int fingerCount = 0;
-    if (ALPSForceFT == 1) {
-        if (fingerStates[0].z > z_finger) {
-            fingerCount = 0;
-            fingerCount = f.fingers;
-        }
-    } else {
-        if (fingerStates[0].z == 0) {
-            fingerCount = 0;
-            fingerCount = f.fingers;
-        }
+    if (fingerStates[0].z > z_finger) {
+        fingerCount = 0;
+        fingerCount = f.fingers;
     }
     
     clampedFingerCount = fingerCount;
@@ -3866,8 +3848,10 @@ void ALPS::sendTouchData() {
         
         transducer.type = FINGER;
         transducer.isValid = true;
-        //transducer.supportsPressure = false;
-        transducer.supportsPressure = ALPSForceFT == 1 ? true : false;
+        if (_forceTouchMode == FORCE_TOUCH_DISABLED || _forceTouchMode == FORCE_TOUCH_BUTTON)
+            transducer.supportsPressure = false;
+        else
+            transducer.supportsPressure = true;
         
         int posX = state.x_avg.average();
         int posY = state.y_avg.average();

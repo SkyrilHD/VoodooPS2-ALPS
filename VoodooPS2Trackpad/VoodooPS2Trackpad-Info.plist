@@ -36,8 +36,6 @@
 			<dict>
 				<key>Default</key>
 				<dict>
-					<key>ALPSForceFT</key>
-					<integer>0</integer>
 					<key>Darwin 16+</key>
 					<dict>
 						<key>ApplePreferenceCapability</key>
