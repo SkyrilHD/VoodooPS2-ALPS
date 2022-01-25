@@ -2,7 +2,7 @@ VoodooPS2 Changelog
 ============================
 #### v1.0.6
 - added middle button scrolling for V8 tracksticks
-- made V8 trackstick slower by cutting the speed in half
+- made V8 trackstick slower by cutting the speed in a third
 - prevent the trackstick pressure from being saved in the touchpad pressure on V8
 - removed ability to update logical dimensions in VoodooInput
     - After a while, V8 touchpads break for some reason. Removing fixes that. (Huge thanks to Jake Lo for testing)

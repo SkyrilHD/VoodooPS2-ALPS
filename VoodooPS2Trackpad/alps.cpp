@@ -1883,9 +1883,9 @@ void ALPS::alps_process_packet_ss4_v2(UInt8 *packet) {
         // Y is inverted
         y = -y;
         
-        // Divide by 2 since trackpoint's speed is too fast
-        x /= 2;
-        y /= 2;
+        // Divide by 3 since trackpoint's speed is too fast
+        x /= 3;
+        y /= 3;
         
         DEBUG_LOG("ALPS: Trackstick report: X=%d, Y=%d, Z=%d\n", x, y, pressure);
         /* If middle button is pressed, switch to scroll mode. Else, move pointer normally */
