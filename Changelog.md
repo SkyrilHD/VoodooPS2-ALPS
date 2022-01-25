@@ -18,8 +18,8 @@ VoodooPS2 Changelog
     - V1, V2 and V6 touchpads only report 1 finger, which is not enough to benefit from VoodooInput
 - fixed touchpad not resetting completely after Ctrl+Alt+PrntScr combo
 - fixed notification centre on V7 touchpads
-- (BETA) added ALPSForceFT property to enable Force Touch on V8 touchpads
-    - set ALPSForceFT to 1 and ForceTouchMode to 2 inside Info.plist of VoodooPS2Trackpad to enable pressure support
+- (BETA) added support for pressure report to enable Force Touch on V8 touchpads
+    - set ForceTouchMode to 2 (3 or 4) inside Info.plist of VoodooPS2Trackpad to enable pressure support
 - decreased FingerZ to 1
 
 #### v1.0.5
