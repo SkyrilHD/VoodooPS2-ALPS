@@ -20,6 +20,7 @@ VoodooPS2 Changelog
 - fixed notification centre on V7 touchpads
 - (BETA) added ALPSForceFT property to enable Force Touch on V8 touchpads
     - set ALPSForceFT to 1 and ForceTouchMode to 2 inside Info.plist of VoodooPS2Trackpad to enable pressure support
+- decreased FingerZ to 1
 
 #### v1.0.5
 - synced code from acidanthera

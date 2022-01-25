@@ -64,7 +64,7 @@
 					<key>DragLockTempMask</key>
 					<integer>1048592</integer>
 					<key>FingerZ</key>
-					<integer>5</integer>
+					<integer>1</integer>
 					<key>ForceTouchCustomDownThreshold</key>
 					<string>90</string>
 					<key>ForceTouchCustomPower</key>
