@@ -1138,9 +1138,7 @@ void ALPS::alps_process_touchpad_packet_v3_v5(UInt8 *packet) {
     if (fingers >= 2) {
         fingerStates[1].x = f.mt[1].x;
         fingerStates[1].y = f.mt[1].y;
-        // Maybe TODO: Add pressure support
-        // Disable pressure report, otherwise finger counting does not work.
-        fingerStates[1].z = 0;
+        fingerStates[1].z = f.pressure;
         
         if (fingerStates[1].x > X_MAX_POSITIVE)
             fingerStates[1].x -= 1 << ABS_POS_BITS;
@@ -1155,9 +1153,7 @@ void ALPS::alps_process_touchpad_packet_v3_v5(UInt8 *packet) {
     // normal "packet"
     fingerStates[0].x = f.mt[0].x;
     fingerStates[0].y = f.mt[0].y;
-    // Maybe TODO: Add pressure support
-    // Disable pressure report, otherwise finger counting does not work.
-    fingerStates[0].z = 0;
+    fingerStates[0].z = f.pressure;
     
     DEBUG_LOG("ALPS: fingerStates[0] report: x: %d, y: %d, z: %d\n", fingerStates[0].x, fingerStates[0].y, fingerStates[0].z);
     
@@ -1172,9 +1168,9 @@ void ALPS::alps_process_touchpad_packet_v3_v5(UInt8 *packet) {
         fingerStates[0].y = YMAX;
     
     int fingerCount = 0;
-    if (fingerStates[0].z == 0) {
+    if (fingerStates[0].z > z_finger) {
         fingerCount = 0;
-        fingerCount = fingers;
+        fingerCount = f.fingers;
     }
     
     clampedFingerCount = fingerCount;
