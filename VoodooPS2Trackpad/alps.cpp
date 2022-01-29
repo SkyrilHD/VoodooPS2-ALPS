@@ -2562,7 +2562,7 @@ bool ALPS::alps_hw_init_v3() {
     alps_exit_command_mode();
     
     /* Set rate and enable data reporting */
-    ps2_command(0x64, kDP_SetMouseSampleRate);
+    ps2_command(0x28, kDP_SetMouseSampleRate);
     ps2_command_short(kDP_Enable);
     
     return true;
