@@ -2629,12 +2629,8 @@ bool ALPS::alps_hw_init_rushmore_v3() {
         goto error;
     }
     
-    // SkyrilHD: This causes the entire trackpad, trackstick, and keyboard to stop working.
-    // reference: https://github.com/SkyrilHD/VoodooPS2-ALPS/issues/11
-    /*
-    if (alps_get_v3_v7_resolution(0xc2da))
+    if (!alps_get_v3_v7_resolution(0xc2da))
         goto error;
-    */
     
     regVal = alps_command_mode_read_reg(0xc2c6);
     if (regVal == -1)
