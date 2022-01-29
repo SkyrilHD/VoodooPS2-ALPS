@@ -21,6 +21,7 @@ VoodooPS2 Changelog
 - (BETA) added support for pressure report to enable Force Touch on V3, V4, V5 and V8 touchpads
     - set ForceTouchMode to 2 (3 or 4) inside Info.plist of VoodooPS2Trackpad to enable pressure support
 - decreased FingerZ to 1
+- fixed V3 Rushmore not working
 
 #### v1.0.5
 - synced code from acidanthera
