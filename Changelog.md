@@ -22,6 +22,7 @@ VoodooPS2 Changelog
     - set ForceTouchMode to 2 (3 or 4) inside Info.plist of VoodooPS2Trackpad to enable pressure support
 - decreased FingerZ to 1
 - fixed V3 Rushmore not initializing
+- fixed V3 Rushmore not reporting 1 finger to VoodooInput
 
 #### v1.0.5
 - synced code from acidanthera
