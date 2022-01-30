@@ -1170,7 +1170,7 @@ void ALPS::alps_process_touchpad_packet_v3_v5(UInt8 *packet) {
     int fingerCount = 0;
     if (fingerStates[0].z > z_finger) {
         fingerCount = 0;
-        fingerCount = f.fingers;
+        fingerCount = fingers;
     }
     
     clampedFingerCount = fingerCount;
