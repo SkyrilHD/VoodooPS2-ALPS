@@ -581,6 +581,8 @@ private:
     process_packet process_packet;
     //    set_abs_params set_abs_params;
     
+    int amount_invalid {0};
+    
     void injectVersionDependentProperties(OSDictionary* dict);
     bool resetMouse();
     bool handleOpen(IOService *forClient, IOOptionBits options, void *arg) override;

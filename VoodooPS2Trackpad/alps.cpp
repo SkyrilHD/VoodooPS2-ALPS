@@ -590,11 +590,23 @@ void ALPS::packetReady() {
     while (_ringBuffer.count() >= priv.pktsize) {
         UInt8 *packet = _ringBuffer.tail();
         if (priv.PSMOUSE_BAD_DATA == false) {
+            amount_invalid = 0;
             if (!ignoreall)
                 (this->*process_packet)(packet);
         } else {
             IOLog("ALPS: an invalid or bare packet has been dropped...\n");
-            /* Might need to perform a full HW reset here if we keep receiving bad packets (consecutively) */
+            
+            // SkyrilHD: Maybe find a better solution?
+            /* Perform a full HW reset here if we keep receiving bad packets (consecutively) */
+            ++amount_invalid;
+            if (amount_invalid > 20) {
+                IOLog("ALPS: Performing HW Reset due to many invalid packets!");
+                _device->lock();
+                resetMouse();
+                identify();
+                initTouchPad();
+                _device->unlock();
+            }
         }
         _packetByteCount = 0;
         _ringBuffer.advanceTail(priv.pktsize);
