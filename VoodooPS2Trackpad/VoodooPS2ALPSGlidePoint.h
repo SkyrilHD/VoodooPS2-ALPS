@@ -20,6 +20,9 @@
  * @APPLE_LICENSE_HEADER_END@
  */
 
+#ifndef _APPLEPS2ALPSTOUCHPAD_H
+#define _APPLEPS2ALPSTOUCHPAD_H
+
 #include "ApplePS2MouseDevice.h"
 #include <IOKit/IOTimerEventSource.h>
 #include <IOKit/hidsystem/IOHIPointing.h>
@@ -402,7 +405,7 @@ struct alps_fields {
     unsigned int ts_middle:1;
 };
 
-class ALPS;
+class ApplePS2ALPSGlidePoint;
 
 /**
  * struct alps_data - private data structure for the ALPS driver
@@ -455,16 +458,16 @@ struct alps_data {
 
 // Pulled out of alps_data, now saved as vars on class
 // makes invoking a little easier
-typedef bool (ALPS::*hw_init)();
-typedef bool (ALPS::*decode_fields)(struct alps_fields *f, UInt8 *p);
-typedef void (ALPS::*process_packet)(UInt8 *packet);
+typedef bool (ApplePS2ALPSGlidePoint::*hw_init)();
+typedef bool (ApplePS2ALPSGlidePoint::*decode_fields)(struct alps_fields *f, UInt8 *p);
+typedef void (ApplePS2ALPSGlidePoint::*process_packet)(UInt8 *packet);
 //typedef void (ALPS::*set_abs_params)();
 
 #define ALPS_QUIRK_TRACKSTICK_BUTTONS	1 /* trakcstick buttons in trackstick packet */
 
 //
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-// ALPS Class Declaration
+// ApplePS2ALPSGlidePoint Class Declaration
 //
 
 typedef struct ALPSStatus {
@@ -490,9 +493,9 @@ typedef struct ALPSStatus {
 // predeclure stuff
 struct alps_data;
 
-class EXPORT ALPS : public IOHIPointing {
+class EXPORT ApplePS2ALPSGlidePoint : public IOHIPointing {
     typedef IOHIPointing super;
-    OSDeclareDefaultStructors( ALPS );
+    OSDeclareDefaultStructors( ApplePS2ALPSGlidePoint );
     
 private:
     IOService *voodooInputInstance {nullptr};
@@ -687,7 +690,7 @@ protected:
     
 public:
     bool init(OSDictionary * dict) override;
-    ALPS * probe(IOService *provider, SInt32 *score) override;
+    ApplePS2ALPSGlidePoint * probe(IOService *provider, SInt32 *score) override;
     
     bool start(IOService *provider) override;
     void stop(IOService *provider) override;
@@ -700,3 +703,5 @@ public:
     
     IOReturn message(UInt32 type, IOService* provider, void* argument) override;
 };
+
+#endif /* _APPLEPS2ALPSTOUCHPAD_H */

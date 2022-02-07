@@ -22,8 +22,8 @@
 		84833FA5161B627D00845294 /* ApplePS2KeyboardDevice.h in Headers */ = {isa = PBXBuildFile; fileRef = 84833F9F161B627D00845294 /* ApplePS2KeyboardDevice.h */; settings = {ATTRIBUTES = (); }; };
 		84833FA7161B627D00845294 /* ApplePS2MouseDevice.h in Headers */ = {isa = PBXBuildFile; fileRef = 84833FA1161B627D00845294 /* ApplePS2MouseDevice.h */; settings = {ATTRIBUTES = (); }; };
 		84833FAA161B629500845294 /* ApplePS2ToADBMap.h in Headers */ = {isa = PBXBuildFile; fileRef = 84833FA9161B629500845294 /* ApplePS2ToADBMap.h */; settings = {ATTRIBUTES = (); }; };
-		84833FB1161B62A900845294 /* alps.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 84833FAB161B62A900845294 /* alps.cpp */; };
-		84833FB2161B62A900845294 /* alps.h in Headers */ = {isa = PBXBuildFile; fileRef = 84833FAC161B62A900845294 /* alps.h */; settings = {ATTRIBUTES = (); }; };
+		84833FB1161B62A900845294 /* VoodooPS2ALPSGlidePoint.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 84833FAB161B62A900845294 /* VoodooPS2ALPSGlidePoint.cpp */; };
+		84833FB2161B62A900845294 /* VoodooPS2ALPSGlidePoint.h in Headers */ = {isa = PBXBuildFile; fileRef = 84833FAC161B62A900845294 /* VoodooPS2ALPSGlidePoint.h */; settings = {ATTRIBUTES = (); }; };
 		84833FC2161B69C700845294 /* VoodooPS2Keyboard.h in Headers */ = {isa = PBXBuildFile; fileRef = 84167834161B5613002C60E6 /* VoodooPS2Keyboard.h */; settings = {ATTRIBUTES = (); }; };
 		84833FC3161B6A7E00845294 /* VoodooPS2Controller.h in Headers */ = {isa = PBXBuildFile; fileRef = 8416781E161B55B2002C60E6 /* VoodooPS2Controller.h */; settings = {ATTRIBUTES = (); }; };
 		84DD197B162D496E0044D061 /* AppleACPIPS2Nub.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 84DD1979162D496E0044D061 /* AppleACPIPS2Nub.cpp */; };
@@ -75,8 +75,8 @@
 		84833FA0161B627D00845294 /* ApplePS2MouseDevice.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ApplePS2MouseDevice.cpp; sourceTree = "<group>"; };
 		84833FA1161B627D00845294 /* ApplePS2MouseDevice.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ApplePS2MouseDevice.h; sourceTree = "<group>"; };
 		84833FA9161B629500845294 /* ApplePS2ToADBMap.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ApplePS2ToADBMap.h; sourceTree = "<group>"; };
-		84833FAB161B62A900845294 /* alps.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; lineEnding = 0; path = alps.cpp; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.cpp; };
-		84833FAC161B62A900845294 /* alps.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = alps.h; sourceTree = "<group>"; };
+		84833FAB161B62A900845294 /* VoodooPS2ALPSGlidePoint.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; lineEnding = 0; path = VoodooPS2ALPSGlidePoint.cpp; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.cpp; };
+		84833FAC161B62A900845294 /* VoodooPS2ALPSGlidePoint.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = VoodooPS2ALPSGlidePoint.h; sourceTree = "<group>"; };
 		84DD1979162D496E0044D061 /* AppleACPIPS2Nub.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = AppleACPIPS2Nub.cpp; sourceTree = "<group>"; };
 		84DD197A162D496E0044D061 /* AppleACPIPS2Nub.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AppleACPIPS2Nub.h; sourceTree = "<group>"; };
 		C3F4F603A234F724795A2FBD /* VoodooPS2Trackpad.kext */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; name = VoodooPS2Trackpad.kext; path = ../Products/Debug/VoodooPS2Controller.kext/Contents/PlugIns/VoodooPS2Trackpad.kext; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -195,8 +195,8 @@
 			isa = PBXGroup;
 			children = (
 				7197CFC326E0DBE8005B9F34 /* VoodooInput Headers */,
-				84833FAC161B62A900845294 /* alps.h */,
-				84833FAB161B62A900845294 /* alps.cpp */,
+				84833FAC161B62A900845294 /* VoodooPS2ALPSGlidePoint.h */,
+				84833FAB161B62A900845294 /* VoodooPS2ALPSGlidePoint.cpp */,
 				84167857161B56C4002C60E6 /* Supporting Files */,
 				71C22F1D26E183A100FE8589 /* VoodooPS2Common.h */,
 			);
@@ -253,7 +253,7 @@
 				7105998D27738497007082FD /* VoodooPS2Common.h in Headers */,
 				71A0A5CB26E1493300530E0F /* VoodooInputEvent.h in Headers */,
 				71A0A5CD26E1493300530E0F /* MultitouchHelpers.h in Headers */,
-				84833FB2161B62A900845294 /* alps.h in Headers */,
+				84833FB2161B62A900845294 /* VoodooPS2ALPSGlidePoint.h in Headers */,
 				71A0A5CA26E1493300530E0F /* VoodooInputTransducer.h in Headers */,
 				71A0A5CC26E1493300530E0F /* VoodooInputMessages.h in Headers */,
 			);
@@ -460,7 +460,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				84833FB1161B62A900845294 /* alps.cpp in Sources */,
+				84833FB1161B62A900845294 /* VoodooPS2ALPSGlidePoint.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

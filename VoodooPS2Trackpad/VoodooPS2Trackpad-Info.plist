@@ -27,7 +27,7 @@
 			<key>CFBundleIdentifier</key>
 			<string>com.skyrilhd.PS2Trackpad</string>
 			<key>IOClass</key>
-			<string>ALPS</string>
+			<string>ApplePS2ALPSGlidePoint</string>
 			<key>IOProbeScore</key>
 			<integer>6000</integer>
 			<key>IOProviderClass</key>
