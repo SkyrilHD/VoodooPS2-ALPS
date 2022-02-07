@@ -23,6 +23,7 @@ VoodooPS2 Changelog
 - decreased FingerZ to 1
 - fixed V3 Rushmore not initializing
 - fixed V3 Rushmore not reporting 1 finger to VoodooInput
+- refactored ALPS to ApplePS2ALPSGlidePoint
 
 #### v1.0.5
 - synced code from acidanthera
