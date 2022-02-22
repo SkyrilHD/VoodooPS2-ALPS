@@ -872,7 +872,7 @@ int ApplePS2ALPSGlidePoint::alps_process_bitmap(struct alps_data *priv,
         strlcpy(bitLog, "ALPS: ", sizeof(bitLog) + 1);
         
         for (int j = 0; xmap != 0; j++, xmap >>= 1) {
-            strlcat(bitLog, (ymap & 1 && xmap & 1) ? "1 " : "0 ", sizeof(bitLog));
+            strlcat(bitLog, (ymap & 1 && xmap & 1) ? "1 " : "0 ", sizeof(bitLog) + 1);
         }
         
         IOLog("ALPS: %s\n", bitLog);
