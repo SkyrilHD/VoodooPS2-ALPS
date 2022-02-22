@@ -1,5 +1,16 @@
 VoodooPS2 Changelog
 ============================
+#### v1.0.7
+- cleaned up code and fixed some logic issues
+- simplified finger count even more
+- added middle trackstick button as pass-through
+- enabled trackstick buttons on V1 and V2
+- added pressure check for V1 and V2
+- fixed bitmap processing
+- fixed an issue where a special trackstick packet was not filtered out in V3
+- improved V3 Rushmore bitmap processing
+- fixed clang
+
 #### v1.0.6
 - added middle button scrolling for V8 tracksticks
 - made V8 trackstick slower by cutting the speed in a third
