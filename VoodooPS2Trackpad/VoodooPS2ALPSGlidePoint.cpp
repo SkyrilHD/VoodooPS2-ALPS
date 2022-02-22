@@ -628,9 +628,9 @@ void ApplePS2ALPSGlidePoint::alps_process_packet_v1_v2(UInt8 *packet) {
     if (ignoreall)
         return;
     
-    int x, y, z, fin, left, right, middle, buttons = 0;
+    int x, y, z, fin, ges, left, right, middle, buttons = 0;
     // Unused code
-    // int back = 0, forward = 0, fingers = 0, ges;
+    // int back = 0, forward = 0, fingers = 0;
     uint64_t now_abs;
     
     clock_get_uptime(&now_abs);
@@ -667,8 +667,7 @@ void ApplePS2ALPSGlidePoint::alps_process_packet_v1_v2(UInt8 *packet) {
     }
     */
     
-    // Unused code
-    // ges = packet[2] & 1;
+    ges = packet[2] & 1;
     fin = packet[2] & 2;
     
     if ((priv.flags & ALPS_DUALPOINT) && z == 127) {
@@ -679,8 +678,7 @@ void ApplePS2ALPSGlidePoint::alps_process_packet_v1_v2(UInt8 *packet) {
         dispatchRelativePointerEventX(dx, dy, buttons, now_abs);
         return;
     }
-    
-#if 0   
+
     /* Some models have separate stick button bits */
     if (priv.flags & ALPS_STICK_BITS) {
         left |= packet[0] & 1;
@@ -697,7 +695,6 @@ void ApplePS2ALPSGlidePoint::alps_process_packet_v1_v2(UInt8 *packet) {
     if (ges && !fin) {
         z = 40;
     }
-#endif
     
     // REVIEW: Check if this is correct
     /*
@@ -717,7 +714,8 @@ void ApplePS2ALPSGlidePoint::alps_process_packet_v1_v2(UInt8 *packet) {
     fingers = z > 30 ? 1 : 0;
 #endif
     
-    dispatchRelativePointerEventX(x, y, buttons, now_abs);
+    if (z > 30)
+        dispatchRelativePointerEventX(x, y, buttons, now_abs);
     
     if (priv.flags & ALPS_WHEEL) {
         int scrollAmount = ((packet[2] << 1) & 0x08) - ((packet[0] >> 4) & 0x07);
