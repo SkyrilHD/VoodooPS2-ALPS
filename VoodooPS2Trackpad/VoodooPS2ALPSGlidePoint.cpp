@@ -2182,7 +2182,11 @@ bool ApplePS2ALPSGlidePoint::alps_absolute_mode_v1_v2() {
 
 int ApplePS2ALPSGlidePoint::alps_monitor_mode_send_word(int word) {
     int i, nibble;
-    
+
+    /*
+     * b0-b11 are valid bits, send sequence is inverse.
+     * e.g. when word = 0x0123, nibble send sequence is 3, 2, 1
+     */
     for (i = 0; i <= 8; i += 4) {
         nibble = (word >> i) & 0xf;
         alps_command_mode_send_nibble(nibble);
@@ -2193,7 +2197,7 @@ int ApplePS2ALPSGlidePoint::alps_monitor_mode_send_word(int word) {
 
 int ApplePS2ALPSGlidePoint::alps_monitor_mode_write_reg(int addr, int value) {
     ps2_command_short(kDP_Enable);
-    alps_monitor_mode_send_word(0x0A0);
+    alps_monitor_mode_send_word(0x0A0); // 0x0A0 is the command to write the word
     alps_monitor_mode_send_word(addr);
     alps_monitor_mode_send_word(value);
     ps2_command_short(kDP_SetDefaultsAndDisable);
@@ -2551,6 +2555,9 @@ bool ApplePS2ALPSGlidePoint::alps_hw_init_v3() {
     alps_exit_command_mode();
     
     /* Set rate and enable data reporting */
+    /* param is set here to 0x28, in Linux code it is 0x64
+       ref: https://github.com/torvalds/linux/blob/3593030761630e09200072a4bd06468892c27be3/drivers/input/mouse/alps.c#L2269
+    */
     ps2_command(0x28, kDP_SetMouseSampleRate);
     ps2_command_short(kDP_Enable);
     
