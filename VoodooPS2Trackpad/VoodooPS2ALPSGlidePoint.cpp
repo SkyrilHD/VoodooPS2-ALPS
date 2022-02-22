@@ -671,11 +671,6 @@ void ApplePS2ALPSGlidePoint::alps_process_packet_v1_v2(UInt8 *packet) {
     // ges = packet[2] & 1;
     fin = packet[2] & 2;
     
-    /* To make button reporting compatible with rest of driver */
-    buttons |= left ? 0x01 : 0;
-    buttons |= right ? 0x02 : 0;
-    buttons |= middle ? 0x04 : 0;
-    
     if ((priv.flags & ALPS_DUALPOINT) && z == 127) {
         int dx, dy;
         dx = x > 383 ? (x - 768) : x;
@@ -692,7 +687,12 @@ void ApplePS2ALPSGlidePoint::alps_process_packet_v1_v2(UInt8 *packet) {
         right |= packet[0] & 2;
         middle |= packet[0] & 4;
     }
-    
+
+    /* To make button reporting compatible with rest of driver */
+    buttons |= left ? 0x01 : 0;
+    buttons |= right ? 0x02 : 0;
+    buttons |= middle ? 0x04 : 0;
+
     /* Convert hardware tap to a reasonable Z value */
     if (ges && !fin) {
         z = 40;
