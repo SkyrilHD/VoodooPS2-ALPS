@@ -764,7 +764,7 @@ static void alps_get_bitmap_points(unsigned int map,
  * is greater than 0.
  */
 int ApplePS2ALPSGlidePoint::alps_process_bitmap(struct alps_data *priv,
-                              struct alps_fields *fields)
+                                                struct alps_fields *fields)
 {
     
     int i, fingers_x = 0, fingers_y = 0, fingers, closest;
@@ -1055,8 +1055,7 @@ bool ApplePS2ALPSGlidePoint::alps_decode_dolphin(struct alps_fields *f, UInt8 *p
         f->y_map = palm_data & (BIT(priv.y_bits) - 1);
         
         /* X-profile is stored in p(n) to p(n+m-1), m = x_bits; */
-        f->x_map = (palm_data >> priv.y_bits) &
-        (BIT(priv.x_bits) - 1);
+        f->x_map = (palm_data >> priv.y_bits) & (BIT(priv.x_bits) - 1);
     }
     return true;
 }
@@ -1423,8 +1422,7 @@ void ApplePS2ALPSGlidePoint::alps_get_finger_coordinate_v7(struct input_mt_pos *
             mt[1].y |= 0x000F;
             /* Detect false-positive touches where x & y report max value */
             if (mt[1].y == 0x7ff && mt[1].x == 0xff0)
-                mt[1].x = 0;
-            /* y gets set to 0 at the end of this function */
+                mt[1].x = 0; /* y gets set to 0 at the end of this function */
             break;
             
         case V7_PACKET_ID_MULTI:
