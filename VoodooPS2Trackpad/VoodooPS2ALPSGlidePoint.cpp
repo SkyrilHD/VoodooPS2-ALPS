@@ -3354,7 +3354,7 @@ void ApplePS2ALPSGlidePoint::alps_buttons(struct alps_fields &f) {
     
     left = f.left;
     right = f.right | f.ts_right;
-    middle = f.middle;
+    middle = f.middle | f.ts_middle;
     left_ts = f.ts_left;
     
     AbsoluteTime timestamp;
