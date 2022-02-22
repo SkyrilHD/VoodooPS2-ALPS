@@ -905,7 +905,7 @@ void ApplePS2ALPSGlidePoint::alps_process_trackstick_packet_v3(UInt8 *packet) {
     /* There is a special packet that seems to indicate the end
      * of a stream of trackstick data. Filter these out
      */
-    if (packet[1] == 0x7f && packet[2] == 0x7f && packet[3] == 0x7f) {
+    if (packet[1] == 0x7f && packet[2] == 0x7f && packet[4] == 0x7f) {
         return;
     }
     
