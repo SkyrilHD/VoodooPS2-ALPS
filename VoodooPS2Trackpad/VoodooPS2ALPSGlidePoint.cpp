@@ -1211,7 +1211,6 @@ void ApplePS2ALPSGlidePoint::alps_process_packet_v6(UInt8 *packet) {
         return;
     
     int x, y, z;
-    // int left, right, middle;
     int buttons = 0;
     
     uint64_t now_abs;
