@@ -709,10 +709,8 @@ void ApplePS2ALPSGlidePoint::alps_process_packet_v1_v2(UInt8 *packet) {
     // }
     
     priv.prev_fin = fin;
-    
-#if 0
-    fingers = z > 30 ? 1 : 0;
-#endif
+
+    // fingers = z > 30 ? 1 : 0;
     
     if (z > 30)
         dispatchRelativePointerEventX(x, y, buttons, now_abs);
