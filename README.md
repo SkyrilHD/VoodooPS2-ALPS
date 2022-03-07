@@ -1,5 +1,7 @@
 # VoodooPS2-ALPS
 
+### VoodooPS2-ALPS is now part of [acidanthera's VoodooPS2](https://github.com/acidanthera/VoodooPS2), please [use it](https://github.com/acidanthera/VoodooPS2/releases) instead! This repo is archived for history tracking.
+
 This new VoodooPS2 kext, made for ALPS touchpads, adds support for Magic Trackpad 2 emulation in order to use macOS native driver instead of handling all gestures itself.
 
 This driver is a fork of DrHurt's VoodooPS2 repo with included fixes by 1Revenger1.
